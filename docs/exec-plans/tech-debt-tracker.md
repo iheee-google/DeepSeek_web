@@ -18,13 +18,12 @@
 - **为什么推迟**：没有内容可服务。
 - **还债条件**：随 D1 一起解决。
 
-### D3：CI 从未在 GitHub 上真跑过
+### D3：CI 从未在 GitHub 上真跑过 —— **GitHub 侧已还清，Cloudflare 侧待验证**
 
-- **是什么**：`.github/workflows/ci.yml` 已写好（install → 校验版本 → format → lint → check → test → build → artifact），但 GitHub 仓库尚未创建。
-- **为什么推迟**：等用户创建仓库。
-- **风险**：已从「字体下载路径未验证」降级。**2026-10-11 已在干净 `git clone` 副本中跑完整个门禁序列**（install / format:check / lint / check / test / build 全部退出码 0），并清空本机字体候选目录强制走下载分支，取得的两个 TTF 与上游 `Content-Length` 逐字节一致，含下载耗时 34 秒。
-- **仍未验证的部分**：GitHub Actions runner 上的行为（缓存命中率、`pnpm/action-setup` 与 corepack 的交互、artifact 上传）与 **Cloudflare Pages 构建环境是否真的按 `packageManager` 字段选用 pnpm 10.30.3**（v3 不从 lockfile 检测 pnpm 版本，见 `docs/CI.md`）。
-- **还债条件**：仓库推送后首次 CI 运行 **且** 首次 Cloudflare 构建成功，两者日志都检查过。
+- **是什么**：`.github/workflows/ci.yml` 已写好（install → 校验版本 → format → lint → check → test → build → artifact）。
+- **GitHub 侧：已还清**。2026-10-11 用户推送 `main` 后工作流自动触发并**成功**（`CI | completed | success`，run 创建于 `2026-10-11T14:47:23Z`，距推送 6 秒）。这验证了此前只在本机模拟过的环节：Actions runner 上的 `pnpm/action-setup`、corepack、`--frozen-lockfile`、**从 `notofonts/noto-cjk` 下载字体的真实网络路径**，以及 artifact 上传。
+- **仍未验证**：**Cloudflare Pages 构建环境是否真的按 `packageManager` 字段选用 pnpm 10.30.3**（v3 既不从 lockfile 也不从 `engines` 检测 pnpm 版本，见 `docs/CI.md` 版本对齐表）。另 CI 缓存命中率尚未观察（首次必然冷缓存，单次数据不足）。
+- **还债条件**：首次 Cloudflare 构建成功，且检查过构建日志中的 pnpm 版本与字体下载步骤。
 
 ### D4：文档未经机械校验
 
