@@ -61,16 +61,41 @@ git push -u origin main
 
 **关于密码**：GitHub 从 2021 年起不再接受账号密码，`git push` 提示密码时要填 **Personal Access Token**（PAT），不是登录密码。
 
-- 创建 PAT：<https://github.com/settings/tokens> → **Generate new token (classic)** → 勾选 **`repo`** 权限 → 生成后**立刻复制**（页面关闭后不再显示）。
+- 创建 PAT：<https://github.com/settings/tokens> → **Generate new token (classic)** → 生成后**立刻复制**（页面关闭后不再显示）。
+- 权限勾选：**必须同时勾 `repo` 和 `workflow`**。原因见下面的实测记录。
 - 输入时：用户名填 `iheee-google`，密码处粘贴 PAT。
 - 想省去每次输入：`git config --global credential.helper store`（会以明文存在 `~/.git-credentials`，仅建议个人机器使用）。
 
-**如果 push 被拒**（提示 `rejected` / `non-fast-forward`）：说明第 1 步勾选了初始化文件，两边历史不一致。此时**不要**用 `git push -f`（会丢东西）。改用：
+#### 实测：只勾 `repo` 会被拒（2026-10-11）
+
+```
+! [remote rejected] main -> main (refusing to allow a Personal Access Token
+  to create or update workflow `.github/workflows/ci.yml` without `workflow` scope)
+```
+
+GitHub 对 `.github/workflows/` 下的文件有**独立的权限门**：PAT 只有 `repo` 权限时可以推送普通代码，但**不能创建或更新 CI 工作流文件**。本项目仓库里有 `.github/workflows/ci.yml`，因此必须在同一个 token 上补勾 `workflow`。
+
+**这次拒绝是原子的，没有丢东西**：远程仓库仍为空，本地 4 个提交、178 个文件、工作区全部完好。
+
+修法（二选一）：
+
+- **A. 给现有 token 补权限**（推荐）：<https://github.com/settings/tokens> → 点该 token → 勾上 **`workflow`** → **Update token**。HTTP 远程地址不变，重试即可。若系统缓存了旧凭据，先清掉：
+  ```bash
+  git config --global --unset credential.helper   # 若之前设过 store
+  rm -f ~/.git-credentials                        # 清除已缓存的旧 token
+  ```
+- **B. 新建一个含 `repo` + `workflow` 的 token**，推送时用新的。
+
+如果不想用 token，也可以改用 SSH（`git remote set-url origin git@github.com:iheee-google/DeepSeek_web.git`），SSH 密钥不受此限制——但本机当前**没有 SSH 密钥**，需要先生成并上传公钥。
+
+**其它 push 被拒的情况**（提示 `non-fast-forward`）：说明第 1 步勾选了初始化文件，两边历史不一致。此时**不要**用 `git push -f`（会丢东西）。改用：
 
 ```bash
 git pull --rebase origin main
 git push -u origin main
 ```
+
+**关于 CI 工作流与 Cloudflare 的关系**：这个报错**不影响 Cloudflare 部署**。`.github/workflows/ci.yml` 是 GitHub Actions 的门禁，Cloudflare 构建只读仓库代码、跑 `pnpm build`，不关心 Actions。但既然仓库里已有这个文件，推送时就必须解决它。
 
 ### 第 3 步：Cloudflare Pages 连接仓库
 
