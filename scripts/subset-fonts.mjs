@@ -169,8 +169,23 @@ for (const file of walk(DIST).filter((f) => rewritable.includes(extname(f)))) {
     }
   }
 }
+
+/**
+ * 最后一道闸：dist 里不得残留任何全量字体文件。
+ *
+ * 上面两条只看「引用」，抓不住「文件在但没人引用」的情况 —— 而全量 TTF 一旦
+ * 留在 dist/，就会被原样上传成公开可下载的静态资源（线上实测发生过：单个文件
+ * 25 MB，且因为字体许可方并不介意分发，这类泄漏不会被任何扫描报警）。
+ * 引用检查是"怕字体加载不到"，这一条是"怕多送出去 42 MB"。
+ */
+for (const file of walk(DIST)) {
+  if (['.ttf', '.otf', '.ttc'].includes(extname(file))) {
+    problems.push(`${file} 是未子集化的全量字体，dist/ 里不应存在`);
+  }
+}
+
 if (problems.length > 0) {
   console.error('字体自检失败：\n  ' + problems.join('\n  '));
   process.exit(1);
 }
-console.log('字体自检通过：所有引用均指向 dist/ 中真实存在的文件');
+console.log('字体自检通过：所有引用均指向 dist/ 中真实存在的文件，且无全量字体残留');
