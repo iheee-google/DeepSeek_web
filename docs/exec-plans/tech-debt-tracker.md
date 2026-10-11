@@ -18,12 +18,14 @@
 - **为什么推迟**：没有内容可服务。
 - **还债条件**：随 D1 一起解决。
 
-### D3：CI 从未在 GitHub 上真跑过 —— **GitHub 侧已还清，Cloudflare 侧待验证**
+### D3：CI 从未在 GitHub 上真跑过 —— **GitHub 侧已还清，Cloudflare 侧部分验证**
 
 - **是什么**：`.github/workflows/ci.yml` 已写好（install → 校验版本 → format → lint → check → test → build → artifact）。
 - **GitHub 侧：已还清**。2026-10-11 用户推送 `main` 后工作流自动触发并**成功**（`CI | completed | success`，run 创建于 `2026-10-11T14:47:23Z`，距推送 6 秒）。这验证了此前只在本机模拟过的环节：Actions runner 上的 `pnpm/action-setup`、corepack、`--frozen-lockfile`、**从 `notofonts/noto-cjk` 下载字体的真实网络路径**，以及 artifact 上传。
-- **仍未验证**：**Cloudflare Pages 构建环境是否真的按 `packageManager` 字段选用 pnpm 10.30.3**（v3 既不从 lockfile 也不从 `engines` 检测 pnpm 版本，见 `docs/CI.md` 版本对齐表）。另 CI 缓存命中率尚未观察（首次必然冷缓存，单次数据不足）。
-- **还债条件**：首次 Cloudflare 构建成功，且检查过构建日志中的 pnpm 版本与字体下载步骤。
+- **Cloudflare 侧：已拿到构建日志（2026-10-11）**，确认 `Detected the following tools from environment: pnpm@10.30.3, nodejs@22.12.0` —— 即 `packageManager` 字段确实被采用，版本对齐有效。
+- **但那次构建暴露了一个更严重的问题**：Cloudflare 的 `npx wrangler deploy` 因仓库缺少 wrangler 配置而自动执行了 `astro add cloudflare`，**用适配器二次构建**，导致 CI 验证的 `dist/` 与线上部署的 `dist/client/` 不是同一个产物（字体全 404 + 25MB 全量 TTF 被公开投递）。根因、修法与防回归断言见 `docs/RELIABILITY.md`。
+- **仍未验证**：CI 缓存命中率尚未观察（首次必然冷缓存，单次数据不足）。
+- **还债条件**：`wrangler.jsonc` 推送后，确认 Cloudflare 构建日志中**不再出现 `astro add`**，且线上 CSS 哈希与本地 `pnpm build` 产物一致、woff2 返回 200、全量 TTF 返回 404。
 
 ### D4：文档未经机械校验
 
@@ -51,9 +53,9 @@
 
 ### D8：Pagefind 索引未接入
 
-- **是什么**：`docs/CI.md` 与 `core-beliefs.md` 都把 Pagefind 写进构建链路，但**`package.json` 里没有 Pagefind 依赖，构建脚本也没跑它**。
-- **为什么推迟**：需要真实内容才有索引价值。
-- **还债条件**：随 D1 一起接入，并加上「draft 不进索引」的验证。
+- **是什么**：`docs/CI.md` 与 `core-beliefs.md` 都把 Pagefind 写进构建链路，`package.json` 里**已装 `pagefind@1.5.2`（devDependency）**，但**构建脚本从未调用它**（`scripts/` 中零处引用），`dist/` 里也就没有索引产物。
+- **为什么推迟**：需要真实内容才有索引价值 —— 当前站点只有首页，没有可搜索的笔记正文。
+- **还债条件**：随 D1（内容管线）一起接入，并加上「draft 不进索引」的机械校验。注意 Pagefind 的**中文分词效果尚未实测**，接入时需先用真实中文笔记验证召回质量。
 
 ### D9：`scripts/verify-dist.mjs` 有两个空列
 

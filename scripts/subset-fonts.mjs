@@ -23,7 +23,7 @@ import {
   existsSync,
   unlinkSync,
 } from 'node:fs';
-import { resolve, dirname, join, extname } from 'node:path';
+import { resolve, dirname, join, extname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,6 +41,30 @@ if (!existsSync(DIST)) {
     'dist/ 不存在。先运行 pnpm build 生成站点，或直接跑 pnpm build 让它自动调用本脚本。',
   );
   process.exit(1);
+}
+
+/**
+ * 静态资源的真正根目录。
+ *
+ * 无适配器时是 dist/ 本身；一旦 Astro 挂上 @astrojs/cloudflare 适配器，产物会变成
+ * dist/client/（静态资源）+ dist/server/（Worker 入口）两层，只有 dist/client/ 会被
+ * 当作静态根来服务。
+ *
+ * 这个区分是必须的：2026-10-11 线上就是踩在这里 —— Cloudflare 的 `npx wrangler deploy`
+ * 自动跑了 `astro add cloudflare` 并**二次构建**，字体写进了 dist/ 根（不被服务，woff2 全 404），
+ * 而全量 TTF 留在 dist/client/（被原样公开投递，单个 25 MB）。子集化的产物必须落在
+ * 真正对外的那一层，否则"构建成功"和"字体可用"是两回事。
+ */
+function findAssetsRoot() {
+  const nested = resolve(DIST, 'client');
+  if (existsSync(join(nested, 'index.html'))) return nested;
+  return DIST;
+}
+
+const ASSETS = findAssetsRoot();
+
+if (ASSETS !== DIST) {
+  console.log('检测到适配器布局（dist/client/ + dist/server/），静态资源根为 dist/client/');
 }
 
 /** 递归列出目录下所有文件 */
@@ -62,7 +86,7 @@ function walk(dir) {
  * 日期、代码片段里出现，漏掉任何一个都会造成字形回退。
  */
 function collectChars() {
-  const files = walk(DIST).filter((f) => extname(f) === '.html');
+  const files = walk(ASSETS).filter((f) => extname(f) === '.html');
   const chars = new Set();
 
   // ASCII 可打印字符全量保留，代价极小
@@ -85,8 +109,10 @@ function collectChars() {
 }
 
 const text = collectChars();
-const htmlCount = walk(DIST).filter((f) => extname(f) === '.html').length;
-console.log(`扫描 ${htmlCount} 个 HTML，收集到 ${[...text].length} 个唯一字符`);
+const htmlCount = walk(ASSETS).filter((f) => extname(f) === '.html').length;
+console.log(
+  `扫描 ${htmlCount} 个 HTML（静态根 ${relative(ROOT, ASSETS)}/），收集到 ${[...text].length} 个唯一字符`,
+);
 
 let { default: subsetFont } = {};
 try {
@@ -115,7 +141,7 @@ for (const font of FONTS) {
 
   const buf = readFileSync(src);
   const out = await subsetFont(buf, text, { targetFormat: 'woff2' });
-  const target = resolve(DIST, font.target);
+  const target = resolve(ASSETS, font.target);
   writeFileSync(target, out);
 
   const saved = ((1 - out.length / buf.length) * 100).toFixed(1);
@@ -124,8 +150,10 @@ for (const font of FONTS) {
       `${font.target}  ${(out.length / 1024).toFixed(1)} KB  (省 ${saved}%)`,
   );
 
-  // 把全量 TTF 从 dist 里删掉，避免它被一起部署
-  const full = resolve(DIST, font.source);
+  // 把全量 TTF 从对外目录里删掉，避免它被一起部署。
+  // 注意这里是 ASSETS 而不是 DIST：适配器布局下 TTF 在 dist/client/，
+  // 只删 dist/ 根等于没删，实测线上就这样泄露过 25 MB。
+  const full = resolve(ASSETS, font.source);
   if (existsSync(full)) unlinkSync(full);
 }
 
@@ -142,7 +170,7 @@ const version = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8')).
 const rewritable = ['.html', '.css'];
 let rewritten = 0;
 
-for (const file of walk(DIST).filter((f) => rewritable.includes(extname(f)))) {
+for (const file of walk(ASSETS).filter((f) => rewritable.includes(extname(f)))) {
   const source = readFileSync(file, 'utf8');
   const next = source
     .replaceAll('/NotoSerifSC-VF.ttf', `/NotoSerifSC-subset.woff2?v=${version}`)
@@ -157,15 +185,15 @@ for (const file of walk(DIST).filter((f) => rewritable.includes(extname(f)))) {
 }
 console.log(`改写 ${rewritten} 个文件的字体引用（版本 ${version}）`);
 
-// 自我校验：确认没有残留的全量 TTF 引用，并确认每个被引用的字体文件真实存在于 dist/
+// 自我校验：确认没有残留的全量 TTF 引用，并确认每个被引用的字体文件真实存在于对外目录
 const problems = [];
-for (const file of walk(DIST).filter((f) => rewritable.includes(extname(f)))) {
+for (const file of walk(ASSETS).filter((f) => rewritable.includes(extname(f)))) {
   const source = readFileSync(file, 'utf8');
   for (const name of FONTS) {
     if (source.includes(`/${name.source}`)) problems.push(`${file} 仍引用 /${name.source}`);
-    // 引用指向的产物必须真的在 dist 里。这条才是能抓住"构建成功但字体 404"的检查。
-    if (source.includes(`/${name.target}`) && !existsSync(resolve(DIST, name.target))) {
-      problems.push(`${file} 引用了 /${name.target}，但该文件不在 dist/`);
+    // 引用指向的产物必须真的在对外目录里。这条才是能抓住"构建成功但字体 404"的检查。
+    if (source.includes(`/${name.target}`) && !existsSync(resolve(ASSETS, name.target))) {
+      problems.push(`${file} 引用了 /${name.target}，但该文件不在 ${relative(ROOT, ASSETS)}/`);
     }
   }
 }

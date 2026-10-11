@@ -85,21 +85,43 @@ Cloudflare Pages 默认使用 **v3 构建系统**（Ubuntu 22.04、x86_64、gVis
 
 | 项       | 值                                                                       |
 | -------- | ------------------------------------------------------------------------ |
-| 仓库     | `https://github.com/iheee-google/DeepSeek_web`（待用户创建后填入）       |
+| 仓库     | `https://github.com/iheee-google/DeepSeek_web`（已创建并推送）           |
 | 生产分支 | `main`                                                                   |
 | 构建命令 | `pnpm build`                                                             |
 | 输出目录 | `dist`                                                                   |
-| 域名     | `iheee.xyz`（用户已托管 Cloudflare）                                     |
+| 域名     | `iheee.xyz`（已绑定并生效，HTTPS 正常）                                  |
 | 适配器   | **不需要** `@astrojs/cloudflare`（该适配器只用于 SSR，本项目为静态输出） |
+| 部署配置 | `wrangler.jsonc`（**必须存在**，理由见下）                               |
 
 **能力**（已核对 Cloudflare 官方文档）：push 自动构建部署；自定义分支生成预览 URL 且不影响生产；PR 内显示预览链接；构建状态回写 Git 仓库；可用 commit message 跳过构建。
 
 **限制**：官方文档明确「If you deploy using the Git integration, you cannot switch to Direct Upload later.」——选定 Git 集成后不能改为直传（可关闭自动部署后改用 Wrangler，但那是另一条路径）。
 
+### 🔴 `wrangler.jsonc` 不是可选配置，是安全开关
+
+Cloudflare 的部署命令是 `npx wrangler deploy`。**仓库里若没有 wrangler 配置**，wrangler 在非交互环境下会自动执行 `astro add cloudflare`：注入适配器、改写 `package.json` 与 `astro.config.mjs`，然后**用适配器再构建一次**（所有确认提示都取默认值，日志里只留下一行 `Configuring project for Astro`）。
+
+后果与完整分析见 [`RELIABILITY.md`](./RELIABILITY.md) 的「线上跑的构建和 CI 验证的构建不是同一个」。一句话概括：**CI 验证扁平 `dist/`，线上跑带适配器的 `dist/client/`，两边产物不同，本地永远测不出来。**
+
+因此 `wrangler.jsonc` 的内容刻意保持最小（assets-only）：
+
+```jsonc
+{
+  "name": "deepseek-web",
+  "compatibility_date": "2026-10-06",
+  "assets": { "directory": "./dist" },
+}
+```
+
+**不要加 `main` 或 `assets.binding`** —— 实测报错 `Cannot use assets with a binding in an assets-only Worker`。若将来真需要 SSR，再显式引入适配器并同步改这个文件（那应是一次有意识的决策，而不是平台替我们做的）。
+
+**验证方式**：`npx wrangler@4 deploy --dry-run`，输出应形如 `✨ Read N files from the assets directory .../dist` 且**全程不出现 `astro add`**。这条已由 `tests/structure/deploy.test.ts` 钉住。
+
 ## 变更历史
 
-| 日期       | 变更                                                                                   |
-| ---------- | -------------------------------------------------------------------------------------- |
-| 2026-10-11 | 首次判定为"其他类型（Web 静态站点）"，明确跳过 Tauri 三问，记录技术栈与门禁计划        |
-| 2026-10-11 | 工程落地：门禁全绿，记录构建链路三个特殊点与 GitHub → Cloudflare Pages 部署方案        |
-| 2026-10-11 | 门禁结果改为在干净克隆中复跑取得；补节点/pnpm 版本对齐表与强制下载字体的逐字节校验数据 |
+| 日期       | 变更                                                                                                        |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| 2026-10-11 | 首次判定为"其他类型（Web 静态站点）"，明确跳过 Tauri 三问，记录技术栈与门禁计划                             |
+| 2026-10-11 | 工程落地：门禁全绿，记录构建链路三个特殊点与 GitHub → Cloudflare Pages 部署方案                             |
+| 2026-10-11 | 门禁结果改为在干净克隆中复跑取得；补节点/pnpm 版本对齐表与强制下载字体的逐字节校验数据                      |
+| 2026-10-11 | 站点上线（`iheee.xyz` 200）；记录 `wrangler.jsonc` 为必需配置 —— 无它则 wrangler 会擅自注入适配器并二次构建 |

@@ -1,0 +1,22 @@
+{
+  // 这个文件的作用不是"配置部署"，而是**阻止 Cloudflare 擅自改构建**。
+  //
+  // 2026-10-11 的线上事故：Cloudflare 的部署命令是 `npx wrangler deploy`，
+  // 非交互环境下 wrangler 检测到框架是 Astro，于是自动执行了
+  // `astro add cloudflare`（注入 @astrojs/cloudflare 适配器、改写 package.json
+  // 与 astro.config.mjs、新建 wrangler.jsonc），然后**用适配器再构建一次**。
+  // 那次构建把静态根从 dist/ 变成 dist/client/，结果字体子集写错位置（全 404）
+  // 且 25MB 全量 TTF 被原样公开投递。
+  //
+  // 关键点：CI 验证的是扁平 dist/ 产物，而线上跑的是带适配器的第二次构建 ——
+  // 「测试过的」和「上线的」根本不是同一个东西。
+  //
+  // 仓库里只要存在这个文件，wrangler 就直接按它部署，不再尝试"配置项目"。
+  // 本站是 output:'static'，没有服务端渲染需求，因此只声明静态资源目录。
+  // 不要加 main / assets.binding：assets-only Worker 不允许有 binding。
+  "name": "deepseek-web",
+  "compatibility_date": "2026-10-06",
+  "assets": {
+    "directory": "./dist",
+  },
+}

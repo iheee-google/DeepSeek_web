@@ -28,7 +28,7 @@
 
 **反向验证**（必须做，否则不知道检查是否在检查空气）：移走字体 → 构建确实失败（`ELIFECYCLE Command failed with exit code 1`）；恢复 → 通过。
 
-**线上复现（2026-10-11）**：这个失败模式**真的在 iheee.xyz 上线过一次**，形态与上面完全一致 —— 线上 `/NotoSerifSC-subset.woff2` 返回 **404**，而**全量 `NotoSerifSC-VF.ttf` 返回 200 且实际传输 25,125,232 字节**（任何人可下载）。根因是当时部署用的构建跑在**早期软跳过版**脚本上：源字体不在 `public/` 时只打印「跳过」而不退出，于是引用改写照常执行（CSS/HTML 指向 404 的 woff2），全量 TTF 也**没有被 `unlinkSync` 删除**，作为 `public/` 静态资源被原样投递。
+**线上复现（2026-10-11）**：这个失败模式**真的在 iheee.xyz 上线过一次**，形态与上面完全一致 —— 线上 `/NotoSerifSC-subset.woff2` 返回 **404**，而**全量 `NotoSerifSC-VF.ttf` 返回 200 且实际传输 25,125,232 字节**（任何人可下载）。**但根因不是脚本版本旧**（见下一条：真正的根因是 Cloudflare 用适配器做了第二次构建，静态根从 `dist/` 变成 `dist/client/`）。
 
 **教训（本次新增）**：**「引用检查」和「残留检查」是两件事，必须都做**。上面第 2 条自检只问「被引用的字体在不在」，抓不住「文件在但没人引用」——而后者意味着 42 MB 全量字体被公开投递。修法见下一条。
 
@@ -45,6 +45,41 @@ dist/planted-full.ttf 是未子集化的全量字体，dist/ 里不应存在
 ```
 
 **反向验证**：`cp public/NotoSansSC-VF.ttf dist/planted-full.ttf && node scripts/subset-fonts.mjs` → 退出码 **1**，报错精确指出该文件；移除后恢复通过。
+
+### 🔴 线上跑的构建和 CI 验证的构建不是同一个（已修）
+
+**这是本站迄今最隐蔽的一个 bug**，因为它不违反任何本地断言：本地和 CI 怎么测都是绿的，坏的只发生在线上。
+
+**现象**：线上字体全 404 + 全量 TTF 被投递（见上两条），但**任何一次提交在本地构建都是正确的**。逐字节比对还发现线上 CSS 多出 `-webkit-mask-*` 前缀、`@starting-style` 结构也不同 —— 而全仓库 161 个 blob、所有历史提交里都不存在 `-webkit-mask`。**线上产物不属于任何一个已提交状态。**
+
+**根因**：Cloudflare 的部署命令是 `npx wrangler deploy`。仓库里原本没有任何 wrangler 配置，wrangler 在**非交互环境**下检测到框架是 Astro，于是自己执行了 `astro add cloudflare`：注入 `@astrojs/cloudflare` 适配器、改写 `package.json` 与 `astro.config.mjs`，然后**用适配器再构建一次**。日志原文的两次构建顺序是决定性的证据：
+
+```
+Executing user build command: pnpm run build
+  Success: Build command completed            ← 第一次，扁平 dist/，一切正常
+Executing user deploy command: npx wrangler deploy
+  🛠️  Configuring project for Astro with `astro add cloudflare`
+  [build] Running: pnpm run build             ← 第二次，带适配器
+  [build] adapter: @astrojs/cloudflare
+  字体自检失败：/opt/buildhome/repo/dist/client/NotoSerifSC-VF.ttf 是未子集化的全量字体
+```
+
+适配器把静态根从 `dist/` 改成 `dist/client/`，于是 `scripts/subset-fonts.mjs` 里所有写死的 `dist/` 路径全部错位：woff2 写到不被服务的位置（→ 404），全量 TTF 实际在 `dist/client/` 而删除语句指向 `dist/` 根（→ 没删掉，被原样公开投递）。`-webkit-mask-*` 前缀之谜也由此解开：适配器参与构建时 Lightning CSS 的浏览器目标不同。
+
+**为什么本地绝对测不出来**：本地从不跑 `wrangler deploy`，所以从不触发适配器。**CI 验证的是扁平 `dist/`，线上跑的是 `dist/client/`。**
+
+**修法（两层）**：
+
+1. **治本 —— 阻断擅自改构建**：仓库里只要有 `wrangler.jsonc`，wrangler 就直接按它部署，不再尝试"配置项目"。本站是纯静态站点，声明为 assets-only 即可，**不要加 `main` 或 `assets.binding`**（assets-only Worker 不允许 binding，实测会报 `Cannot use assets with a binding in an assets-only Worker`）。验证方式是 `npx wrangler@4 deploy --dry-run`，输出 `Read N files from the assets directory` 且**全程不再出现 `astro add`**。
+2. **治标 —— 让脚本兼容两种布局**：`scripts/subset-fonts.mjs` 增加 `findAssetsRoot()`，探测 `dist/client/index.html` 是否存在，存在则以 `dist/client/` 为静态根；所有子集写入、全量删除、引用改写、自检都改走该根。**最后一道残留检查故意仍扫整个 `dist/`** —— 恰恰因为它的职责是"整棵树里都不许有全量字体"。
+
+**反向验证**：仓库内 `tests/structure/deploy.test.ts` 8 条断言，逐条破坏后确认变红（移除 `wrangler.jsonc`、给配置加 `main`、把 `adapter` 加回 `astro.config.mjs`、把 `unlinkSync` 路径改回裸 `DIST`，5 项破坏全部如实变红，恢复后转绿）。适配器布局路径在 `/tmp/cfbuild` 用真实 `astro add cloudflare` 复现验证通过。
+
+**教训（最重要的一条）**：
+
+- **「测试过的」和「上线的」必须被证明是同一个东西。** CI 绿灯只说明 CI 那条构建链是好的；如果部署平台有权再构建一次，绿灯就是假的安全感。凡是「本地全绿但线上坏」的问题，第一件事是拿线上产物的字节去比对，而不是继续在本地找。
+- **平台会自动"帮你"配置项目，而这种自动化是非交互的**（所有确认提示都取默认值，日志里只留下一行 `Configuring project for Astro`）。对部署平台，**显式配置本身就是一个开关**：不写配置 = 把构建方式的决定权交出去。
+- 排查这类问题时，**依赖浮动、browserslist、历史重写都曾被怀疑并逐一排除**（用 `npm install` 忽略 lockfile 重建、加 `.browserslistrc`、遍历全部 git 对象搜特征串）。真正的判据是「线上 CSS 哈希与本地不一致」+「该特征串在任何提交中都不存在」—— 这把范围从"我的代码变了"缩小到"构建过程变了"。
 
 ### CSS 压缩器折叠声明导致动画静默消失（已修）
 
@@ -134,6 +169,7 @@ git config --get credential.helper                     # 只查值，查不出�
 - [ ] `dist/` 体积无异常增长（当前基线 868 KB）
 - [ ] 本机与 CI 的路径差异已考虑（CI 无 `/mnt/c`，`HOME` 不同）
 - [ ] 跟踪文件总字节与 `.git` 体积对得上（差得离谱说明有悬空大对象）
+- [ ] **部署平台的构建方式与 CI 一致**：`npx wrangler@4 deploy --dry-run` 输出中**不得出现 `astro add`**；线上 CSS 哈希应与本地构建一致
 
 ## 5. 回滚
 
@@ -141,8 +177,9 @@ git config --get credential.helper                     # 只查值，查不出�
 
 ## 变更历史
 
-| 日期       | 变更                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| 2026-10-11 | 建立。记录两个已实测的静默失败模式与修法                                                  |
-| 2026-10-11 | 补第三个失败模式：被 `.gitignore` 拦下的文件仍留在 `.git`（38 MB → 9.7 MB）               |
-| 2026-10-11 | 补线上实证：字体 404 与全量 TTF 公开投递真的发生过一次；新增「dist 不得残留全量字体」闸门 |
+| 日期       | 变更                                                                                                                                                                                     |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-11 | 建立。记录两个已实测的静默失败模式与修法                                                                                                                                                 |
+| 2026-10-11 | 补第三个失败模式：被 `.gitignore` 拦下的文件仍留在 `.git`（38 MB → 9.7 MB）                                                                                                              |
+| 2026-10-11 | 补线上实证：字体 404 与全量 TTF 公开投递真的发生过一次；新增「dist 不得残留全量字体」闸门                                                                                                |
+| 2026-10-11 | 🔴 找到真正根因：Cloudflare 用 `astro add cloudflare` 做了**第二次构建**，静态根变 `dist/client/`。修法 = `wrangler.jsonc` 阻断注入 + 脚本兼容两种布局 + `deploy.test.ts` 8 条防回归断言 |

@@ -1,9 +1,9 @@
 # 执行计划：打通 GitHub → Cloudflare Pages 自动部署
 
-**状态**：进行中（GitHub 侧已完成；等用户在 Cloudflare 创建 Pages 项目）
+**状态**：进行中（网站已上线；正在修一个只有线上才暴露的构建差异问题，见进度日志 2026-10-11 末条）
 **创建日期**：2026-10-11
-**负责人**：用户（仓库创建、授权）+ 智能体（本地准备、验证、文档）
-**关联**：`docs/CI.md`「部署：GitHub → Cloudflare Pages」、`docs/requirements.md` §5.3、用户 m01305
+**负责人**：用户（仓库创建、授权、Cloudflare 侧操作）+ 智能体（本地准备、验证、文档）
+**关联**：`docs/CI.md`「部署：GitHub → Cloudflare Pages」、`docs/RELIABILITY.md`「线上跑的构建和 CI 验证的构建不是同一个」、`docs/requirements.md` §5.3、用户 m01305
 
 ## 目标
 
