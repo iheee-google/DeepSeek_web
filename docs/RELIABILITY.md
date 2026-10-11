@@ -64,6 +64,37 @@ git gc --prune=now
 
 **通用教训**：**`.gitignore` 管的是「未来是否跟踪」，不是「过去是否已存储」。** 判断仓库是否真的干净，不能只看 `git status`，要拿跟踪文件总字节与 `.git` 体积对账。
 
+### 配置了 `credential.helper` 不等于凭据已存在（已解决）
+
+2026-10-11 推送成功后，用户执行了 `git config --global credential.helper store`，目录里也确认 `~/.gitconfig` 写入了 `[credential] helper = store`。但此后 git 仍然无法免密推送，读到的错误是：
+
+```
+fatal: could not read Username for 'https://github.com': terminal prompts disabled
+```
+
+**根因是时机，不是配置错误。** `store` helper 只在**下一次认证成功的那一刻**把凭据写盘。用户此前那次成功推送发生在 helper 被启用**之前**，git 当时并没有在监听——helper 不会回头去捡已经发生过的认证。于是形成一种很隐蔽的中间状态：
+
+```
+配置：store                 ✅ 已就位
+文件：~/.git-credentials    ❌ 不存在（因为启用后还没发生过认证）
+```
+
+对照时间线可以确认：推送在 `22:47:17`，而 `.gitconfig` 的 mtime 是 `23:10:29`——配置晚于那次认证 23 分钟。
+
+**修法**：让 helper 处于启用状态下**再认证一次**即可（任意一次 `git push`，提示时正常输入用户名与 PAT）。此后 `~/.git-credentials` 出现，免密推送生效。
+
+**排查命令**：
+
+```bash
+git config --list --show-origin | grep -i credential   # 配置在哪一层、来自哪个文件
+ls -la ~/.git-credentials                              # store helper 的落盘位置
+git config --get credential.helper                     # 只查值，查不出「是否已生效」
+```
+
+**通用教训**：**`credential.helper` 是一个「监听器」而不是「存储器」——它只能捕获启用之后发生的认证。** 判断凭据是否真的可用，要看凭据文件是否存在，不能只看配置项有没有写上。
+
+**另外**：本机的 shell 不是 TTY（`tty` 返回 `not a tty`），所以自动化执行时任何需要交互输入凭据的 `git` 操作都会直接失败。凭据文件一旦就位，这条路才通。
+
 ## 3. 外部依赖
 
 | 依赖                                            | 失败时的行为                                                                                               |
