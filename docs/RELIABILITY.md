@@ -36,6 +36,34 @@ Astro 的 CSS 压缩器把 `animation: g linear both` 与 `animation-timeline: s
 
 **通用教训**：**「不报错」不等于「在工作」。** 动画与资源引用都必须主动验证计算值或产物内容，不能只看退出码。
 
+### 被 `.gitignore` 拦下的文件仍会留在 `.git` 里（已修）
+
+早期执行过一次 `git add -A`，当时 `public/*.ttf` 尚未写进 `.gitignore`，两个字体（24.0 MB + 16.9 MB）已作为 blob 写入对象库。之后补上忽略规则再提交，**这两个 blob 不会出现在任何提交树里，但也不会被删除**——它们成为悬空对象，长期占据 `.git` 体积。
+
+症状：`du -sh .git` 报 **38 MB**，而 `git ls-files` 统计的跟踪文件总量只有 **12.8 MB**，两者对不上。用 `git fsck --unreachable` 才能看到那两个 blob。
+
+```bash
+# 定位：跟踪文件总字节与 .git 体积明显不符时
+git ls-files -z | xargs -0 stat -c%s | awk '{s+=$1} END {printf "%.1f MB\n", s/1048576}'
+du -sh .git
+git fsck --unreachable --dangling
+git count-objects -vH          # 看 size 与 size-pack
+```
+
+修法（**先确认悬空对象没被任何提交引用**，否则会丢历史）：
+
+```bash
+git rev-list --objects --all | grep <object-hash>   # 无输出 = 确实悬空
+git reflog expire --expire=now --all
+git gc --prune=now
+```
+
+本次清理后 `.git` 从 **38 MB 降到 9.7 MB**，`fsck --full` 无输出、HEAD 未变、3 个提交与 178 个文件不变、工作区干净。
+
+**预防**：`.gitignore` 要在**第一次 `git add` 之前**写好；大文件进过暂存区之后，光加忽略规则是不够的。
+
+**通用教训**：**`.gitignore` 管的是「未来是否跟踪」，不是「过去是否已存储」。** 判断仓库是否真的干净，不能只看 `git status`，要拿跟踪文件总字节与 `.git` 体积对账。
+
 ## 3. 外部依赖
 
 | 依赖                                            | 失败时的行为                                                                                               |
@@ -55,6 +83,7 @@ Astro 的 CSS 压缩器把 `animation: g linear both` 与 `animation-timeline: s
 - [ ] **故意破坏一个输入，确认构建真的失败**（不能只验证成功路径）
 - [ ] `dist/` 体积无异常增长（当前基线 868 KB）
 - [ ] 本机与 CI 的路径差异已考虑（CI 无 `/mnt/c`，`HOME` 不同）
+- [ ] 跟踪文件总字节与 `.git` 体积对得上（差得离谱说明有悬空大对象）
 
 ## 5. 回滚
 
@@ -62,6 +91,7 @@ Astro 的 CSS 压缩器把 `animation: g linear both` 与 `animation-timeline: s
 
 ## 变更历史
 
-| 日期       | 变更                                     |
-| ---------- | ---------------------------------------- |
-| 2026-10-11 | 建立。记录两个已实测的静默失败模式与修法 |
+| 日期       | 变更                                                                        |
+| ---------- | --------------------------------------------------------------------------- |
+| 2026-10-11 | 建立。记录两个已实测的静默失败模式与修法                                    |
+| 2026-10-11 | 补第三个失败模式：被 `.gitignore` 拦下的文件仍留在 `.git`（38 MB → 9.7 MB） |
