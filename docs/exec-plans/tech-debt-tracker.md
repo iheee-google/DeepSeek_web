@@ -20,10 +20,11 @@
 
 ### D3：CI 从未在 GitHub 上真跑过
 
-- **是什么**：`.github/workflows/ci.yml` 已写好（install → format → lint → check → test → build → artifact），但 GitHub 仓库尚未创建。
+- **是什么**：`.github/workflows/ci.yml` 已写好（install → 校验版本 → format → lint → check → test → build → artifact），但 GitHub 仓库尚未创建。
 - **为什么推迟**：等用户创建仓库。
-- **风险**：CI 环境的字体下载路径（`notofonts/noto-cjk` raw）**只在本机用 sed 清空候选目录模拟验证过**，未经真实 CI 验证。
-- **还债条件**：仓库推送后首次 CI 运行。
+- **风险**：已从「字体下载路径未验证」降级。**2026-10-11 已在干净 `git clone` 副本中跑完整个门禁序列**（install / format:check / lint / check / test / build 全部退出码 0），并清空本机字体候选目录强制走下载分支，取得的两个 TTF 与上游 `Content-Length` 逐字节一致，含下载耗时 34 秒。
+- **仍未验证的部分**：GitHub Actions runner 上的行为（缓存命中率、`pnpm/action-setup` 与 corepack 的交互、artifact 上传）与 **Cloudflare Pages 构建环境是否真的按 `packageManager` 字段选用 pnpm 10.30.3**（v3 不从 lockfile 检测 pnpm 版本，见 `docs/CI.md`）。
+- **还债条件**：仓库推送后首次 CI 运行 **且** 首次 Cloudflare 构建成功，两者日志都检查过。
 
 ### D4：文档未经机械校验
 
