@@ -1,0 +1,17 @@
+# 施工期不得改写：Harness §16 规定阶段 A–F 全勾完前
+# 不删、不精简、不就地改写 docs/HARNESS-RULES.md
+docs/HARNESS-RULES.md
+
+# 第三方与素材原文：不做格式化，保留原始排版
+godfather-trilogy-notes-v4/
+
+# 原型：独立 HTML，已按自身风格手写，不参与统一格式化
+prototypes/
+
+# 生成产物与锁文件
+docs/generated/
+prototypes/shots/
+pnpm-lock.yaml
+dist/
+.astro/
+node_modules/

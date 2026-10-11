@@ -1,0 +1,178 @@
+---
+/**
+ * 站点顶栏。
+ *
+ * 导航在桌面必须是一行、高度不超过 80px；移动端隐藏次要项而不是折行。
+ * 依据 design-taste-frontend Pre-Flight Check 的导航条款。
+ */
+import { SITE } from '../config/site';
+
+interface Props {
+  /** 滚动过首屏后顶栏变实心 */
+  solidOnScroll?: boolean;
+}
+
+const { solidOnScroll = true } = Astro.props;
+
+const NAV = [
+  { href: '/notes', label: '笔记' },
+  { href: '/projects', label: '项目' },
+  { href: '/about', label: '履历' },
+];
+---
+
+<header class="bar" data-solid={solidOnScroll ? 'true' : 'false'}>
+  <a class="brand" href="/">
+    <span class="name">{SITE.title}</span>
+    <span class="role">{SITE.role}</span>
+  </a>
+
+  <nav class="links" aria-label="主导航">
+    {NAV.map((item) => (
+      <a href={item.href}>{item.label}</a>
+    ))}
+    <a href={`mailto:${SITE.email}`} class="ext">
+      邮箱
+    </a>
+    <a href={SITE.github} class="ext" rel="me noopener" target="_blank">
+      GitHub
+    </a>
+  </nav>
+</header>
+
+<style>
+  .bar {
+    position: fixed;
+    inset: 0 0 auto;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* 桌面导航高度上限 80px */
+    height: 64px;
+    padding: 0 clamp(16px, 4vw, 48px);
+    gap: 14px;
+    white-space: nowrap;
+    overflow: clip;
+    /* 首屏上顶栏浮在影像之上：渐变保证任何画面下都可读 */
+    background: linear-gradient(
+      to bottom,
+      rgb(11 9 7 / 95%) 0%,
+      rgb(11 9 7 / 65%) 60%,
+      rgb(11 9 7 / 0%) 100%
+    );
+    transition:
+      background-color var(--dur-modal) var(--ease-out),
+      border-color var(--dur-modal) var(--ease-out);
+    border-bottom: 1px solid transparent;
+  }
+
+  /* 滚过首屏后变实心，避免后续正文内容与浮层混在一起 */
+  .bar[data-past='true'] {
+    background: var(--bg);
+    border-bottom-color: var(--rule);
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .brand .name {
+    font-family: var(--serif);
+    font-size: 17px;
+    letter-spacing: 0.04em;
+  }
+
+  .brand .role {
+    color: var(--fg-faint);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .links {
+    display: flex;
+    align-items: center;
+    gap: clamp(14px, 2.4vw, 30px);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+  }
+
+  .links a {
+    color: var(--fg-dim);
+    position: relative;
+    padding: 2px 0;
+    transition: color var(--dur-dropdown) var(--ease-out);
+  }
+
+  /* 下划线从左侧生长，而不是整条淡入 */
+  .links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 1px;
+    width: 100%;
+    background: currentcolor;
+    transform-origin: 0 50%;
+    scale: 0 1;
+    transition: scale var(--dur-modal) var(--ease-out);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .links a:hover {
+      color: var(--fg);
+    }
+
+    .links a:hover::after {
+      scale: 1 1;
+    }
+  }
+
+  .links a[aria-current='page'] {
+    color: var(--gold);
+  }
+
+  .links a[aria-current='page']::after {
+    scale: 1 1;
+  }
+
+  @media (max-width: 640px) {
+    /* 移动端隐藏次要项，绝不折行 */
+    .brand .role,
+    .links .ext {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * 滚过首屏后把顶栏切成实心。
+   *
+   * 用 IntersectionObserver 观察首屏底部而非监听 scroll：只在跨越边界时回调一次。
+   */
+  const bar = document.querySelector<HTMLElement>('.bar');
+  const hero = document.getElementById('hero');
+
+  if (bar && hero) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        bar.dataset.past = entry.isIntersecting ? 'false' : 'true';
+      },
+      { rootMargin: '-64px 0px 0px 0px', threshold: 0 },
+    );
+
+    // 观察首屏顶部的一块哨兵区域：它离开视口即表示已经滚过首屏
+    const sentinel = document.createElement('div');
+    sentinel.setAttribute('aria-hidden', 'true');
+    sentinel.style.cssText = 'position:absolute;top:64px;left:0;width:1px;height:1px;';
+    hero.prepend(sentinel);
+    observer.observe(sentinel);
+  }
+</script>

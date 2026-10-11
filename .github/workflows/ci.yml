@@ -1,0 +1,56 @@
+name: CI
+
+# 门禁：lint + format check + astro check + 结构测试 + 静态构建。
+# 本项目判定为「其他类型（Web 静态站点）」，已跳过 Tauri 三问，
+# 因此不生成桌面安装包流水线（docs/CI.md、Harness §3.5）。
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+
+      - name: 安装依赖
+        run: pnpm install --frozen-lockfile
+
+      # Harness §7.1：tag 发布时机械校验 tag 与 package.json 版本一致
+      - name: 校验版本一致性
+        run: |
+          node scripts/bump-version.mjs --check
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            TAG="${GITHUB_REF_NAME#v}"
+            PKG="$(node -p "require('./package.json').version")"
+            if [ "$TAG" != "$PKG" ]; then
+              echo "::error::tag ($TAG) 与 package.json ($PKG) 版本不一致（Harness §7.1）"
+              exit 1
+            fi
+          fi
+
+      - name: 格式检查
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: 类型与内容 schema 检查
+        run: pnpm check
+
+      - name: 结构测试
+        run: pnpm test
+
+      - name: 静态构建
+        run: pnpm build

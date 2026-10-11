@@ -1,0 +1,46 @@
+# 忽略构建产物与依赖
+node_modules/
+dist/
+.astro/
+.pnpm-store/
+
+# 搜索索引（构建期生成）
+public/pagefind/
+.pagefind/
+
+# 生成产物（可由 scripts/ 复跑重建，不手工编辑）
+docs/generated/
+prototypes/shots/
+
+# 原型用中文字体（41 MB，由 scripts/fetch-fonts.mjs 从系统字体目录复制，
+# 生产构建时改用子集化字体，不入库）
+prototypes/assets/fonts/*.ttf
+prototypes/assets/fonts/*.otf
+
+# 站点字体（同一份文件，public/ 是构建输入目录，同样不入库）
+# 缺失时运行 pnpm fonts 从系统字体目录复制；构建时由 scripts/subset-fonts.mjs 子集化
+public/*.ttf
+public/*.otf
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# 本地提示词历史（Harness §7.3：只追加，禁止提交与推送）
+prompt-history.txt
+
+# 编辑器与系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*:Zone.Identifier
+
+# 日志与临时文件
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.tmp/
+.cache/

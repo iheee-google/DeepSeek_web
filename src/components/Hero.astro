@@ -1,0 +1,406 @@
+---
+/**
+ * 首屏：百叶窗。
+ *
+ * 机制来自素材本身——`scenes/office-vito.jpg` 与 `portraits/vito.jpg` 是同一场戏的
+ * 两种裁切，画面里那道横向百叶窗把光切成横条。这里用 CSS mask 复现那条光带。
+ *
+ * 为什么用 mask 而不是 14 个 DOM 切片：mask 只需 1 个元素就能得到全部横条，
+ * 切片方案要 14 条 × 5 幕 = 70 个节点。mask-image 本身不可动画，但注册过的
+ * 自定义属性可以，因此 `--slat` 注册为 <percentage>（注册成 <length> 时
+ * 含百分号的 calc 无法插值，动画会静默失败）。
+ * 依据：docs/design-docs/animation-capabilities.md。
+ */
+import { ACTS } from '../repo/acts';
+---
+
+<section class="hero" id="hero" aria-label="《教父》三部曲笔记节选">
+  <div class="stage">
+    <div class="frames">
+      {ACTS.map((act, i) => (
+        <div
+          class:list={['frame', { 'is-on': i === 0 }]}
+          style={`--img:url(${act.img})`}
+          aria-hidden={i === 0 ? 'false' : 'true'}
+        >
+          <div class="pic" />
+          <div class="caption">
+            <p class="year">{act.year}</p>
+            {/* 幕标题是并列关系，用 h2；页面唯一的 h1 在顶栏的品牌名上 */}
+            <h2 class="lines">
+              {act.lines.map((line) => (
+                <span class="ln">
+                  <i>{line}</i>
+                </span>
+              ))}
+            </h2>
+            <p class="src">{act.source}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="veil" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <nav class="rail" aria-label="幕次">
+      {ACTS.map((act, i) => (
+        <button type="button" data-goto={i} aria-label={`第 ${i + 1} 幕 ${act.year}`}>
+          <span>{act.year}</span>
+        </button>
+      ))}
+    </nav>
+
+    <div class="foot" aria-hidden="true">
+      <span class="meta">827 行</span>
+      <span class="rule"></span>
+      <span class="meta">11 章</span>
+      <span class="rule"></span>
+      <span class="meta">80 张影像</span>
+    </div>
+  </div>
+
+  {/*
+    五段等高节拍，均分整个舞台高度。它们没有内容，只负责产生滚动距离，
+    并作为 IntersectionObserver 的观测点——比监听 scroll 事件更省，
+    也不会与合成线程打架（设计规范禁止 window.addEventListener('scroll')）。
+  */}
+  <div class="beats" aria-hidden="true">
+    {ACTS.map((act, i) => (
+      <div class="beat" data-beat={i} data-year={act.year} />
+    ))}
+  </div>
+</section>
+
+<style>
+  /*
+   * mask-image 不可动画，但注册过的自定义属性可以。
+   * 必须注册为 <percentage>：注册成 <length> 时含百分号的 calc 无法插值。
+   */
+  @property --slat {
+    syntax: '<percentage>';
+    inherits: false;
+    initial-value: 96%;
+  }
+
+  .hero {
+    position: relative;
+    background: var(--bg);
+  }
+
+  .stage {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    /* clip 而非 hidden：hidden 会让 .stage 成为滚动容器，
+       冻结其内部所有 animation-timeline: view() */
+    overflow: clip;
+  }
+
+  .beats {
+    /* 舞台是第一屏，节拍从同一位置开始铺开 */
+    margin-top: -100svh;
+    /* 节拍只提供滚动距离，不能拦截舞台上的点击 */
+    pointer-events: none;
+  }
+
+  .beat {
+    height: 100svh;
+  }
+
+  /* 让 sticky 舞台在最后一幕之后自然让位 */
+  .beat:last-child {
+    height: 100svh;
+  }
+
+  .frames {
+    position: absolute;
+    inset: 0;
+  }
+
+  .frame {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    /* 出场永远比入场快，且不回退位移 */
+    transition: opacity 420ms var(--ease-out);
+  }
+
+  .frame.is-on {
+    opacity: 1;
+  }
+
+  .pic {
+    position: absolute;
+    inset: 0;
+    background-image: var(--img);
+    background-size: cover;
+    background-position: center;
+
+    /*
+     * 一个 tile + repeat 得到全部 14 条横条：
+     * mask-size 把 tile 固定成 1/14 高，渐变只在 tile 内画一条缝。
+     * --slat 从 -6% 走到 96%，留下的 4% 透明就是横条之间的缝隙。
+     */
+    mask-image: linear-gradient(
+      180deg,
+      #000 0 var(--slat),
+      transparent calc(var(--slat) + 3%) 100%
+    );
+    mask-size: 100% calc(100% / 14);
+    mask-repeat: repeat;
+  }
+
+  /* 只有当前幕在推进横缝；其余幕停在完全揭开的位置 */
+  .frame.is-on .pic {
+    animation: blinds-in 900ms var(--ease-out) both;
+  }
+
+  @keyframes blinds-in {
+    from {
+      --slat: -6%;
+    }
+    to {
+      --slat: 96%;
+    }
+  }
+
+  /* 压暗只针对左下标题区，保留百叶窗最亮的横条 */
+  .veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      rgb(11 9 7 / 96%) 0%,
+      rgb(11 9 7 / 79%) 16%,
+      rgb(11 9 7 / 40%) 34%,
+      rgb(11 9 7 / 14%) 56%,
+      rgb(11 9 7 / 0%) 78%
+    );
+    pointer-events: none;
+  }
+
+  /* 让顶栏与右栏在任何画面上都可读 */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(130% 92% at 52% 46%, rgb(0 0 0 / 0%) 36%, rgb(11 9 7 / 70%) 100%);
+    pointer-events: none;
+  }
+
+  .caption {
+    position: absolute;
+    left: clamp(20px, 6vw, 96px);
+    bottom: clamp(88px, 15vh, 168px);
+    max-width: min(760px, 78vw);
+    z-index: 2;
+  }
+
+  .year {
+    font-family: var(--sans);
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    color: var(--gold);
+    margin: 0 0 18px;
+  }
+
+  .lines {
+    font-family: var(--serif);
+    font-size: clamp(38px, 7.2vw, 104px);
+    font-weight: 500;
+    line-height: 1.22;
+    letter-spacing: 0.01em;
+    color: var(--fg);
+    margin: 0;
+  }
+
+  /*
+   * 标题用遮罩滑入：每行是一个 overflow:clip 的盒子，内层 <i> 从 102% 归零。
+   * 文字不换位置，只被裁出来——这就是 PPT 平滑那种「同一元素形变」的手感，
+   * 但比整块位移安静得多。
+   */
+  .ln {
+    display: block;
+    overflow: clip;
+    /* 中文行内需要留出下伸部，否则句号会被裁掉 */
+    padding-bottom: 0.12em;
+  }
+
+  .ln i {
+    display: block;
+    font-style: normal;
+    translate: 0 102%;
+    transition: translate 620ms var(--ease-out);
+  }
+
+  .frame.is-on .ln i {
+    translate: 0 0;
+  }
+
+  .frame.is-on .ln:nth-child(2) i {
+    transition-delay: 70ms;
+  }
+
+  .src {
+    font-size: 13px;
+    color: var(--fg-dim);
+    margin: 22px 0 0;
+    letter-spacing: 0.02em;
+  }
+
+  .rail {
+    position: absolute;
+    right: clamp(16px, 3.4vw, 52px);
+    top: 50%;
+    translate: 0 -50%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    z-index: 3;
+  }
+
+  .rail button {
+    appearance: none;
+    background: none;
+    border: 0;
+    padding: 4px 0;
+    color: var(--fg-faint);
+    font: inherit;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  /* 指示线由伪元素承担，宽度可独立过渡 */
+  .rail button::after {
+    content: '';
+    display: block;
+    width: 18px;
+    height: 1px;
+    background: currentcolor;
+    transition: width var(--dur-modal) var(--ease-out);
+  }
+
+  .rail button[aria-current='true'] {
+    color: var(--gold);
+  }
+
+  .rail button[aria-current='true']::after {
+    width: 40px;
+  }
+
+  .foot {
+    position: absolute;
+    left: clamp(20px, 6vw, 96px);
+    right: clamp(20px, 6vw, 96px);
+    bottom: clamp(20px, 4vh, 40px);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--fg-faint);
+    z-index: 3;
+  }
+
+  .foot .rule {
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  @media (max-width: 720px) {
+    .rail {
+      display: none;
+    }
+
+    .caption {
+      bottom: clamp(76px, 13vh, 120px);
+    }
+  }
+
+  /*
+   * 降级为更少更温和：撤掉横缝推进与遮罩滑入，只留透明度过渡。
+   * 依据 docs/design-docs/animation-capabilities.md 第三节。
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .frame.is-on .pic {
+      animation: none;
+    }
+
+    .ln i,
+    .frame.is-on .ln i {
+      translate: none;
+      transition: none;
+    }
+
+    .frame {
+      transition: opacity 200ms ease;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * 幕次切换。
+   *
+   * 观察五段等高节拍而非监听 scroll 事件：IO 由浏览器在合成线程外批量回调，
+   * 不会因为每次滚动都进主线程而掉帧。百分比进度条交给纯 CSS 滚动驱动动画
+   * （见 .rule-fill），JS 完全不读滚动位置。
+   */
+  const stage = document.getElementById('hero');
+  const frames = [...document.querySelectorAll<HTMLElement>('.frame')];
+  const buttons = [...document.querySelectorAll<HTMLButtonElement>('.rail button')];
+  const beats = [...document.querySelectorAll<HTMLElement>('.beat')];
+
+  if (stage && frames.length > 0 && beats.length > 0) {
+    let current = -1;
+
+    const show = (next: number) => {
+      if (next === current || next < 0 || next >= frames.length) return;
+      current = next;
+      frames.forEach((frame, i) => {
+        frame.classList.toggle('is-on', i === next);
+        frame.setAttribute('aria-hidden', i === next ? 'false' : 'true');
+      });
+      buttons.forEach((button, i) => {
+        if (i === next) button.setAttribute('aria-current', 'true');
+        else button.removeAttribute('aria-current');
+      });
+    };
+
+    /**
+     * 视口中线落在哪一段节拍上，就显示哪一幕。
+     * rootMargin 把判定区间收成一条中线，避免相邻两幕同时命中。
+     */
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const index = Number((entry.target as HTMLElement).dataset.beat ?? '0');
+          show(index);
+        }
+      },
+      { rootMargin: '-50% 0px -50% 0px', threshold: 0 },
+    );
+
+    beats.forEach((beat) => observer.observe(beat));
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const index = Number(button.dataset.goto ?? '0');
+        const beat = beats[index];
+        if (!beat) return;
+        // 滚动到该节拍，让它的中线对准视口中线
+        const top = beat.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top - window.innerHeight / 2, behavior: 'smooth' });
+      });
+    });
+
+    show(0);
+  }
+</script>

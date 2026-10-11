@@ -1,0 +1,85 @@
+---
+/**
+ * 站点根布局。
+ *
+ * 内容页零客户端 JS：只有显式声明 client:* 的 island 才会带脚本。
+ * 字体用 `font-display: swap` 并预加载，避免首屏文字不可见。
+ */
+import '../styles/global.css';
+import SiteBar from '../components/SiteBar.astro';
+import { SITE } from '../config/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** 首屏用固定顶栏浮在影像上；内页用常规顶栏 */
+  overlayBar?: boolean;
+}
+
+const { title, description = SITE.description, overlayBar = false } = Astro.props;
+
+const pageTitle = title ? `${title} · ${SITE.title}` : `${SITE.title} · ${SITE.role}`;
+---
+
+<!doctype html>
+<html lang={SITE.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="color-scheme" content="dark" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    {/*
+      中文字体体积大，先只预加载首屏真正需要的一份（衬线，标题用）。
+      生产构建应改为按字符集子集化的 woff2，见 scripts/fetch-fonts.mjs 的说明。
+    */}
+    <link rel="preload" href="/NotoSerifSC-VF.ttf" as="font" type="font/ttf" crossorigin />
+
+    <style is:global>
+      /* 字体在 public/ 下按需复制（不入库），声明放在这里以免 CSS 处理阶段解析路径 */
+      @font-face {
+        font-family: 'Noto Serif SC';
+        src: url('/NotoSerifSC-VF.ttf') format('truetype-variations');
+        font-weight: 200 900;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Noto Sans SC';
+        src: url('/NotoSansSC-VF.ttf') format('truetype-variations');
+        font-weight: 100 900;
+        font-display: swap;
+      }
+    </style>
+  </head>
+
+  <body class={overlayBar ? 'has-overlay-bar' : ''}>
+    <a class="skip" href="#main">
+      跳到主要内容
+    </a>
+    <SiteBar />
+    <main id="main">
+      <slot />
+    </main>
+  </body>
+</html>
+
+<style>
+  /* 首屏顶栏浮在影像上，因此 main 不吃顶栏高度 */
+  .skip {
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    z-index: 100;
+    padding: 10px 16px;
+    background: var(--gold);
+    color: var(--bg);
+  }
+
+  .skip:focus {
+    left: 8px;
+    top: 8px;
+  }
+</style>

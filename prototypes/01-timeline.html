@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>原型 01 — 同一把尺</title>
+<style>
+@font-face{
+  font-family:"Noto Serif SC";
+  src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");
+  font-weight:100 900; font-display:swap;
+}
+@font-face{
+  font-family:"Noto Sans SC";
+  src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");
+  font-weight:100 900; font-display:swap;
+}
+
+:root{
+  --ink:#14120F;
+  --paper:#EBE5D9;
+  --rule:#14120F1F;
+  --dim:#8C8479;
+  --gold:#A87C2E;
+  --pane:#100D0A;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  /* 唯一的一把尺：每 1 年 = 6px。两条带共用。 */
+  --px-year:6px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"Noto Serif SC",Georgia,serif;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- 固定读数 ---------- */
+.readout{
+  position:fixed;inset:auto 0 0 0;z-index:60;
+  display:flex;align-items:baseline;gap:24px;
+  padding:11px 24px 13px;
+  font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:11px;color:var(--dim);
+  background:linear-gradient(to top,var(--paper) 52%,transparent);
+  pointer-events:none;font-variant-numeric:tabular-nums;
+}
+.readout b{color:var(--ink);font-weight:500}
+.readout .ratio{margin-left:auto;color:var(--gold)}
+.readout .ratio b{color:var(--gold);font-weight:700;font-size:13px}
+
+/* ================= 首屏 ================= */
+.hero{height:100svh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+
+.lede{padding:clamp(30px,7vh,74px) var(--gut) 0;max-width:1500px;margin:0 auto;width:100%;--gut:24px}
+.lede h1{
+  font-size:clamp(20px,2.15vw,31px);font-weight:600;line-height:1.48;letter-spacing:.004em;
+  max-width:23em;
+}
+.lede .sub{
+  font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:12.5px;color:var(--dim);margin-top:13px;line-height:1.75;max-width:40em;
+}
+
+/* ---- 共用刻度尺：每 100 年一条主刻度 ---- */
+.ruler{
+  flex:1;position:relative;display:flex;flex-direction:column;
+  justify-content:center;gap:clamp(20px,4.4vh,50px);
+  padding-bottom:76px;overflow:hidden;
+}
+.scale{
+  display:flex;align-items:flex-end;gap:0;
+  padding-left:max(24px,calc((100vw - 1500px)/2));
+  will-change:transform;
+}
+/* 每 100 年的竖刻度线，不随带移动 */
+.ticks{
+  position:absolute;left:0;right:0;height:26px;pointer-events:none;
+  overflow:hidden;
+}
+.ticks i{
+  position:absolute;bottom:0;width:1px;height:9px;background:var(--rule);
+}
+.ticks i.maj{height:16px;background:#14120F38}
+
+/* 履历：一年 6px 的横条 */
+.bar{
+  position:absolute;top:0;height:2px;background:var(--ink);
+  transform-origin:left center;transform:scaleX(0);
+  transition:transform 1.05s var(--ease-out);
+}
+.bar.on{transform:scaleX(1)}
+.bar.k2{background:var(--gold);height:3px;top:-.5px}
+
+/* 履历：节点 */
+.node{
+  position:absolute;top:-4px;width:9px;height:9px;border-radius:50%;
+  background:var(--paper);border:1.6px solid var(--ink);
+  opacity:0;transition:opacity .5s var(--ease-out);
+}
+.node.on{opacity:1}
+.node.k2{border-color:var(--gold);background:var(--gold)}
+.nlabel{
+  position:absolute;top:13px;width:max-content;max-width:15em;
+  opacity:0;transform:translateY(5px);
+  transition:opacity .6s var(--ease-out),transform .6s var(--ease-out);
+}
+.nlabel.on{opacity:1;transform:none}
+.nlabel .d{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;
+  color:var(--gold);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.03em;
+}
+.nlabel .t{font-size:14.5px;font-weight:600;margin-top:3px;line-height:1.34}
+.nlabel .m{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;
+  color:var(--dim);margin-top:3px;line-height:1.55;
+}
+
+/* 记录：一年 6px 的影像块 */
+.plate{
+  position:absolute;top:-42px;height:44px;overflow:hidden;background:var(--pane);
+  opacity:0;transition:opacity .55s var(--ease-out);
+}
+.plate.on{opacity:1}
+.plate img{width:100%;height:100%;object-fit:cover;display:block;
+  filter:saturate(.7) contrast(1.07) brightness(.92)}
+.plate.solid{background:#241E17}
+.plate.solid::after{
+  content:attr(data-yr);position:absolute;inset:0;display:grid;place-items:center;
+  color:var(--gold);font-size:9.5px;font-weight:700;letter-spacing:.04em;
+  font-family:"Noto Sans SC",sans-serif;font-variant-numeric:tabular-nums;
+}
+
+/* 带标签 */
+.rowhd{
+  position:absolute;left:max(24px,calc((100vw - 1500px)/2));top:-46px;
+  display:flex;align-items:baseline;gap:10px;white-space:nowrap;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;
+  letter-spacing:.09em;color:var(--dim);
+}
+.rowhd .sp{font-family:"Noto Serif SC",serif;font-size:11.5px;letter-spacing:0;color:var(--gold);font-weight:600}
+
+.scalerow{position:relative;height:58px}
+.scalerow.recrow{height:56px;margin-top:26px}
+
+/* 尺度提示（右侧，说明同一把尺） */
+.legend{
+  position:absolute;right:24px;bottom:78px;text-align:right;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;
+  color:var(--dim);line-height:1.85;
+}
+.legend em{font-style:normal;color:var(--gold)}
+
+/* ================= 内容区 ================= */
+section{padding:clamp(70px,13vh,140px) 24px 0;max-width:1500px;margin:0 auto}
+.kicker{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;
+  letter-spacing:.1em;color:var(--dim);margin-bottom:20px;
+}
+h2{font-size:clamp(23px,3vw,42px);font-weight:600;line-height:1.28;max-width:19em}
+.intro{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:13.5px;
+  line-height:1.9;color:#4A443B;max-width:35em;margin-top:19px;
+}
+
+/* 影像墙：横向长图，保持各自比例 */
+.wall{display:flex;gap:3px;overflow-x:auto;padding:30px 0 16px;scrollbar-width:thin}
+.wall::-webkit-scrollbar{height:5px}
+.wall::-webkit-scrollbar-thumb{background:var(--rule);border-radius:3px}
+.wall figure{flex:0 0 auto;margin:0;position:relative;background:var(--pane)}
+.wall img{display:block;height:clamp(150px,20vw,240px);width:auto;
+  filter:saturate(.72) contrast(1.06) brightness(.94)}
+.wall figcaption{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;color:var(--dim);
+  padding-top:8px;max-width:24ch;line-height:1.6;
+}
+
+/* 笔记台账 */
+.ledger ol{list-style:none;margin-top:34px}
+.ledger li{border-top:1px solid var(--rule)}
+.ledger li:last-child{border-bottom:1px solid var(--rule)}
+.ledger a{
+  display:grid;grid-template-columns:112px 1fr auto;gap:22px;align-items:baseline;
+  padding:18px 4px;text-decoration:none;color:inherit;transition:background .18s ease;
+}
+@media (hover:hover) and (pointer:fine){.ledger a:hover{background:#14120F0A}}
+.ledger .dt{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.ledger .tt{font-size:15px;font-weight:600;line-height:1.5}
+.ledger .tt small{display:block;font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:11.5px;font-weight:400;color:var(--dim);margin-top:4px;line-height:1.65}
+.ledger .tg{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;color:var(--gold);white-space:nowrap}
+
+/* 履历 */
+.cv{border-top:1px solid var(--rule);margin-top:clamp(70px,13vh,140px)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:46px;margin-top:36px}
+.col h3{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;letter-spacing:.1em;
+  color:var(--dim);padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:22px;
+}
+.job{padding-bottom:26px;margin-bottom:26px;border-bottom:1px solid var(--rule)}
+.job:last-child{border:0;margin:0;padding:0}
+.job .hd{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+.job .hd strong{font-size:15.5px;font-weight:600;line-height:1.45}
+.job .dt{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;color:var(--gold);
+  white-space:nowrap;font-variant-numeric:tabular-nums}
+.job .co{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12px;color:var(--dim);margin-top:5px}
+.job ul{margin-top:11px;list-style:none}
+.job li{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12.5px;line-height:1.82;
+  color:#3A352E;padding-left:15px;position:relative}
+.job li::before{content:"";position:absolute;left:0;top:.74em;width:5px;height:1px;background:var(--dim)}
+.skills{display:flex;flex-wrap:wrap;gap:7px}
+.skills span{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px;
+  padding:4px 10px;border:1px solid var(--rule);border-radius:2px;color:#3A352E}
+
+/* 明暗 */
+[data-theme="dark"]{
+  --ink:#E9E3D7;--paper:#0E0C09;--rule:#E9E3D724;--dim:#7E776C;--gold:#C99C46;--pane:#000;
+}
+[data-theme="dark"] .intro,[data-theme="dark"] .job li,[data-theme="dark"] .skills span{color:#B9B2A6}
+[data-theme="dark"] .plate.solid{background:#2A231A}
+.themebtn{
+  position:fixed;top:14px;right:14px;z-index:70;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;
+  background:none;border:1px solid var(--rule);color:var(--dim);
+  padding:6px 11px;border-radius:2px;cursor:pointer;
+  transition:color .18s ease,border-color .18s ease;
+}
+.themebtn:hover{color:var(--ink);border-color:var(--dim)}
+.themebtn:active{transform:scale(.97)}
+.skip{position:absolute;left:-9999px;background:var(--ink);color:var(--paper);
+  padding:9px 15px;font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12px;
+  text-decoration:none;z-index:99}
+.skip:focus{left:12px;top:12px}
+a:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+/* 响应式 */
+@media (max-width:900px){
+  .nlabel{max-width:11em}
+  .nlabel .m{display:none}
+  .legend{display:none}
+  .plate{top:-34px;height:36px}
+  .scalerow{height:50px}
+  .scalerow.recrow{height:50px;margin-top:34px}
+  .wall img{height:132px}
+  .ledger a{grid-template-columns:1fr auto;gap:8px}
+  .ledger .dt{grid-column:1/-1}
+}
+@media (prefers-reduced-motion:reduce){
+  .bar,.node,.nlabel,.plate{transition-duration:.01ms}
+  .bar{transform:scaleX(1)}
+  .wall img{transition:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#records">跳到内容</a>
+<button class="themebtn" id="tb" type="button" aria-label="切换明暗主题">明 / 暗</button>
+
+<main>
+<section class="hero" id="top">
+  <div class="lede">
+    <h1>22 岁。整理了 96 年。</h1>
+    <p class="sub">
+      上下两条用的是同一把尺：<em>每 1 年 = 6 像素</em>。<br>
+      上面是我活过的时间，下面是我记下来的时间。
+    </p>
+  </div>
+
+  <div class="ruler" id="ruler">
+    <div class="ticks" id="ticks"></div>
+
+    <!-- 履历行 -->
+    <div class="scalerow" id="rowA">
+      <div class="rowhd"><span>履历</span><span class="sp">2022.09 — 2026.06</span><span>3 年 10 个月 · 276px</span></div>
+    </div>
+
+    <!-- 记录行 -->
+    <div class="scalerow recrow" id="rowB">
+      <div class="rowhd"><span>记录</span><span class="sp">1901 — 2026</span><span>125 年 · 9000px</span></div>
+    </div>
+
+    <div class="legend">
+      同一把尺 · 同一比例<br>
+      长度差 = <em id="lgRatio">32.6 倍</em>
+    </div>
+  </div>
+
+  <div class="readout">
+    <span>滚动 <b id="rp">0%</b></span>
+    <span id="rs1">左带 0px</span>
+    <span id="rs2">右带 0px</span>
+    <span class="ratio">长度比 <b id="rr">32.6×</b></span>
+  </div>
+</section>
+
+<!-- data -->
+<script type="application/json" id="data">
+{
+  "career": [
+    {"d":"2022.09","t":"入学","m":"广东石油化工学院 · 人工智能","from":2022.75,"to":2026.5},
+    {"d":"2023.11","t":"典阅杯","m":"全国大学生 AI 算法设计与应用大赛 · 国家级二等奖","from":2023.85,"to":2023.95},
+    {"d":"2025.01","t":"千翔安全环保","m":"算法工程师 · YOLOv8 小目标检测","from":2025.083,"to":2025.417,"k":2},
+    {"d":"2025.07","t":"科蓝金信","m":"算法开发工程师 · 大模型 / 多模态 Agent","from":2025.5,"to":2026.417,"k":2},
+    {"d":"2025.10","t":"iHeNovel","m":"AI 小说创作助手 · 独立项目","from":2025.75,"to":2026.25},
+    {"d":"2026.06","t":"毕业","m":"GPA 3.0/4.0 · 专业课均分 90+","from":2026.5,"to":2026.5}
+  ],
+  "records": [
+    {"y":1901,"f":1901,"t":1970,"img":"portrait-vito.jpg","c":"维托出生 · 西西里"},
+    {"y":1945,"f":1945,"t":1947,"img":"scene-wedding.jpg","c":"康妮的婚礼"},
+    {"y":1946,"f":1946,"t":1948,"img":"scene-oranges.jpg","c":"橙子滚落街头"},
+    {"y":1955,"f":1955,"t":1957,"img":"scene-baptism.jpg","c":"洗礼与清算"},
+    {"y":1958,"f":1958,"t":1960,"img":"scene-michael-chair.jpg","c":"太浩湖"},
+    {"y":1959,"f":1959,"t":1961,"img":"portrait-fredo.jpg","c":"弗雷多的背叛"},
+    {"y":1979,"f":1979,"t":1981,"img":"scene-door-kay.jpg","c":"迈克尔回到纽约"},
+    {"y":1997,"f":1997,"t":1999,"img":"scene-michael-alone.jpg","c":"独自死去"},
+    {"y":2026.51,"f":2026.51,"t":2026.55,"img":"scene-office-vito.jpg","c":"linux.do · 7 篇","solid":true}
+  ]
+}
+</script>
+
+<section id="records">
+  <div class="kicker">记录 — RECORDS</div>
+  <h2>我看过的、读过的，以及从中整理出来的东西。</h2>
+  <p class="intro">
+    《教父》三部曲：827 行笔记，44 个人物，一条从 1901 到 1997 的时间轴。<br>
+    linux.do 上的技术帖：7 篇。别人写的帖子，我读过、拆开、重排成自己的结构。
+  </p>
+
+  <div class="wall">
+    <figure><img src="assets/godfather/scene-office-vito.jpg" alt="维托的书房" loading="lazy"><figcaption>「我相信美国」——本纳瑟拉的独白</figcaption></figure>
+    <figure><img src="assets/godfather/scene-wedding.jpg" alt="康妮的婚礼" loading="lazy"><figcaption>婚礼当天，门在凯的面前关上</figcaption></figure>
+    <figure><img src="assets/godfather/scene-oranges.jpg" alt="滚落的橙子" loading="lazy"><figcaption>橙子：出现 6 次的死亡预兆</figcaption></figure>
+    <figure><img src="assets/godfather/scene-baptism.jpg" alt="洗礼" loading="lazy"><figcaption>洗礼与清算，剪在同一段管风琴里</figcaption></figure>
+    <figure><img src="assets/godfather/scene-michael-chair.jpg" alt="迈克尔在太浩湖" loading="lazy"><figcaption>太浩湖的办公室，1958</figcaption></figure>
+    <figure><img src="assets/godfather/scene-michael-alone.jpg" alt="迈克尔独自坐着" loading="lazy"><figcaption>1997：独自死去</figcaption></figure>
+    <figure><img src="assets/godfather/scene-fish.jpg" alt="鱼" loading="lazy"><figcaption>鱼：一种「无法拒绝」的记号</figcaption></figure>
+    <figure><img src="assets/godfather/portrait-vito.jpg" alt="维托" loading="lazy"><figcaption>维托·柯里昂</figcaption></figure>
+    <figure><img src="assets/godfather/portrait-michael.jpg" alt="迈克尔" loading="lazy"><figcaption>迈克尔：一个被写好的转变</figcaption></figure>
+  </div>
+
+  <div class="ledger">
+    <div class="kicker" style="margin:44px 0 0">笔记 — linux.do 整理 · 2026.07</div>
+    <ol>
+      <li><a href="#"><span class="dt">2026-07-13</span><span class="tt">从 vibe coding 到 spec coding：我用 Trellis 的实践总结<small>761 行。作者拆了 Prompt / Rules / Skill 的边界，以及三个没被解决的问题。</small></span><span class="tg">Agent · Harness</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-07</span><span class="tt">AI 时代的思维框架<small>把 LLM 推理比作受上下文塑形的「语义地形」，并提出五种性质与八种提示技巧。</small></span><span class="tg">llm · context</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-04</span><span class="tt">佬们，做 Agent 用 LangGraph 是不是方向不太对？<small>66 楼的争论。结论偏向 ReAct 与 Agent SDK，LangGraph 留给有审计要求的场景。</small></span><span class="tg">agent · langgraph</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-04</span><span class="tt">企业知识库项目落地好难…求助<small>46 楼。围绕 PDF 解析、表格与图片、模型选型的实际踩坑。</small></span><span class="tg">rag · document-ai</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-04</span><span class="tt">【InkWell Ai】AI 辅助长篇写小说工作台<small>从选题脑暴到百万字交付，逐版本记录。29 张界面截图。</small></span><span class="tg">AI 写作 · 产品</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-03</span><span class="tt">AI 协作手册：博士生日常如何与 AI 协作<small>科研四阶段、科研绘图、Code Agent 选型，以及「警惕效率幻觉」。</small></span><span class="tg">AI 协作 · 方法论</span></a></li>
+      <li><a href="#"><span class="dt">2026-07-03</span><span class="tt">AI 中转站大起底：什么是中转站，倍率是什么<small>计费结构、低价渠道来源，以及一张判断是否靠谱的速查表。</small></span><span class="tg">API · 科普</span></a></li>
+    </ol>
+  </div>
+</section>
+
+<section class="cv">
+  <div class="kicker">履历 — EXPERIENCE</div>
+  <h2 style="font-size:clamp(20px,2.3vw,29px)">工作、项目与教育</h2>
+  <div class="cols">
+    <div class="col">
+      <h3>工作经历</h3>
+      <div class="job">
+        <div class="hd"><strong>深圳科蓝金信科技发展有限公司</strong><span class="dt">2025.07 — 2026.05</span></div>
+        <div class="co">算法开发工程师 · 大模型 / 多模态 Agent 研发与工程化落地</div>
+        <ul>
+          <li>智能语音助手意图识别与工具调用：FastAPI 意图识别服务覆盖 60+ 用户意图，多轮对话意图传递与跨轮槽位继承，Function Call 工具分发；落地 BERT-CRF 轻量单轮识别方案与联网搜索模型动态路由。</li>
+          <li>多模态有声故事生成 Agent：断点续跑批量音频处理流水线，Qwen3.5-Omni 音频理解与结构化抽取，串联 Qwen TTS + AudioLDM2 音效 + MusicGen 背景音乐。</li>
+          <li>AI 报关资料智能解析系统：FastAPI + LangChain 文档理解流水线，PDF / Excel / 图片多格式 OCR 解析，跨文档商品要素匹配，SSE 流式推送与 Excel 导出，Vue2 + Element UI 管理端。</li>
+          <li>垂直场景落地：OpenMAIC / DeepTutor 搭建 K12 多智能体互动教学；z-image-turbo 文生图高并发服务支撑 AI 打印机业务；低延迟 AI 电话外呼，TTS 响应优化至 2 秒内，支持实时打断与音色克隆。</li>
+        </ul>
+      </div>
+      <div class="job">
+        <div class="hd"><strong>茂名千翔安全环保科技有限公司</strong><span class="dt">2025.01 — 2025.05</span></div>
+        <div class="co">算法工程师 · 气体泄漏监测系统核心算法</div>
+        <ul>
+          <li>多源融合算法与设备对接：声学与视频融合算法、实时流视频处理，对接联丰迅声学传感器并完成多款性能对比测试，对接激光雷达与光学仪器供应商完成设备选型。</li>
+          <li>数据工程与 CV 检测模型优化：构建多源数据集与处理流水线，搭建 Labelme / ISAT 标注环境，编写标签可视化、去重与 COCO / YOLO 格式转换脚本；基于 YOLOv8 训练法兰与阀门检测及管道罐体实例分割，改进检测头结构提升小目标检测精度。</li>
+          <li>大模型智能助手部署：使用 LLM-Factory 微调本地 DeepSeek，基于 Ollama + OpenWebUI 构建可视化交互界面。</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col">
+      <h3>个人项目</h3>
+      <div class="job">
+        <div class="hd"><strong>iHeNovel — AI 智能小说创作助手</strong><span class="dt">2025.10 — 2026.03</span></div>
+        <div class="co">面向长篇网文创作的 AI Agent 写作平台</div>
+        <ul>
+          <li>统一服务商与可扩展 Agent 能力：Service 层适配 OpenAI / Claude / Gemini，流式生成、JSON 解析重试与调用监控；MCP 插件机制实现外部搜索与资料查询；Prompt 模板管理与写作风格配置。</li>
+          <li>智能记忆与长篇上下文增强：ChromaDB 与本地 / 远程 Embedding 构建向量记忆服务，章节记忆写入与语义检索，伏笔上下文补全；章节上下文构建服务聚合大纲、上一章衔接、角色关系、职业阶段与相关记忆；SSE 长任务生成链路拆分可恢复步骤并实时展示进度。</li>
+          <li>完整创作管理工作台：灵感生成、世界观、职业体系、角色关系、大纲规划、章节创作、润色重写、拆书导入；角色 / 组织 / 关系图谱、伏笔时间线、章节分析、项目导入导出。</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top:38px">教育经历</h3>
+      <div class="job">
+        <div class="hd"><strong>广东石油化工学院</strong><span class="dt">2022.09 — 2026.06</span></div>
+        <div class="co">人工智能 · 本科 · GPA 3.0/4.0 · 核心专业课均分 90+</div>
+        <ul>
+          <li>第一学年综合成绩专业前 5%，获校级一等奖学金；第二、三学年专业前 10%，获校级二等奖学金。</li>
+          <li>2023「典阅杯」全国大学生人工智能算法设计与应用大赛 国家级二等奖。</li>
+          <li>2024 中国机器人大赛暨 Robocup 机器人世界杯中国赛机器人先进视觉赛 国家级二等奖。</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top:38px">技能</h3>
+      <div class="skills">
+        <span>Python</span><span>C</span><span>PyTorch</span><span>LangChain</span>
+        <span>LLM-Factory</span><span>LoRA</span><span>ChromaDB</span>
+        <span>BERT</span><span>意图识别</span><span>文本分类</span>
+        <span>ONNX</span><span>TensorRT</span><span>RKNN</span><span>VLLM</span>
+        <span>Ollama</span><span>OpenWebUI</span>
+        <span>多模态生成</span><span>FastAPI</span><span>Git</span>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+(function(){
+  var D = JSON.parse(document.getElementById('data').textContent);
+  var rm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var root = document.documentElement;
+
+  /* ---- 主题 ---- */
+  var saved=null; try{saved=localStorage.getItem('proto-theme');}catch(e){}
+  var sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  root.setAttribute('data-theme', saved || (sysDark?'dark':'light'));
+  document.getElementById('tb').addEventListener('click', function(){
+    var n = root.getAttribute('data-theme')==='dark'?'light':'dark';
+    root.setAttribute('data-theme',n);
+    try{localStorage.setItem('proto-theme',n);}catch(e){}
+  });
+
+  /* ---- 同一把尺 ---- */
+  var PXY = 6;                       // px per year
+  var T0  = 1901;                    // 公共原点
+  var A0=2022.75, A1=2026.5;         // 履历范围
+  var W   = (2026.51 - T0) * PXY;    // 记录带总宽
+  var rowA = document.getElementById('rowA');
+  var rowB = document.getElementById('rowB');
+  var ruler= document.getElementById('ruler');
+
+  /* 履历横条 + 节点 */
+  var bars=[], nodes=[], labels=[];
+  D.career.forEach(function(c,i){
+    var x0=(c.from-T0)*PXY, x1=(c.to-T0)*PXY;
+    var w = Math.max(c.to>c.from ? x1-x0 : 0, 0);
+    if (w>0){
+      var b=document.createElement('div');
+      b.className='bar'+(c.k===2?' k2':'');
+      b.style.left=x0+'px'; b.style.width=w+'px';
+      rowA.appendChild(b); bars.push(b);
+    }
+    var n=document.createElement('div');
+    n.className='node'+(c.k===2?' k2':'');
+    n.style.left=((c.from-T0)*PXY-4.5)+'px';
+    rowA.appendChild(n); nodes.push(n);
+
+    var l=document.createElement('div');
+    l.className='nlabel';
+    l.style.left=((c.from-T0)*PXY-4.5)+'px';
+    l.innerHTML='<div class="d">'+c.d+'</div><div class="t">'+c.t+'</div><div class="m">'+c.m+'</div>';
+    rowA.appendChild(l); labels.push(l);
+  });
+
+  /* 记录影像块 + 尺 */
+  var plates=[];
+  D.records.forEach(function(r){
+    var x0=(r.f-T0)*PXY, w=Math.max((r.t-r.f)*PXY, 16);
+    var p=document.createElement('div');
+    p.className='plate'+(r.solid?' solid':'');
+    p.style.left=x0+'px'; p.style.width=w+'px';
+    p.setAttribute('data-yr', r.y<2000 ? String(Math.round(r.y)) : '2026.07');
+    p.title = Math.round(r.y)+' · '+r.c;
+    if (r.img) p.innerHTML='<img src="assets/godfather/'+r.img+'" alt="'+r.c+'" loading="lazy">';
+    rowB.appendChild(p); plates.push(p);
+  });
+
+  /* 刻度：1901 起每 10 年一条，100 年一条主刻度 */
+  var tk=document.getElementById('ticks');
+  var frag=document.createDocumentFragment();
+  for (var y=1900; y<=2030; y+=10){
+    var t=document.createElement('i');
+    t.style.left=((y-T0)*PXY)+'px';
+    if (y%100===0) t.className='maj';
+    frag.appendChild(t);
+  }
+  tk.appendChild(frag);
+
+  /* ---- 入场：一次编排好的时刻 ---- */
+  if (rm){
+    bars.forEach(function(b){b.classList.add('on')});
+    nodes.concat(labels).concat(plates).forEach(function(n){n.classList.add('on')});
+  } else {
+    bars.forEach(function(b,i){ setTimeout(function(){b.classList.add('on')}, 260+i*90); });
+    plates.forEach(function(p,i){ setTimeout(function(){p.classList.add('on')}, 560+i*55); });
+    nodes.forEach(function(n,i){ setTimeout(function(){n.classList.add('on')}, 700+i*90); });
+    labels.forEach(function(l,i){ setTimeout(function(){l.classList.add('on')}, 780+i*90); });
+  }
+
+  /* ---- 滚动：两条带同向不同速，直到都露出末端 ---- */
+  var rp=document.getElementById('rp'), rs1=document.getElementById('rs1'),
+      rs2=document.getElementById('rs2'), rr=document.getElementById('rr'), lg=document.getElementById('lgRatio');
+  var ticking=false, ratios=W/((A1-A0)*PXY);
+
+  function apply(){
+    ticking=false;
+    var p=Math.min(1,Math.max(0,window.scrollY/Math.max(1,window.innerHeight)));
+    rp.textContent=Math.round(p*100)+'%';
+    var gut=Math.max(24,(window.innerWidth-1500)/2);
+    var maxA=Math.max(0, (A1-T0)*PXY + gut - window.innerWidth);
+    var maxB=Math.max(0, W + gut - window.innerWidth);
+    if (rm) { rs1.textContent='—'; rs2.textContent='—'; return; }
+    var xa=-maxA*Math.min(1,p/0.62);
+    var xb=-maxB*Math.min(1,p/0.92);
+    rowA.style.transform='translate3d('+xa.toFixed(1)+'px,0,0)';
+    rowB.style.transform='translate3d('+xb.toFixed(1)+'px,0,0)';
+    var tick=document.getElementById('ticks');
+    tick.style.transform='translate3d('+xb.toFixed(1)+'px,0,0)';
+    rs1.textContent='左带 '+Math.round(xa)+'px';
+    rs2.textContent='右带 '+Math.round(xb)+'px';
+  }
+  rr.textContent=ratios.toFixed(1)+'×';
+  lg.textContent=ratios.toFixed(1)+' 倍';
+  window.addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(apply)}},{passive:true});
+  window.addEventListener('resize',apply);
+  apply();
+})();
+</script>
+</body>
+</html>

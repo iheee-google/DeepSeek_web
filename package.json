@@ -1,0 +1,49 @@
+{
+  "name": "hechufu-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "个人网站：作品集、项目与长期笔记",
+  "engines": {
+    "node": ">=22.12.0",
+    "pnpm": ">=7.1.0"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/subset-fonts.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "verify:proto": "node scripts/verify-prototypes.mjs",
+    "fonts": "node scripts/fetch-fonts.mjs",
+    "bump": "node scripts/bump-version.mjs"
+  },
+  "dependencies": {
+    "@astrojs/react": "7.0.1",
+    "astro": "7.3.8",
+    "lucide-react": "1.55.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@eslint/js": "10.0.1",
+    "@types/node": "^22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "eslint": "10.12.0",
+    "eslint-plugin-astro": "3.2.1",
+    "globals": "17.13.0",
+    "pagefind": "1.5.2",
+    "prettier": "3.9.10",
+    "prettier-plugin-astro": "1.1.1",
+    "subset-font": "2.9.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.71.1",
+    "vitest": "5.0.3"
+  }
+}

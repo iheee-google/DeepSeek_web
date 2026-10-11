@@ -1,0 +1,209 @@
+/**
+ * 动效 token 与全局样式。
+ *
+ * 全部动画只使用 transform / opacity / filter（走 GPU 合成，不触发 layout 与 paint）。
+ * 依据：docs/design-docs/animation-capabilities.md、emil-design-eng 技能。
+ * 缓动取自 transitions.dev 的房子标度（用户 m00831 提供的研究对象）。
+ */
+
+:root {
+  /* 深棕黑而非纯黑：近黑底 + 单一亮强调色是生成式设计反模式第 2 条 */
+  --bg: #0b0907;
+  --bg-raise: #141110;
+  --fg: #f0e9db;
+  --fg-dim: #a89e8f;
+  --fg-faint: #6f665b;
+  --gold: #c39a45;
+  --rule: #2a2521;
+
+  /* 动效 token */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.36, 0.64, 1);
+
+  --dur-press: 120ms;
+  --dur-tooltip: 160ms;
+  --dur-dropdown: 200ms;
+  --dur-modal: 250ms;
+  --dur-panel: 350ms;
+  --dur-reveal: 500ms;
+  --stagger: 40ms;
+
+  --sans: 'Noto Sans SC', system-ui, sans-serif;
+  --serif: 'Noto Serif SC', Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* 防横向溢出一律用 clip：hidden 会让根元素成为滚动容器并冻结 view() 时间轴 */
+  overflow-x: clip;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  /* 中英混排：西文与数字用比例字体，正文行高按中文习惯放宽 */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 中文标题不断行内断字 */
+h1,
+h2,
+h3 {
+  font-family: var(--serif);
+  font-weight: 500;
+  line-height: 1.25;
+  text-wrap: balance;
+  margin: 0;
+}
+
+/* 正文行宽上限，保证可读性 */
+p {
+  text-wrap: pretty;
+  max-width: 68ch;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 可见键盘焦点：满足无障碍底线 */
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* 小交互也要有动画：按钮按下轻微缩小 */
+button,
+[role='button'],
+a.btn {
+  transition:
+    scale var(--dur-press) var(--ease-out),
+    opacity var(--dur-press) var(--ease-out),
+    background-color var(--dur-dropdown) var(--ease-out),
+    color var(--dur-dropdown) var(--ease-out),
+    border-color var(--dur-dropdown) var(--ease-out);
+}
+
+button:active,
+[role='button']:active,
+a.btn:active {
+  /* 用独立的 scale 属性而非 transform，避免与布局 transform 冲突 */
+  scale: 0.97;
+}
+
+/* 只在真正支持 hover 的设备上做悬停放大，触屏 tap 不会误触发 */
+@media (hover: hover) and (pointer: fine) {
+  button:hover,
+  [role='button']:hover,
+  a.btn:hover {
+    scale: 1.03;
+  }
+}
+
+/**
+ * 元素入场。
+ *
+ * 用 @starting-style 而非「先 opacity:0 再 JS 加类」：后者在 JS 未加载时
+ * 内容永久不可见，前者在支持范围内自然降级。
+ * 同时配 IntersectionObserver 的 .reveal 路径覆盖不支持 @starting-style 的浏览器。
+ */
+@supports (transition-behavior: allow-discrete) {
+  .reveal {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+    transition:
+      opacity var(--dur-reveal) var(--ease-out),
+      translate var(--dur-reveal) var(--ease-out),
+      filter var(--dur-reveal) var(--ease-out);
+    transition-delay: var(--d, 0ms);
+
+    @starting-style {
+      opacity: 0;
+      translate: 0 12px;
+      filter: blur(3px);
+    }
+  }
+}
+
+/* 降级路径：JS 加 .js-ready 后才隐藏，保证无 JS 时内容可见 */
+.js-ready .reveal:not(.is-in) {
+  opacity: 0;
+  translate: 0 12px;
+  filter: blur(3px);
+}
+
+.js-ready .reveal.is-in {
+  opacity: 1;
+  translate: 0 0;
+  filter: blur(0);
+  transition:
+    opacity var(--dur-reveal) var(--ease-out),
+    translate var(--dur-reveal) var(--ease-out),
+    filter var(--dur-reveal) var(--ease-out);
+  transition-delay: var(--d, 0ms);
+}
+
+/**
+ * 出场与入场解耦：出场永远更快更安静，不回退位移。
+ * 依据 transitions.dev texts-reveal 的 decoupled-exit 规则。
+ */
+.reveal.is-out {
+  opacity: 0;
+  transition:
+    opacity 200ms ease,
+    translate 0s linear,
+    filter 0s linear;
+  transition-delay: 0s;
+}
+
+/**
+ * prefers-reduced-motion：降级为更少更温和的动画，而非全部移除。
+ * 保留透明度与颜色过渡（帮助理解状态变化），移除位移、缩放与模糊。
+ * 依据 docs/design-docs/animation-capabilities.md 第三节。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .reveal,
+  .js-ready .reveal:not(.is-in) {
+    opacity: 1 !important;
+    translate: none !important;
+    filter: none !important;
+  }
+
+  button:active,
+  [role='button']:active,
+  a.btn:active,
+  button:hover,
+  [role='button']:hover,
+  a.btn:hover {
+    scale: none;
+  }
+}

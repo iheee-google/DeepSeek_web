@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>方向 α — 一幕</title>
+<style>
+@font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+
+:root{
+  --bg:#0A0806;
+  --fg:#EFE8DA;
+  --dim:#7E7568;
+  --gold:#B98F3C;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:"Noto Serif SC",Georgia,serif;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ============ 幕 ============ */
+.act{
+  position:relative;height:100svh;width:100%;overflow:hidden;
+  display:flex;align-items:flex-end;
+}
+.act .frame{
+  position:absolute;inset:0;
+  background-size:cover;background-position:center 28%;
+  transform:scale(1.06);opacity:0;
+  transition:opacity 1.6s var(--ease-out),transform 2.6s var(--ease-out);
+  will-change:transform,opacity;
+}
+.act.on .frame{opacity:1;transform:scale(1)}
+.act .veil{
+  position:absolute;inset:0;
+  background:linear-gradient(to top,#0A0806F2 0%,#0A0806A8 34%,#0A08062E 62%,#0A08061A 100%);
+}
+.act .body{
+  position:relative;z-index:2;width:100%;
+  padding:0 clamp(20px,5vw,92px) clamp(46px,9vh,96px);
+  max-width:1600px;margin:0 auto;
+}
+.act .yr{
+  font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:clamp(11px,1vw,13px);letter-spacing:.34em;color:var(--gold);
+  font-variant-numeric:tabular-nums;font-weight:600;
+}
+.act h2{
+  font-size:clamp(34px,7.4vw,124px);font-weight:600;line-height:1.02;
+  letter-spacing:-.02em;margin-top:clamp(8px,1.6vh,18px);
+  opacity:0;transform:translateY(26px);
+  transition:opacity 1.1s var(--ease-out) .25s,transform 1.1s var(--ease-out) .25s;
+}
+.act.on h2{opacity:1;transform:none}
+.act .sub{
+  font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:clamp(12.5px,1.05vw,14.5px);line-height:1.85;color:#C6BDB0;
+  max-width:38em;margin-top:clamp(12px,2.2vh,24px);
+  opacity:0;transform:translateY(14px);
+  transition:opacity 1s var(--ease-out) .45s,transform 1s var(--ease-out) .45s;
+}
+.act.on .sub{opacity:1;transform:none}
+.act .credit{
+  position:absolute;right:clamp(20px,5vw,92px);bottom:clamp(46px,9vh,96px);
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;
+  color:#6A6257;text-align:right;line-height:1.7;z-index:2;
+}
+
+/* 幕间细线 */
+.seam{height:1px;background:#EFE8DA16;max-width:1600px;margin:0 auto}
+
+/* 滚动提示 */
+.hint{
+  position:absolute;left:50%;bottom:22px;transform:translateX(-50%);
+  z-index:3;font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10px;
+  letter-spacing:.24em;color:#5E574D;
+  animation:bob 2.6s var(--ease-out) infinite;
+}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0);opacity:.55}50%{transform:translateX(-50%) translateY(5px);opacity:1}}
+
+/* ============ 后续内容 ============ */
+.after{max-width:1600px;margin:0 auto;padding:clamp(64px,12vh,130px) clamp(20px,5vw,92px) 0}
+.kicker{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;
+  letter-spacing:.22em;color:var(--dim);margin-bottom:18px}
+h3{font-size:clamp(19px,2.1vw,27px);font-weight:600;line-height:1.36}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:3px;margin-top:30px}
+.strip a{display:block;position:relative;overflow:hidden;background:#141109;text-decoration:none}
+.strip img{width:100%;height:clamp(112px,13vw,158px);object-fit:cover;display:block;
+  filter:saturate(.78) contrast(1.05);
+  transition:transform .55s var(--ease-out),filter .55s var(--ease-out)}
+@media (hover:hover) and (pointer:fine){
+  .strip a:hover img{transform:scale(1.05);filter:saturate(1) contrast(1.02)}
+}
+.strip em{position:absolute;left:0;right:0;bottom:0;font-style:normal;
+  font-family:"Noto Sans SC",sans-serif;font-size:10px;color:#EFE8DA;
+  background:linear-gradient(to top,#0A0806E0,transparent);padding:16px 7px 5px;
+  opacity:0;transition:opacity .28s ease}
+.strip a:hover em{opacity:1}
+
+nav.quiet{display:flex;gap:26px;flex-wrap:wrap;margin-top:clamp(40px,7vh,68px);
+  padding-top:26px;border-top:1px solid #EFE8DA16}
+nav.quiet a{font-family:"Noto Sans SC",sans-serif;font-size:12px;color:#A69D90;
+  text-decoration:none;transition:color .18s ease}
+nav.quiet a:hover{color:var(--fg)}
+a:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.skip{position:absolute;left:-9999px;background:var(--fg);color:var(--bg);
+  padding:9px 15px;font-family:"Noto Sans SC",sans-serif;font-size:12px;text-decoration:none;z-index:99}
+.skip:focus{left:12px;top:12px}
+footer{max-width:1600px;margin:0 auto;padding:clamp(50px,9vh,90px) clamp(20px,5vw,92px) 60px;
+  font-family:"Noto Sans SC",sans-serif;font-size:11px;color:#5E574D;
+  display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+
+@media (max-width:720px){
+  .act .credit{display:none}
+  .act .frame{background-position:center 22%}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .act .frame,.act h2,.act .sub{transition-duration:.01ms}
+  .act .frame{transform:none;opacity:1}
+  .hint{animation:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#after">跳到内容</a>
+
+<div class="act on" style="--i:0">
+  <div class="frame" style="background-image:url('assets/godfather/scene-office-vito.jpg')"></div>
+  <div class="veil"></div>
+  <div class="body">
+    <div class="yr">1945</div>
+    <h2>本纳瑟拉的<br>女儿被打了。</h2>
+    <p class="sub">殡仪馆老板本纳瑟拉。女儿被殴打，法庭判了缓刑。</p>
+  </div>
+  <div class="credit">《教父》1972<br>笔记第 41 行</div>
+  <div class="hint">向下</div>
+</div>
+
+<div class="seam"></div>
+
+<div class="act">
+  <div class="frame" style="background-image:url('assets/godfather/scene-oranges.jpg')"></div>
+  <div class="veil"></div>
+  <div class="body">
+    <div class="yr">1946</div>
+    <h2>橙子滚了<br>一地。</h2>
+    <p class="sub">笔记里数出 6 次出现。从康妮的婚礼，到第三部结尾的轮椅。</p>
+  </div>
+  <div class="credit">视听语言<br>符号系统 · 第 1 个</div>
+</div>
+
+<div class="seam"></div>
+
+<div class="act">
+  <div class="frame" style="background-image:url('assets/godfather/scene-baptism.jpg')"></div>
+  <div class="veil"></div>
+  <div class="body">
+    <div class="yr">1955</div>
+    <h2>他在教堂里<br>否认撒旦。</h2>
+    <p class="sub">管风琴圣乐与暗杀小组上膛的动作，交替剪接。</p>
+  </div>
+  <div class="credit">洗礼蒙太奇<br>第 88–104 行</div>
+</div>
+
+<div class="seam"></div>
+
+<div class="act">
+  <div class="frame" style="background-image:url('assets/godfather/scene-michael-alone.jpg')"></div>
+  <div class="veil"></div>
+  <div class="body">
+    <div class="yr">1997</div>
+    <h2>院子里<br>没有人。</h2>
+    <p class="sub">编年史表的最后一行。1990 公映版与 2020 Coda 版在这里分开。</p>
+  </div>
+  <div class="credit">编年史 1901–1997<br>最后一节</div>
+  <div class="hint">继续</div>
+</div>
+
+<div class="after" id="after">
+  <div class="kicker">同一篇笔记的其它部分</div>
+  <h3>827 行，11 章</h3>
+
+  <div class="strip">
+    <a href="#"><img src="assets/godfather/portrait-vito.jpg" alt="维托" loading="lazy"><em>维托</em></a>
+    <a href="#"><img src="assets/godfather/portrait-michael.jpg" alt="迈克尔" loading="lazy"><em>迈克尔</em></a>
+    <a href="#"><img src="assets/godfather/portrait-sonny.jpg" alt="桑尼" loading="lazy"><em>桑尼</em></a>
+    <a href="#"><img src="assets/godfather/portrait-fredo.jpg" alt="弗雷多" loading="lazy"><em>弗雷多</em></a>
+    <a href="#"><img src="assets/godfather/portrait-tom.jpg" alt="汤姆" loading="lazy"><em>汤姆</em></a>
+    <a href="#"><img src="assets/godfather/portrait-kay.jpg" alt="凯" loading="lazy"><em>凯</em></a>
+    <a href="#"><img src="assets/godfather/portrait-connie.jpg" alt="康妮" loading="lazy"><em>康妮</em></a>
+    <a href="#"><img src="assets/godfather/portrait-vito-young.jpg" alt="年轻的维托" loading="lazy"><em>年轻的维托</em></a>
+    <a href="#"><img src="assets/godfather/scene-fish.jpg" alt="鱼" loading="lazy"><em>鱼</em></a>
+    <a href="#"><img src="assets/godfather/scene-door-kay.jpg" alt="门" loading="lazy"><em>关上的门</em></a>
+    <a href="#"><img src="assets/godfather/scene-michael-chair.jpg" alt="太浩湖" loading="lazy"><em>太浩湖</em></a>
+    <a href="#"><img src="assets/godfather/scene-restaurant.jpg" alt="餐厅" loading="lazy"><em>餐厅</em></a>
+  </div>
+
+  <nav class="quiet">
+    <a href="#">人物图鉴 · 44 人</a>
+    <a href="#">编年史 · 1901–1997</a>
+    <a href="#">经典台词</a>
+    <a href="#">历史原型与勘误</a>
+    <a href="#">视听语言 · 12 个符号</a>
+  </nav>
+</div>
+
+<footer>
+  <span>何楚福 · 个人网站原型 · 方向 α</span>
+  <span>影像版权归派拉蒙所有</span>
+</footer>
+
+<script>
+(function(){
+  var acts=[].slice.call(document.querySelectorAll('.act'));
+  var rm=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if('IntersectionObserver' in window && !rm){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting) e.target.classList.add('on'); });
+    },{threshold:.32});
+    acts.forEach(function(a){io.observe(a)});
+  } else {
+    acts.forEach(function(a){a.classList.add('on')});
+  }
+
+  /* 极轻微的视差：只动 transform，随滚动位置 */
+  if(!rm){
+    var ticking=false;
+    function apply(){
+      ticking=false;
+      var vh=window.innerHeight;
+      acts.forEach(function(a){
+        var r=a.getBoundingClientRect();
+        if(r.bottom<-80||r.top>vh+80) return;
+        var t=Math.max(-1,Math.min(1,(r.top+r.height/2-vh/2)/vh));
+        var f=a.querySelector('.frame');
+        f.style.transform='scale(1.06) translate3d(0,'+(t*14).toFixed(1)+'px,0)';
+      });
+    }
+    window.addEventListener('scroll',function(){if(!ticking){ticking=true;requestAnimationFrame(apply)}},{passive:true});
+    apply();
+  }
+})();
+</script>
+</body>
+</html>

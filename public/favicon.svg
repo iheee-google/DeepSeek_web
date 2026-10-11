@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" fill="#0B0907"/>
+  <!-- 三条横缝，取自首屏百叶窗的横条比例 -->
+  <g fill="#C39A45">
+    <rect x="7" y="9" width="18" height="2.6"/>
+    <rect x="7" y="14.7" width="18" height="2.6"/>
+    <rect x="7" y="20.4" width="12" height="2.6"/>
+  </g>
+</svg>

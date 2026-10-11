@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>方向 β — 散落与归位</title>
+<style>
+@font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+
+:root{
+  --bg:#EDE7DB;
+  --fg:#15130F;
+  --dim:#8B8378;
+  --gold:#A5792A;
+  --line:#15130F1C;
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-io:cubic-bezier(.77,0,.175,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font-family:"Noto Serif SC",Georgia,serif;
+  -webkit-font-smoothing:antialiased}
+
+/* 固定顶栏：只放事实 */
+.bar{
+  position:fixed;top:0;left:0;right:0;z-index:70;
+  display:flex;align-items:center;gap:20px;
+  padding:13px clamp(18px,4vw,46px);
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11px;color:var(--dim);
+  background:linear-gradient(to bottom,var(--bg) 46%,transparent);
+  font-variant-numeric:tabular-nums;
+}
+.bar .who{color:var(--fg);font-weight:600;letter-spacing:.01em}
+.bar .sp{margin-left:auto;display:flex;gap:20px}
+.bar a{color:var(--dim);text-decoration:none;transition:color .18s ease}
+.bar a:hover{color:var(--fg)}
+.bar a:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}
+
+/* ============ 舞台 ============ */
+.stage{
+  position:relative;height:300svh;   /* 三倍屏高：留出归位过程 */
+}
+.pin{
+  position:sticky;top:0;height:100svh;overflow:hidden;
+  display:flex;flex-direction:column;justify-content:center;
+}
+.lede{
+  position:absolute;top:clamp(62px,11vh,116px);left:0;right:0;
+  padding:0 clamp(18px,4vw,46px);z-index:5;pointer-events:none;
+}
+.lede h1{
+  font-size:clamp(19px,2.05vw,30px);font-weight:600;line-height:1.5;max-width:24em;
+}
+.lede .facts{
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12px;color:var(--dim);
+  margin-top:11px;line-height:1.85;
+}
+.lede .facts b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* 图块容器 */
+.field{
+  position:relative;width:100%;height:min(58svh,540px);
+  margin-top:clamp(60px,13vh,120px);
+}
+.tile{
+  position:absolute;left:0;top:0;
+  width:var(--w);height:var(--h);
+  will-change:transform;
+  /* 位移动画由滚动直接驱动（每帧写 transform），不再叠加 transition，
+     否则滚动与过渡两套时间轴互相追尾。只保留透明度过渡。 */
+  transition:opacity .45s ease;
+}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;
+  filter:saturate(.7) contrast(1.07) brightness(.93);
+  box-shadow:0 1px 0 #15130F14}
+.tile.cap img{box-shadow:0 10px 30px -12px #15130F5C}
+.tile em{
+  position:absolute;left:0;right:0;bottom:-19px;
+  font-family:"Noto Sans SC",sans-serif;font-style:normal;font-size:10px;color:var(--dim);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  opacity:0;transition:opacity .4s ease .45s;
+}
+.tile.shown em{opacity:1}
+
+/* 右侧进度：年份 */
+.gauge{
+  position:absolute;right:clamp(18px,4vw,46px);bottom:clamp(56px,10vh,92px);
+  z-index:6;text-align:right;pointer-events:none;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:10.5px;color:var(--dim);
+  font-variant-numeric:tabular-nums;line-height:1.9;
+}
+.gauge .yr{font-family:"Noto Serif SC",serif;font-size:clamp(22px,3vw,38px);
+  font-weight:600;color:var(--gold);letter-spacing:-.01em;display:block;line-height:1.1}
+.gauge .st{color:var(--fg);font-weight:600}
+
+/* 底部刻度 */
+.foot{
+  position:absolute;left:0;right:0;bottom:clamp(20px,4vh,38px);
+  padding:0 clamp(18px,4vw,46px);z-index:6;
+  display:flex;align-items:baseline;gap:16px;
+  font-family:"Noto Sans SC",sans-serif;font-size:10.5px;color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.foot .track{flex:1;height:1px;background:var(--line);position:relative}
+.foot .track i{position:absolute;top:-2px;left:0;width:2px;height:5px;background:var(--gold);
+  transition:left .12s linear}
+.foot .lab{white-space:nowrap}
+
+/* ============ 之后 ============ */
+.after{max-width:1520px;margin:0 auto;padding:clamp(64px,11vh,120px) clamp(18px,4vw,46px) 0}
+.kicker{font-family:"Noto Sans SC",sans-serif;font-size:10.5px;letter-spacing:.2em;
+  color:var(--dim);margin-bottom:17px}
+h2{font-size:clamp(20px,2.4vw,32px);font-weight:600;line-height:1.34;max-width:20em}
+
+/* 三种版式并置：证明不同笔记用不同结构 */
+.forms{display:grid;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:clamp(18px,2.4vw,34px);margin-top:38px}
+.form{border-top:2px solid var(--fg);padding-top:16px}
+.form h3{font-size:15.5px;font-weight:600;line-height:1.4}
+.form .tg{font-family:"Noto Sans SC",sans-serif;font-size:10.5px;color:var(--gold);margin-top:7px}
+.form p{font-family:"Noto Sans SC",sans-serif;font-size:12px;color:var(--dim);
+  line-height:1.75;margin-top:9px}
+.form .demo{margin-top:16px;border:1px solid var(--line);padding:13px;background:#FFFFFF3D}
+/* 版式一：楼层对置 */
+.thread{display:flex;flex-direction:column;gap:9px}
+.thread div{display:grid;grid-template-columns:26px 1fr;gap:9px;font-family:"Noto Sans SC",sans-serif;
+  font-size:10.5px;line-height:1.6;color:#4C463C}
+.thread span{color:var(--gold);font-variant-numeric:tabular-nums;font-weight:600}
+.thread .op{color:var(--fg);font-weight:600}
+/* 版式二：判定表 */
+.check{width:100%;border-collapse:collapse;font-family:"Noto Sans SC",sans-serif;font-size:10.5px}
+.check td{padding:5px 0;border-bottom:1px solid var(--line);color:#4C463C;vertical-align:top}
+.check td:last-child{text-align:right;white-space:nowrap;color:var(--gold);font-weight:600}
+/* 版式三：章节阶梯 */
+.steps{font-family:"Noto Sans SC",sans-serif;font-size:10.5px;color:#4C463C;line-height:2.1}
+.steps i{font-style:normal;color:var(--dim);margin-right:8px;font-variant-numeric:tabular-nums}
+
+nav.quiet{display:flex;gap:24px;flex-wrap:wrap;margin-top:clamp(44px,7vh,72px);
+  padding-top:24px;border-top:1px solid var(--line)}
+nav.quiet a{font-family:"Noto Sans SC",sans-serif;font-size:12px;color:#5C554A;
+  text-decoration:none;transition:color .18s ease}
+nav.quiet a:hover{color:var(--fg)}
+footer{max-width:1520px;margin:0 auto;padding:clamp(44px,8vh,80px) clamp(18px,4vw,46px) 56px;
+  font-family:"Noto Sans SC",sans-serif;font-size:11px;color:var(--dim);
+  display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.skip{position:absolute;left:-9999px;background:var(--fg);color:var(--bg);
+  padding:9px 15px;font-family:"Noto Sans SC",sans-serif;font-size:12px;text-decoration:none;z-index:99}
+.skip:focus{left:12px;top:12px}
+
+@media (max-width:760px){
+  .stage{height:260svh}
+  .lede .facts{font-size:11px}
+  .gauge .yr{font-size:19px}
+  .bar .sp a:nth-child(n+3){display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .stage{height:auto}
+  .pin{position:static;height:auto;padding-top:clamp(76px,13vh,132px);padding-bottom:40px}
+  .lede{position:static;margin-bottom:26px}
+  .tile{transition:none}
+  .field{height:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+    gap:26px 10px;margin-top:0;padding:0 clamp(18px,4vw,46px)}
+  .tile{position:static;width:auto!important;height:auto!important;transform:none!important}
+  .tile img{aspect-ratio:3/2}
+  .tile em{position:static;opacity:1;margin-top:5px}
+  .gauge,.foot{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#after">跳到内容</a>
+
+<div class="bar">
+  <span class="who">何楚福</span>
+  <span>AI 算法工程师</span>
+  <span class="sp">
+    <a href="#after">笔记</a>
+    <a href="#after">项目</a>
+    <a href="#after">履历</a>
+    <a href="mailto:2100918674@qq.com">邮箱</a>
+    <a href="https://github.com/iheee-google">GitHub</a>
+  </span>
+</div>
+
+<section class="stage" id="stage">
+  <div class="pin">
+    <div class="lede">
+      <h1>1901 — 1997</h1>
+      <p class="facts">《教父》三部曲笔记里的 14 个年份。</p>
+    </div>
+
+    <div class="field" id="field">
+      <div class="tile" data-y="1901" data-cap="维托出生"><img src="assets/godfather/portrait-vito-young.jpg" alt=""><em>1901 · 维托出生</em></div>
+      <div class="tile" data-y="1917" data-cap="西西里"><img src="assets/godfather/scene-vito-young-street.jpg" alt=""><em>1917 · 西西里街头</em></div>
+      <div class="tile" data-y="1945" data-cap="婚礼"><img src="assets/godfather/scene-wedding.jpg" alt=""><em>1945 · 康妮的婚礼</em></div>
+      <div class="tile" data-y="1945" data-cap="关上的门"><img src="assets/godfather/scene-door-kay.jpg" alt=""><em>1945 · 门在凯面前关上</em></div>
+      <div class="tile" data-y="1946" data-cap="橙子"><img src="assets/godfather/scene-oranges.jpg" alt=""><em>1946 · 橙子滚落街头</em></div>
+      <div class="tile" data-y="1946" data-cap="餐厅"><img src="assets/godfather/scene-restaurant.jpg" alt=""><em>1946 · 餐厅里的两枪</em></div>
+      <div class="tile" data-y="1955" data-cap="洗礼"><img src="assets/godfather/scene-baptism.jpg" alt=""><em>1955 · 洗礼与清算</em></div>
+      <div class="tile" data-y="1955" data-cap="五大家族"><img src="assets/godfather/scene-five-families.jpg" alt=""><em>1955 · 五大家族会议</em></div>
+      <div class="tile" data-y="1958" data-cap="太浩湖"><img src="assets/godfather/scene-tahoe-office.jpg" alt=""><em>1958 · 太浩湖办公室</em></div>
+      <div class="tile" data-y="1959" data-cap="弗雷多"><img src="assets/godfather/portrait-fredo.jpg" alt=""><em>1959 · 弗雷多的背叛</em></div>
+      <div class="tile" data-y="1959" data-cap="迈克尔"><img src="assets/godfather/scene-michael-scream.jpg" alt=""><em>1959 · 楼梯上的崩溃</em></div>
+      <div class="tile" data-y="1979" data-cap="迈克尔回到纽约"><img src="assets/godfather/scene-michael-chair.jpg" alt=""><em>1979 · 回到纽约</em></div>
+      <div class="tile" data-y="1997" data-cap="独自死去"><img src="assets/godfather/scene-michael-alone.jpg" alt=""><em>1997 · 独自死去</em></div>
+      <div class="tile" data-y="2026" data-cap="笔记"><img src="assets/godfather/scene-office-vito.jpg" alt=""><em>2026 · 这 827 行笔记</em></div>
+    </div>
+
+    <div class="gauge">
+      <span class="st" id="gst">散落</span>
+      <span class="yr" id="gyr">—</span>
+      <span id="gn">14 张影像</span>
+    </div>
+
+    <div class="foot">
+      <span class="lab">1901</span>
+      <span class="track"><i id="mark"></i></span>
+      <span class="lab">2026</span>
+    </div>
+  </div>
+</section>
+
+<section class="after" id="after">
+  <div class="kicker">linux.do 的 4 篇</div>
+  <h2>四篇笔记的骨架。</h2>
+
+  <div class="forms">
+    <div class="form">
+      <h3>论坛讨论：66 楼</h3>
+      <div class="tg">LangGraph 是不是方向不太对</div>
+      <p>原帖 66 楼。整理时按立场把钱压到楼层号上。</p>
+      <div class="demo">
+        <div class="thread">
+          <div><span>楼主</span><b class="op">数据分析 Agent 用 LangGraph 是不是过度设计？</b></div>
+          <div><span>2 楼</span>ReAct 加可信工具就够，状态机留给审计要求。</div>
+          <div><span>11 楼</span>我们线上用的是 Agent SDK，LangGraph 走不通。</div>
+          <div><span>34 楼</span>反驳：有审批流的时候 LangGraph 省事。</div>
+          <div><span>66 楼</span>楼主收尾：看你的场景有没有不可回退的步骤。</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form">
+      <h3>科普速查：判定表</h3>
+      <div class="tg">AI 中转站大起底</div>
+      <p>12 个小节。结论落在最后一张判定表上。</p>
+      <div class="demo">
+        <table class="check">
+          <tr><td>是否公开倍率与计费方式</td><td>必须</td></tr>
+          <tr><td>是否支持自查用量</td><td>必须</td></tr>
+          <tr><td>来源是逆向或黑冲渠道</td><td>避免</td></tr>
+          <tr><td>要求预充值大额</td><td>谨慎</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="form">
+      <h3>技术长文：62 个标题</h3>
+      <div class="tg">从 vibe coding 到 spec coding</div>
+      <p>761 行，12 个二级标题。</p>
+      <div class="demo">
+        <div class="steps">
+          <div><i>01</i>Prompt / Rules / Skill 的边界</div>
+          <div><i>02</i>三个没被解决的问题</div>
+          <div><i>03</i>Trellis 的八步机制</div>
+          <div><i>04</i>和其他 Harness 思路的区别</div>
+          <div><i>05</i>适用边界与成本</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="quiet">
+    <a href="#">全部笔记 · 67 篇</a>
+    <a href="#">《教父》三部曲 · 827 行</a>
+    <a href="#">编年史 1901–1997</a>
+    <a href="#">人物图鉴 · 44 人</a>
+  </nav>
+</section>
+
+<footer>
+  <span>何楚福 · 个人网站原型 · 方向 β</span>
+  <span>影像版权归派拉蒙所有</span>
+</footer>
+
+<script>
+(function(){
+  var rm=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var stage=document.getElementById('stage');
+  var field=document.getElementById('field');
+  var tiles=[].slice.call(document.querySelectorAll('.tile'));
+  var gst=document.getElementById('gst'), gyr=document.getElementById('gyr'),
+      gn=document.getElementById('gn'), mark=document.getElementById('mark');
+
+  /* 目标网格：按年份排序后放进竖列 */
+  var sorted=tiles.slice().sort(function(a,b){return +a.dataset.y - +b.dataset.y;});
+  var layout=[];
+
+  function computeLayout(){
+    var W=field.clientWidth, H=field.clientHeight;
+    var inset = W<700 ? 8 : 26;
+    var gapX = W<700 ? 6 : 12;
+    var gapY = W<700 ? 26 : 36;            /* 纵向留出 caption 的位置 */
+    var cols = W<560?4 : W<860?5 : W<1180?6 : 7;
+    var usable = W - inset*2;
+    var cw=(usable-gapX*(cols-1))/cols;
+    var ch=cw*0.66;
+    var rows=Math.ceil(sorted.length/cols);
+    var totalH=rows*ch + (rows-1)*gapY;
+    var top=(H-totalH)/2;
+    layout=sorted.map(function(t,i){
+      var c=i%cols, r=Math.floor(i/cols);
+      return {x:inset+gapX*c+cw*c, y:top+r*(ch+gapY), w:cw, h:ch};
+    });
+  }
+
+  /* 散落位：把画面分成格子，每张图在自己的格子里抖动。
+     纯随机散落会互相压成一堆，抖动网格能在"乱"的同时保住可读性。 */
+  function rand(seed){ var x=Math.sin(seed*12.9898)*43758.5453; return x-Math.floor(x); }
+  function scatter(){
+    var W=field.clientWidth, H=field.clientHeight;
+    var cols = W<560?3 : W<860?4 : 5;
+    var rows = Math.ceil(tiles.length/cols);
+    var cellW=W/cols, cellH=H/rows;
+    var base=Math.min(cellW*0.76, cellH*0.88, 200);
+    tiles.forEach(function(t,i){
+      var c=i%cols, r=Math.floor(i/cols);
+      var w=base*(0.62+rand(i+1)*0.5), h=w*(0.58+rand(i+9)*0.26);
+      var jx=(rand(i+21)-0.5)*(cellW-w)*0.82;
+      var jy=(rand(i+33)-0.5)*(cellH-h)*0.82;
+      var x=c*cellW+(cellW-w)/2+jx;
+      var y=r*cellH+(cellH-h)/2+jy;
+      var rot=(rand(i+41)-0.5)*26;
+      var sc=0.94+rand(i+51)*0.14;
+      x=Math.max(-w*0.12, Math.min(W-w*0.88, x));
+      y=Math.max(-h*0.12, Math.min(H-h*0.88, y));
+      t.style.width=w+'px'; t.style.height=h+'px';
+      t.style.zIndex=String(10+Math.floor(rand(i+61)*40));
+      t._s={x:x,y:y,rot:rot,sc:sc};
+    });
+  }
+
+  var started=false;
+  function apply(){
+    var vh=window.innerHeight;
+    var rect=stage.getBoundingClientRect();
+    var total=stage.offsetHeight-vh;
+    var p=Math.min(1,Math.max(0,-rect.top/Math.max(1,total)));
+
+    /* 0 → .52 归位，之后保持 */
+    var q=Math.min(1,p/0.52);
+    var e=1-Math.pow(1-q,3);   /* ease-out cubic */
+
+    tiles.forEach(function(t,i){
+      var L=layout[i], S=t._s;
+      var x=S.x+(L.x-S.x)*e, y=S.y+(L.y-S.y)*e;
+      var rot=S.rot*(1-e), sc=S.sc+(1-S.sc)*e;
+      var w=S.w0+(L.w-S.w0)*e, h=S.h0+(L.h-S.h0)*e;
+      t.style.width=w+'px'; t.style.height=h+'px';
+      t.style.transform='translate3d('+x.toFixed(1)+'px,'+y.toFixed(1)+'px,0) rotate('+rot.toFixed(2)+'deg) scale('+sc.toFixed(3)+')';
+      t.style.zIndex=String( e>0.85 ? 20+i : 10+Math.floor(rand(i+61)*40) );
+      if(e>0.9) t.classList.add('shown'); else t.classList.remove('shown');
+    });
+
+    /* 读数 */
+    var yr=Math.round(1901+(2026-1901)*e);
+    gyr.textContent = e<0.02 ? '—' : String(yr);
+    gst.textContent = e<0.55 ? '归位中' : (e<0.98?'按年份排列':'1901 — 2026');
+    gn.textContent = Math.round(e*100)+'%';
+    mark.style.left=(e*100).toFixed(1)+'%';
+  }
+
+  /* 重排：先算目标网格，再算散落位，最后记下起始尺寸用于插值 */
+  function relayout(){
+    computeLayout();
+    scatter();
+    tiles.forEach(function(t){
+      t._w0=t.offsetWidth; t._h0=t.offsetHeight;
+      t._s.w0=t._w0; t._s.h0=t._h0;
+    });
+    apply();
+  }
+
+  var ticking=false;
+  function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(function(){ticking=false;apply();}); } }
+
+  if(rm){
+    /* 降级：直接呈现归位后的静态网格（CSS 已切换为流式布局） */
+    gst.textContent='按年份排列';
+  } else {
+    window.addEventListener('scroll',onScroll,{passive:true});
+    window.addEventListener('resize',relayout);
+    relayout();
+    window.addEventListener('load',relayout);
+  }
+})();
+</script>
+</body>
+</html>
