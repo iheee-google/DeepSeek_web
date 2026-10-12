@@ -130,7 +130,7 @@ test.describe('柯里昂档案桌面端', () => {
     await page.evaluate(() => {
       window.CORLEONE_ARCHIVE.search = [
         ...Array.from({ length: 10 }, (_, index) => ({ kind: 'passage', id: `synthetic-${index}`, target: `synthetic-${index}`, title: `段落 ${index}`, text: '家庭模块正文命中' })),
-        { kind: 'quote', id: 'synthetic-quote', target: 'synthetic-quote', title: '家庭模块', text: '模块匹配记录' }
+        { kind: 'quote', id: 'synthetic-quote', target: 'synthetic-quote', title: '引文记录', text: '家庭模块正文命中' }
       ];
     });
     await page.locator('#searchToggle').click();
