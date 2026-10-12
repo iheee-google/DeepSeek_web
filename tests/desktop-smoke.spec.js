@@ -127,6 +127,20 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator(`[data-search-index="${ruleData.index}"]`).click();
     await expect(page.locator(`#${ruleData.id}`)).toHaveClass(/is-open/);
 
+    await page.evaluate(() => {
+      window.CORLEONE_ARCHIVE.search = [
+        ...Array.from({ length: 10 }, (_, index) => ({ kind: 'passage', id: `synthetic-${index}`, target: `synthetic-${index}`, title: `段落 ${index}`, text: '家庭模块正文命中' })),
+        { kind: 'quote', id: 'synthetic-quote', target: 'synthetic-quote', title: '家庭模块', text: '模块匹配记录' }
+      ];
+    });
+    await page.locator('#searchToggle').click();
+    await page.locator('#searchInput').fill('家庭模块');
+    await expect(page.locator('#searchResults .search-result')).toHaveCount(9);
+    await expect(page.locator('#searchResults small').filter({ hasText: '引文' })).toHaveCount(1);
+    await expect(page.locator('#searchResults small').filter({ hasText: '正文' })).toHaveCount(8);
+    await page.keyboard.press('Escape');
+    await page.goto('/', { waitUntil: 'networkidle' });
+
     const quoteData = await page.evaluate(() => ({ original: window.CORLEONE_ARCHIVE.quotes[4].original, id: window.CORLEONE_ARCHIVE.quotes[4].id, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'quote' && item.id === window.CORLEONE_ARCHIVE.quotes[4].id) }));
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill(quoteData.original);

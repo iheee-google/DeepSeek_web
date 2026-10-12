@@ -1537,6 +1537,38 @@
       return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`;
     }
 
+    const semanticSearchKinds = new Set(['rule', 'person', 'timeline', 'quote', 'history', 'motif']);
+
+    function searchItemScore(item, query) {
+      const title = normalizeSearchText(item.title);
+      if (title === query) return 0;
+      if (title.includes(query)) return 1;
+      const textMatch = normalizeSearchText(item.text).includes(query);
+      if (item.kind === 'timeline' && textMatch) return 2;
+      if (item.kind === 'passage' && textMatch && query.length >= 4) return 2;
+      return textMatch ? (item.kind === 'passage' ? 4 : 3) : 4;
+    }
+
+    function selectSearchResults(value, entries = archive.search, limit = 9) {
+      const query = normalizeSearchText(value);
+      if (!query) return [];
+      const scored = entries.map((item, index) => {
+        const title = normalizeSearchText(item.title);
+        const text = normalizeSearchText(item.text);
+        return { item, index, titleMatch: title.includes(query), textMatch: text.includes(query), score: searchItemScore(item, query) };
+      }).filter(({ titleMatch, textMatch }) => titleMatch || textMatch);
+      const byScore = (a, b) => a.score - b.score || a.index - b.index;
+      const moduleMatches = scored
+        .filter(({ item, titleMatch, textMatch }) => item.kind === 'chapter' ? titleMatch : semanticSearchKinds.has(item.kind) && (titleMatch || textMatch))
+        .sort(byScore)
+        .slice(0, 3);
+      const bodyMatches = scored.filter(({ item }) => item.kind === 'passage').sort(byScore);
+      const chosen = [...moduleMatches, ...bodyMatches];
+      const chosenIndexes = new Set(chosen.map(({ index }) => index));
+      const remainder = scored.filter(({ index }) => !chosenIndexes.has(index)).sort(byScore);
+      return [...chosen, ...remainder].slice(0, limit).map(({ item }) => item);
+    }
+
     function renderSearchResults(value) {
       const query = normalizeSearchText(value);
       if (!query) {
@@ -1544,19 +1576,7 @@
         searchResults.innerHTML = '';
         return;
       }
-      const score = (item) => {
-        const title = normalizeSearchText(item.title);
-        if (title === query) return 0;
-        if (title.includes(query)) return 1;
-        const textMatch = normalizeSearchText(item.text).includes(query);
-        if (item.kind === 'timeline' && textMatch) return 2;
-        if (item.kind === 'passage' && textMatch && query.length >= 4) return 2;
-        return textMatch ? (item.kind === 'passage' ? 4 : 3) : 4;
-      };
-      const matches = archive.search
-        .filter((item) => normalizeSearchText(`${item.title} ${item.text}`).includes(query))
-        .sort((a, b) => score(a) - score(b))
-        .slice(0, 9);
+      const matches = selectSearchResults(value);
       searchMeta.textContent = matches.length ? `找到 ${matches.length} 条档案记录` : '没有找到匹配记录';
       searchResults.innerHTML = matches.map((item) => {
         const index = archive.search.indexOf(item);
