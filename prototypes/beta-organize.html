@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>方向 β — 散落与归位</title>
+<title>方向 β · 散落与归位</title>
 <style>
 @font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
 @font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
@@ -184,7 +184,7 @@ footer{max-width:1520px;margin:0 auto;padding:clamp(44px,8vh,80px) clamp(18px,4v
 <section class="stage" id="stage">
   <div class="pin">
     <div class="lede">
-      <h1>1901 — 1997</h1>
+      <h1>1901 至 1997</h1>
       <p class="facts">《教父》三部曲笔记里的 14 个年份。</p>
     </div>
 
@@ -207,7 +207,7 @@ footer{max-width:1520px;margin:0 auto;padding:clamp(44px,8vh,80px) clamp(18px,4v
 
     <div class="gauge">
       <span class="st" id="gst">散落</span>
-      <span class="yr" id="gyr">—</span>
+      <span class="yr" id="gyr">·</span>
       <span id="gn">14 张影像</span>
     </div>
 
@@ -272,7 +272,7 @@ footer{max-width:1520px;margin:0 auto;padding:clamp(44px,8vh,80px) clamp(18px,4v
   <nav class="quiet">
     <a href="#">全部笔记 · 67 篇</a>
     <a href="#">《教父》三部曲 · 827 行</a>
-    <a href="#">编年史 1901–1997</a>
+    <a href="#">编年史 1901 至 1997</a>
     <a href="#">人物图鉴 · 44 人</a>
   </nav>
 </section>
@@ -363,8 +363,8 @@ footer{max-width:1520px;margin:0 auto;padding:clamp(44px,8vh,80px) clamp(18px,4v
 
     /* 读数 */
     var yr=Math.round(1901+(2026-1901)*e);
-    gyr.textContent = e<0.02 ? '—' : String(yr);
-    gst.textContent = e<0.55 ? '归位中' : (e<0.98?'按年份排列':'1901 — 2026');
+    gyr.textContent = e<0.02 ? '·' : String(yr);
+    gst.textContent = e<0.55 ? '归位中' : (e<0.98?'按年份排列':'1901 至 2026');
     gn.textContent = Math.round(e*100)+'%';
     mark.style.left=(e*100).toFixed(1)+'%';
   }

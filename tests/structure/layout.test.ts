@@ -87,20 +87,52 @@ describe('仓库结构与依赖方向', () => {
     expect(bad.map((f) => relative(ROOT, f))).toEqual([]);
   });
 
+  /**
+   * 界面文案里可能出现破折号的文件：src/ 的产物 + prototypes/ 的原型。
+   *
+   * 为什么必须带上 prototypes/：原型才是用户真正打开评审的东西。只在 src/ 里查，
+   * 等于规则在评审现场不生效 —— 实测三个首页原型里就藏着英文 en-dash 和本机路径。
+   */
+  function copyTargets(): string[] {
+    return [
+      ...walk(resolve(ROOT, 'src')),
+      ...walk(resolve(ROOT, 'prototypes')).filter((f) => /\.(html|css)$/.test(f)),
+    ].filter((f) => /\.(astro|html|css|tsx?)$/.test(f));
+  }
+
   it('界面文案不得含英文破折号（em-dash 禁令）', () => {
     // 依据 design-taste-frontend Pre-Flight Check §9.G：ZERO em-dashes anywhere on the page。
-    // 中文破折号「——」属正常中文标点，不在禁令内；此处只查英文 em-dash / en-dash。
-    const targets = walk(resolve(ROOT, 'src'));
+    //
+    // 判定不能写成 /[—–]/ 一刀切：中文破折号「——」就是两个 U+2014 连写，
+    // 那会把《InkWell》的真标题「不只是"文本生成"——Ai 搓出来的…」也判违规。
+    // 所以 en-dash 一律禁；em-dash 只在**单独出现**（左右都不是 em-dash）时禁。
+    const LONE_DASH = /(?<!—)—(?!—)|–/;
     const hits: string[] = [];
-    for (const file of targets) {
-      const text = readFileSync(file, 'utf8');
+    for (const file of copyTargets()) {
       // 先剥掉注释再逐行查：注释里可以讨论这条规则本身。
       // 必须整块剥，不能只跳过以 * 或 // 开头的行——
       // Astro 的 {/* ... */} 与 CSS 的 /* ... */ 续行不以 * 开头，会漏检。
-      const stripped = stripComments(text);
-      stripped.split('\n').forEach((line, i) => {
-        if (/[—–]/.test(line)) hits.push(`${relative(ROOT, file)}:${i + 1}: ${line.trim()}`);
-      });
+      stripComments(readFileSync(file, 'utf8'))
+        .split('\n')
+        .forEach((line, i) => {
+          if (LONE_DASH.test(line)) hits.push(`${relative(ROOT, file)}:${i + 1}: ${line.trim()}`);
+        });
+    }
+    expect(hits).toEqual([]);
+  });
+
+  it('页面文案不得出现本机绝对路径', () => {
+    // 依据 docs/product-specs/notes.md：source_path 只是溯源用的元数据，不渲染给读者。
+    // 原型的「来源」行曾直接写出 /mnt/d/code/简历/1.md 与 /mnt/d/Obsidian/iheee/，
+    // 把作者的本机目录结构摆到了评审页上。
+    const hits: string[] = [];
+    for (const file of copyTargets()) {
+      stripComments(readFileSync(file, 'utf8'))
+        .split('\n')
+        .forEach((line, i) => {
+          const m = /(?:^|["'\s(=])(\/(?:mnt|home|Users|Users\/[^/]+)\/[^\s"'<>)]*)/.exec(line);
+          if (m) hits.push(`${relative(ROOT, file)}:${i + 1}: ${m[1]}`);
+        });
     }
     expect(hits).toEqual([]);
   });
