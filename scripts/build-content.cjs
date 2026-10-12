@@ -12,7 +12,7 @@ function toAssetPath(markdown) {
 }
 
 function cleanTitle(title) {
-  return title.trim().replace(/^\d+[.、]\s*/, '');
+  return title.trim().replace(/[—–]/g, '-').replace(/^\d+[.、]\s*/, '');
 }
 
 function plainText(html) {
@@ -35,7 +35,7 @@ function imagePath(markdown) {
 }
 
 function extractSearchBlocks(html) {
-  const matcher = /<(p|blockquote|table)\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/gi;
+  const matcher = /<(p|blockquote|table|li)\b[^>]*\bid="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/gi;
   return [...html.matchAll(matcher)]
     .map((match) => ({ id: match[2], text: plainText(match[0]) }))
     .filter((block) => block.text.length > 12);
@@ -63,6 +63,7 @@ function makeMarkdownRenderer(prefix) {
   md.renderer.rules.paragraph_open = addBlockId;
   md.renderer.rules.blockquote_open = addBlockId;
   md.renderer.rules.table_open = addBlockId;
+  md.renderer.rules.list_item_open = addBlockId;
   md.renderer.rules.image = (tokens, index, options, env, self) => {
     const token = tokens[index];
     const sourceUrl = token.attrGet('src') || '';
@@ -78,7 +79,7 @@ function makeMarkdownRenderer(prefix) {
 }
 
 function render(markdown, prefix) {
-  return makeMarkdownRenderer(prefix).render(toAssetPath(markdown));
+  return makeMarkdownRenderer(prefix).render(toAssetPath(markdown)).replace(/[—–]/g, '-');
 }
 
 function topLevelSections(markdown) {
@@ -124,37 +125,84 @@ function extractHeadingList(markdown, prefix) {
 function parsePeople(markdown) {
   const matcher = /^(#{1,4})\s+(.+)$/gm;
   const matches = [...markdown.matchAll(matcher)];
-  return matches
-    .filter((match) => match[1].length === 4)
-    .map((match, index) => {
-      const next = matches.find((candidate) => candidate.index > match.index);
-      const bodyStart = match.index + match[0].length;
-      const body = markdown.slice(bodyStart, next ? next.index : markdown.length).trim();
-      const html = render(body, `person-${String(index + 1).padStart(2, '0')}`);
-      const actor = body.match(/\*\s+\*\*演员\*\*：([^\n]+)/)?.[1]?.trim() || '';
-      return {
-        id: `person-${String(index + 1).padStart(2, '0')}`,
-        title: cleanTitle(match[2]),
-        actor,
-        image: imagePath(body),
-        html,
-        text: plainText(html),
-        blocks: extractSearchBlocks(html)
-      };
+  let group = '';
+  let groupIndex = 0;
+  let personIndex = 0;
+  const people = [];
+  for (const match of matches) {
+    if (match[1].length === 3) {
+      group = cleanTitle(match[2]);
+      groupIndex += 1;
+      continue;
+    }
+    if (match[1].length !== 4) continue;
+    const next = matches.find((candidate) => candidate.index > match.index);
+    const bodyStart = match.index + match[0].length;
+    const body = markdown.slice(bodyStart, next ? next.index : markdown.length).trim();
+    const id = `person-${String(++personIndex).padStart(2, '0')}`;
+    const html = render(body, id);
+    const actor = body.match(/\*\s+\*\*演员\*\*：([^\n]+)/)?.[1]?.trim() || '';
+    people.push({
+      id,
+      title: cleanTitle(match[2]),
+      actor,
+      group,
+      groupIndex,
+      image: imagePath(body),
+      html,
+      text: plainText(html),
+      blocks: extractSearchBlocks(html)
     });
+  }
+  return people;
 }
 
 function parseTimeline(section) {
   const rows = [...section.markdown.matchAll(/^\|\s*\*\*([^|]+)\*\*\s*\|\s*([^|]+)\|\s*([^|]+)\|$/gm)];
   return rows.map((row, index) => ({
     id: `timeline-${String(index + 1).padStart(2, '0')}`,
-    era: row[1].trim(),
-    work: row[2].trim(),
-    event: row[3].trim()
+    era: row[1].trim().replace(/[—–]/g, '-'),
+    work: row[2].trim().replace(/[—–]/g, '-'),
+    event: row[3].trim().replace(/[—–]/g, '-')
   }));
 }
 
+function parseQuotes(section) {
+  if (!section) return [];
+  const groups = headingBlocks(section.markdown, 3);
+  let index = 0;
+  return groups.flatMap((group, groupIndex) => [...group.body.matchAll(/^\*\s+\*"([^\"]+)"\*\s+[—–-]{1,2}\s*(.+)$/gm)].map((match) => {
+    const following = group.body.slice(match.index + match[0].length).match(/^\s*（([^）]+)）/m)?.[1] || '';
+    const explanation = group.body.slice(match.index, match.index + 900).match(/\*\*解读\*\*：([^\n]+)/)?.[1]?.trim() || '';
+    return {
+      id: `quote-${String(++index).padStart(2, '0')}`,
+      group: cleanTitle(group.title),
+      groupIndex,
+      original: match[1].trim(),
+      translation: following.trim(),
+      source: match[2].trim().replace(/[—–]/g, '-'),
+      explanation: explanation.replace(/[—–]/g, '-')
+    };
+  }));
+}
+
+function firstImage(html, fallback = '') {
+  return html.match(/<img[^>]+src="([^"]+)"/)?.[1] || fallback;
+}
+
 const rawSections = topLevelSections(source);
+const sectionFallbacks = [
+  'assets/scenes/wedding.jpg',
+  'assets/scenes/office-vito.jpg',
+  'assets/scenes/wedding.jpg',
+  'assets/scenes/fredo-boathouse.jpg',
+  'assets/scenes/mary-steps.jpg',
+  'assets/scenes/michael-alone.jpg',
+  'assets/scenes/five-families.jpg',
+  'assets/scenes/tahoe-office.jpg',
+  'assets/scenes/michael-part3.jpg',
+  'assets/scenes/oranges.jpg'
+];
 let chapterNumber = 0;
 const sections = rawSections.map((section) => {
   const isPrelude = section.title === '序章';
@@ -167,6 +215,7 @@ const sections = rawSections.map((section) => {
     originalTitle: section.title,
     html,
     text: plainText(html),
+    cover: firstImage(html, sectionFallbacks[chapterNumber - 1] || 'assets/scenes/michael-alone.jpg'),
     blocks: extractSearchBlocks(html),
     headings: extractHeadingList(section.markdown, id),
     order: isDirectory ? 0 : chapterNumber
@@ -176,15 +225,59 @@ const sections = rawSections.map((section) => {
 const prelude = sections.find((section) => section.id === 'prelude');
 const directory = sections.find((section) => section.id === 'directory');
 const timelineSection = rawSections.find((section) => section.title.startsWith('七、'));
+const quoteSection = rawSections.find((section) => section.title.startsWith('八、'));
+const historySection = rawSections.find((section) => section.title.startsWith('九、'));
 const motifsSection = rawSections.find((section) => section.title.startsWith('十、'));
-const motifBlocks = motifsSection ? headingBlocks(motifsSection.markdown, 3) : [];
-const motifs = motifBlocks.map((block, index) => {
-  const html = render(block.body, `motif-${String(index + 1).padStart(2, '0')}`);
+const ruleSections = rawSections.filter((section) => section.title.startsWith('一、') || section.title.startsWith('二、'));
+const rules = ruleSections.flatMap((section, sectionIndex) => headingBlocks(section.markdown, 3).map((block, index) => {
+  const id = `rule-${String(sectionIndex * 10 + index + 1).padStart(2, '0')}`;
+  const html = render(block.body, id);
   return {
-    id: `motif-${String(index + 1).padStart(2, '0')}`,
+    id,
+    group: cleanTitle(section.title),
     title: cleanTitle(block.title),
     html,
     text: plainText(html),
+    blocks: extractSearchBlocks(html)
+  };
+}));
+const history = (historySection ? headingBlocks(historySection.markdown, 3) : []).map((block, index) => {
+  const id = `history-${String(index + 1).padStart(2, '0')}`;
+  const html = render(block.body, id);
+  return {
+    id,
+    title: cleanTitle(block.title),
+    html,
+    text: plainText(html),
+    cover: ['assets/scenes/five-families.jpg', 'assets/scenes/havana-cake.jpg'][index] || 'assets/scenes/michael-alone.jpg',
+    blocks: extractSearchBlocks(html)
+  };
+});
+const quotes = parseQuotes(quoteSection);
+const motifBlocks = motifsSection ? headingBlocks(motifsSection.markdown, 3) : [];
+const motifCovers = [
+  'assets/scenes/oranges.jpg',
+  'assets/scenes/baptism.jpg',
+  'assets/scenes/door-kay.jpg',
+  'assets/scenes/fish.jpg',
+  'assets/scenes/sicily-wedding.jpg',
+  'assets/scenes/hospital.jpg',
+  'assets/scenes/office-vito.jpg',
+  'assets/scenes/michael-chair.jpg',
+  'assets/scenes/restaurant.jpg',
+  'assets/scenes/confession.jpg',
+  'assets/scenes/mary-steps.jpg',
+  'assets/scenes/michael-alone.jpg'
+];
+const motifs = motifBlocks.map((block, index) => {
+  const id = `motif-${String(index + 1).padStart(2, '0')}`;
+  const html = render(block.body, id);
+  return {
+    id,
+    title: cleanTitle(block.title),
+    html,
+    text: plainText(html),
+    cover: firstImage(html, motifCovers[index]),
     blocks: extractSearchBlocks(html)
   };
 });
@@ -211,12 +304,16 @@ const passageSearch = chapters.flatMap((item) => item.blocks.map((block) => ({
   kind: 'passage',
   id: block.id,
   target: block.id,
-  title: `${item.title} · 正文`,
+  title: `${item.title} / 正文`,
   text: block.text
 })));
 const search = [
   ...chapters.map((item) => ({ kind: 'chapter', id: item.id, target: `${item.id}-heading`, title: item.title, text: item.text })),
+  ...rules.map((item) => ({ kind: 'rule', id: item.id, target: item.id, title: item.title, text: item.text })),
   ...people.map((item) => ({ kind: 'person', id: item.id, target: item.target, title: item.title, text: item.text })),
+  ...timeline.map((item) => ({ kind: 'timeline', id: item.id, target: item.id, title: item.era, text: `${item.work} ${item.event}` })),
+  ...quotes.map((item) => ({ kind: 'quote', id: item.id, target: item.id, title: item.original, text: `${item.translation} ${item.source} ${item.explanation}` })),
+  ...history.map((item) => ({ kind: 'history', id: item.id, target: item.id, title: item.title, text: item.text })),
   ...motifs.map((item) => ({ kind: 'motif', id: item.id, target: item.target, title: item.title, text: item.text })),
   ...passageSearch
 ];
@@ -228,14 +325,20 @@ const archive = {
     peopleCount: people.length,
     timelineCount: timeline.length,
     motifCount: motifs.length,
+    ruleCount: rules.length,
+    quoteCount: quotes.length,
+    historyCount: history.length,
     imageCount: (source.match(/!\[[^\]]*\]\([^\)]+\)/g) || []).length
   },
   prelude: prelude ? { html: prelude.html, text: prelude.text } : null,
   directory: directory ? { html: directory.html, text: directory.text } : null,
   sections,
   chapters,
+  rules,
   people,
   timeline,
+  quotes,
+  history,
   motifs,
   search
 };

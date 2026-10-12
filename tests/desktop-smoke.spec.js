@@ -37,21 +37,21 @@ test.describe('柯里昂档案桌面端', () => {
     expect(imageStatus.every(Boolean)).toBe(true);
 
     const faithFilter = page.locator('[data-filter="faith"]');
+    const faithCount = await page.locator('.chapter-card[data-category~="faith"]').count();
     await faithFilter.click();
-    await expect(page.locator('#chapterCount')).toHaveText('01 chapters');
-    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(1);
-    await expect(page.locator('.chapter-card:not([hidden]) h3')).toHaveText('终极的代价');
+    await expect(page.locator('#chapterCount')).toHaveText(`${String(faithCount).padStart(2, '0')} chapters`);
+    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(faithCount);
 
     await page.locator('[data-filter="all"]').click();
-    await expect(page.locator('#chapterCount')).toHaveText('03 chapters');
-    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(3);
+    await expect(page.locator('#chapterCount')).toHaveText('10 chapters');
+    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(10);
 
     const firstChapter = page.locator('.chapter-card').first();
     await firstChapter.click();
     const reader = page.locator('#reader');
     await expect(reader).toHaveClass(/is-open/);
     await expect(reader).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#readerTitle')).toHaveText('权力的加冕');
+    await expect(page.locator('#readerTitle')).toContainText('权力的加冕');
     await expect(page.locator('#readerBody p').first()).toBeVisible();
     await expect(page.locator('#readerBody')).toContainText('婚礼');
     const openDuplicateIds = await page.locator('[id]').evaluateAll((nodes) => {
@@ -74,11 +74,9 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#nextQuote').click();
     await expect(quote).not.toHaveText(initialQuote);
 
-    const modeToggle = page.locator('#modeToggle');
-    await modeToggle.click();
-    await expect(page.locator('body')).toHaveClass(/reading-mode/);
-    await modeToggle.click();
-    await expect(page.locator('body')).not.toHaveClass(/reading-mode/);
+    await expect(page.locator('#full-note')).toBeVisible();
+    await expect(page.locator('#noteStart')).toBeVisible();
+    await expect(page.locator('#modeToggle')).toHaveCount(0);
 
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
@@ -107,7 +105,7 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     const invalidSearchTargets = await page.evaluate(() => window.CORLEONE_ARCHIVE.search
       .map((item) => item.target)
-      .filter((target) => !target || document.querySelectorAll(`#noteContent #${CSS.escape(target)}`).length !== 1));
+      .filter((target) => !target || document.querySelectorAll(`#${CSS.escape(target)}`).length !== 1));
     expect(invalidSearchTargets).toEqual([]);
     await expect(page.locator('#noteContent')).toContainText('《教父》三部曲全景笔记');
     await expect(page.locator('#noteContent')).toContainText('视听语言与电影符号系统');
@@ -129,15 +127,15 @@ test.describe('柯里昂档案桌面端', () => {
     });
     await expect.poll(() => page.locator('[data-nav="motifs"]').evaluate((node) => node.classList.contains('is-active'))).toBe(true);
 
+    const faithCards = page.locator('#chapterGrid .chapter-card[data-category~="faith"]');
     await page.locator('[data-filter="faith"]').click();
-    await expect(page.locator('[data-chapter="chapter-03"]')).toBeHidden();
-    await expect(page.locator('[data-chapter="chapter-04"]')).toBeHidden();
-    await expect(page.locator('[data-chapter="chapter-05"]')).toBeVisible();
+    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(await faithCards.count());
+    const familyCards = page.locator('#chapterGrid .chapter-card[data-category~="family"]');
     await page.evaluate(() => {
-      document.querySelector('[data-filter="power"]').click();
-      document.querySelector('[data-filter="family"]').click();
+      document.querySelector('#chapters [data-filter="power"]').click();
+      document.querySelector('#chapters [data-filter="family"]').click();
     });
-    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(2);
+    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(await familyCards.count());
 
     await page.locator('#searchToggle').click();
     await expect(page.locator('#searchPanel')).toHaveClass(/is-open/);
@@ -182,10 +180,7 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/, { timeout: 2_000 });
 
-    await page.locator('#modeToggle').click();
-    await expect(page.locator('body')).toHaveClass(/reading-mode/);
-    await expect.poll(() => page.locator('.grain').evaluate((node) => getComputedStyle(node).opacity)).toBe('0');
-    await page.locator('#modeToggle').click();
+    await expect(page.locator('#modeToggle')).toHaveCount(0);
 
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);

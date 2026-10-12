@@ -41,13 +41,6 @@
       transition: background-color .8s var(--ease-in-out), color .8s var(--ease-in-out);
     }
     body.no-scroll { overflow: hidden; }
-    body.reading-mode { background: #0d0c0a; }
-    body.reading-mode .grain,
-    body.reading-mode .vignette,
-    body.reading-mode .cursor-glow { opacity: 0; }
-    body.reading-mode .hero-media { opacity: .28; }
-    body.reading-mode .note-content { max-width: 64rem; font-size: 1rem; }
-    body.reading-mode .site-header { background: rgba(9, 9, 8, .92); }
     ::selection { color: var(--ink); background: var(--gold-bright); }
     button, a { -webkit-tap-highlight-color: transparent; }
     button { font: inherit; }
@@ -595,6 +588,168 @@
       *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
       .cursor-glow, .grain { display: none; }
     }
+
+    /* archive reframe: family warmth meets institutional power */
+    :root {
+      --ink: #e7e4dc;
+      --ink-soft: #d9ded6;
+      --panel: #f4f0e7;
+      --panel-light: #fbf8f1;
+      --paper: #1d3029;
+      --paper-muted: #65716b;
+      --gold: #a35e3d;
+      --gold-bright: #b9754d;
+      --rust: #38584b;
+      --line: rgba(29, 48, 41, .17);
+      --line-strong: rgba(29, 48, 41, .32);
+      --serif: "Iowan Old Style", "Baskerville", "Songti SC", "STSong", serif;
+    }
+    html { background: var(--ink); }
+    body { color: var(--paper); background: radial-gradient(circle at 82% 0%, rgba(56, 88, 75, .11), transparent 32rem), var(--ink); }
+    .grain { opacity: .025; mix-blend-mode: multiply; }
+    .vignette { background: radial-gradient(ellipse at center, transparent 42%, rgba(29, 48, 41, .13) 100%); }
+    .cursor-glow { background: radial-gradient(circle, rgba(163, 94, 61, .14), transparent 66%); mix-blend-mode: multiply; }
+    .site-header { background: linear-gradient(180deg, rgba(231, 228, 220, .96), rgba(231, 228, 220, .76), transparent); }
+    .site-header.is-scrolled { background: rgba(231, 228, 220, .84); border-bottom-color: var(--line); }
+    .brand-mark { border-color: rgba(56, 88, 75, .55); color: var(--rust); }
+    .brand:hover .brand-mark { background: rgba(56, 88, 75, .1); }
+    .button--solid { color: #f9f5ec; border-color: var(--rust); background: var(--rust); }
+    .button--solid:hover { color: #fff; background: #2d493e; }
+    .hero { color: var(--paper); }
+    .hero::before { background: radial-gradient(circle at 72% 40%, rgba(163, 94, 61, .2), transparent 25rem), linear-gradient(100deg, rgba(231, 228, 220, .98) 0%, rgba(231, 228, 220, .88) 39%, rgba(231, 228, 220, .12) 100%); }
+    .hero::after { background: linear-gradient(transparent, var(--ink)); }
+    .hero-media { opacity: .82; }
+    .hero-media img { filter: sepia(.28) contrast(1.04) brightness(.74) saturate(.8); }
+    .hero-scanline { background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(29, 48, 41, .04) 6px); mix-blend-mode: multiply; }
+    .eyebrow, .section-kicker { color: var(--gold); }
+    .hero h1, .section-title { color: var(--paper); }
+    .hero-lede { color: rgba(29, 48, 41, .72); }
+    .meta-chip { border-color: var(--line); background: rgba(244, 240, 231, .7); backdrop-filter: blur(14px); }
+    .meta-chip strong { color: var(--paper); }
+    .hero-index strong { color: var(--gold); }
+    .hero-index, .scroll-cue { color: var(--paper-muted); }
+    .section-intro, .timeline-caption { color: var(--paper-muted); }
+    .section-rule { background: linear-gradient(90deg, var(--gold), var(--line), transparent); }
+    .full-note-section { background: linear-gradient(180deg, #dce3da 0%, #e7e4dc 100%); }
+    .note-content { color: rgba(29, 48, 41, .83); }
+    .note-content h1, .note-content h2, .note-content h4, .note-content strong { color: var(--paper); }
+    .note-content h3, .note-content em, .note-toc-head, .note-stats strong { color: var(--gold); }
+    .note-content a { color: var(--rust); text-decoration-color: rgba(56, 88, 75, .35); }
+    .note-content blockquote { color: var(--paper); background: rgba(163, 94, 61, .08); }
+    .note-content th { color: var(--rust); background: rgba(56, 88, 75, .08); }
+    .note-toc a:hover, .note-toc a.is-active { color: var(--paper); background: rgba(56, 88, 75, .08); }
+    .note-loading { color: var(--rust); }
+    .chapter-grid, .character-spotlight, .character-roster, .motif-layout { background: var(--line); border-color: var(--line); }
+    .archive-map-grid { grid-template-columns: repeat(12, 1fr); }
+    .chapter-card--feature { grid-column: span 4; min-height: 31rem; }
+    .chapter-card--compact { grid-column: span 3; min-height: 20rem; }
+    .chapter-card--compact .chapter-body h3 { font-size: clamp(1.35rem, 2.2vw, 2rem); }
+    .chapter-card--compact .chapter-body p { font-size: .7rem; }
+    .chapter-card::before { background: linear-gradient(180deg, transparent 12%, rgba(29, 48, 41, .12) 36%, rgba(16, 27, 23, .92) 100%); }
+    .chapter-card:hover { background: var(--panel-light); box-shadow: 0 1.5rem 3rem rgba(29, 48, 41, .18); }
+    .chapter-body h3, .chapter-body p, .chapter-footer, .chapter-tag { color: #f4f0e7; }
+    .chapter-body p { color: rgba(244, 240, 231, .74); }
+    .chapter-tag { border-color: rgba(244, 240, 231, .3); background: rgba(29, 48, 41, .34); }
+    .archive-map-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.2rem 0; border-bottom: 1px solid var(--line); color: var(--paper-muted); font-size: .7rem; }
+    .archive-map-foot a { display: inline-flex; align-items: center; gap: .45rem; color: var(--rust); transition: transform .35s var(--ease-out), color .3s ease; }
+    .archive-map-foot a:hover { color: var(--gold); transform: translateX(.3rem); }
+    .rules-section { background: #d5ded6; }
+    .rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .rule-card { background: rgba(244, 240, 231, .66); transition: background .4s ease, transform .5s var(--ease-out); }
+    .rule-card:hover, .rule-card.is-open { background: var(--panel-light); }
+    .rule-trigger { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .8rem; width: 100%; min-height: 10rem; padding: 1.3rem; border: 0; color: var(--paper); background: transparent; cursor: pointer; text-align: left; }
+    .rule-trigger:hover { transform: translateY(-2px); }
+    .rule-trigger .lucide { width: 1.1rem; height: 1.1rem; color: var(--gold); transition: transform .45s var(--ease-out); }
+    .rule-card.is-open .rule-trigger .lucide { transform: rotate(45deg); }
+    .rule-number { color: var(--gold); font-family: var(--serif); font-size: 1.4rem; }
+    .rule-trigger small { display: block; margin-bottom: .5rem; color: var(--paper-muted); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; }
+    .rule-trigger strong { display: block; font-family: var(--serif); font-size: 1.35rem; font-weight: 400; line-height: 1.05; }
+    .rule-panel { padding: 0 1.3rem 1.4rem 4rem; color: var(--paper-muted); font-family: var(--serif); font-size: .9rem; line-height: 1.8; animation: panelReveal .55s var(--ease-out) both; }
+    .rule-panel p { margin: 0 0 .75rem; }
+    .timeline-section { background: #e1e6df; }
+    .timeline-line { background: linear-gradient(90deg, transparent, var(--rust), var(--line), transparent); }
+    .timeline-dot { background: var(--ink); }
+    .timeline-item { cursor: pointer; transition: transform .4s var(--ease-out), opacity .35s ease; }
+    .timeline-item:hover, .timeline-item.is-active { transform: translateY(-.35rem); }
+    .timeline-item.is-active .timeline-dot { background: var(--gold-bright); box-shadow: 0 0 0 .4rem rgba(163, 94, 61, .14); }
+    .timeline-focus { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: .8rem 1.2rem; margin-top: 2rem; padding: 1rem 1.2rem; border-left: 2px solid var(--gold); background: rgba(244, 240, 231, .66); }
+    .timeline-focus strong { color: var(--gold); font-family: var(--serif); font-size: 1.35rem; }
+    .timeline-focus > span { color: var(--rust); font-size: .68rem; letter-spacing: .08em; }
+    .timeline-focus p { margin: 0; color: var(--paper-muted); font-size: .72rem; line-height: 1.6; }
+    .timeline-focus .button { min-height: 2.35rem; }
+    .feature-media { background: #c8d0c8; }
+    .feature-copy > p, .insight span { color: var(--paper-muted); }
+    .feature-stamp { color: var(--gold); border-color: rgba(163, 94, 61, .62); background: rgba(244, 240, 231, .78); }
+    .quote-section { border-color: var(--line); background: radial-gradient(circle at 50% 50%, rgba(163, 94, 61, .12), transparent 35rem), #d8e0d7; }
+    .quote-inner { color: var(--paper); }
+    .quote-mark { color: var(--gold); }
+    .quote-block blockquote { color: var(--paper); }
+    .quote-translation { margin: .9rem auto 0; color: var(--rust); font-family: var(--sans); font-size: .75rem; letter-spacing: .04em; }
+    .quote-source { color: var(--paper-muted); }
+    .quote-explanation { max-width: 38rem; margin: 1rem auto 0; color: var(--paper-muted); font-size: .75rem; line-height: 1.7; }
+    .quote-index { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: 2.4rem; }
+    .quote-index-button { display: flex; align-items: center; gap: .65rem; padding: .75rem .8rem; border: 1px solid var(--line); color: var(--paper-muted); background: rgba(244, 240, 231, .4); cursor: pointer; font-size: .64rem; text-align: left; transition: color .3s ease, border-color .3s ease, background .3s ease, transform .35s var(--ease-out); }
+    .quote-index-button:hover, .quote-index-button.is-active { color: var(--paper); border-color: var(--gold); background: rgba(163, 94, 61, .1); transform: translateY(-2px); }
+    .quote-index-button span { color: var(--gold); font-family: var(--serif); font-size: 1rem; }
+    .characters-section { background: #e7e4dc; }
+    .character-spotlight { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
+    .character-roster { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin-top: 1.5rem; }
+    .character-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.5rem; padding: .8rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .character-card--roster { min-height: 14rem; }
+    .character-card--roster img { min-height: 14rem; }
+    .character-card--roster .character-body { right: .75rem; bottom: .75rem; left: .75rem; }
+    .character-card--roster .character-body h3 { font-size: 1.2rem; }
+    .character-card--roster .character-body p { font-size: .62rem; }
+    .character-card--roster .character-index { top: .7rem; left: .7rem; font-size: .95rem; }
+    .character-body p { color: rgba(244, 240, 231, .75); }
+    .history-section { background: #dce4dc; }
+    .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
+    .history-card { display: grid; grid-template-columns: .8fr 1.2fr; min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); }
+    .history-card img { width: 100%; height: 100%; min-height: 25rem; object-fit: cover; filter: sepia(.18) saturate(.75) contrast(1.04) brightness(.9); transition: transform .9s var(--ease-out), filter .6s ease; }
+    .history-card:hover img { transform: scale(1.06); filter: sepia(.08) saturate(.95) contrast(1.04) brightness(1); }
+    .history-card-body { padding: 1.4rem; }
+    .history-card-body > span { color: var(--gold); font-family: var(--serif); font-size: 1.3rem; }
+    .history-card-body h3 { margin: .8rem 0 1.1rem; color: var(--paper); font-family: var(--serif); font-size: clamp(1.4rem, 2.2vw, 2rem); font-weight: 400; line-height: 1.05; }
+    .history-card-body > div { color: var(--paper-muted); font-family: var(--serif); font-size: .82rem; line-height: 1.8; }
+    .history-card-body p { margin: 0 0 .8rem; }
+    .motif { background: var(--panel); }
+    .motif:hover { background: var(--panel-light); }
+    .motif-action { display: inline-flex; align-items: center; gap: .35rem; margin-top: 1.2rem; color: var(--rust); font-size: .63rem; letter-spacing: .08em; }
+    .finale { background: #d7dfd8; }
+    .finale-media::after { background: linear-gradient(90deg, rgba(29, 48, 41, .88) 0%, rgba(29, 48, 41, .38) 55%, rgba(29, 48, 41, .6) 100%), linear-gradient(0deg, rgba(29, 48, 41, .84), transparent 55%); }
+    .finale-media img { filter: sepia(.24) contrast(1.08) brightness(.72); }
+    .finale p { color: rgba(244, 240, 231, .78); }
+    .search-backdrop, .reader-backdrop { background: rgba(29, 48, 41, .54); }
+    .search-shell, .reader-panel { border-color: var(--line-strong); background: var(--panel-light); box-shadow: 0 2rem 6rem rgba(29, 48, 41, .24); }
+    .search-input-wrap { background: rgba(29, 48, 41, .04); }
+    .search-input-wrap input, .search-shell h2, .search-result strong { color: var(--paper); }
+    .search-result { color: var(--paper); background: rgba(29, 48, 41, .025); }
+    .reader-body { color: var(--paper-muted); }
+    .reader-content h2, .reader-body blockquote, .reader-quote { color: var(--paper); }
+    .reader-media { background: #bfc9c0; }
+    .reader-media::after { border-color: rgba(244, 240, 231, .42); }
+    .toast { color: var(--paper); background: rgba(244, 240, 231, .94); box-shadow: 0 1rem 2rem rgba(29, 48, 41, .18); }
+    @keyframes panelReveal { from { opacity: 0; transform: translateY(-.4rem); } to { opacity: 1; transform: none; } }
+    @media (max-width: 900px) {
+      .archive-map-grid { grid-template-columns: repeat(2, 1fr); }
+      .chapter-card--feature, .chapter-card--compact { grid-column: span 1; }
+      .chapter-card--feature { min-height: 28rem; }
+      .rule-grid, .character-spotlight, .history-grid { grid-template-columns: 1fr 1fr; }
+      .character-roster { grid-template-columns: repeat(3, 1fr); }
+      .timeline-focus { grid-template-columns: auto 1fr; }
+      .timeline-focus p { grid-column: 1 / -1; }
+    }
+    @media (max-width: 620px) {
+      .archive-map-grid, .rule-grid, .character-spotlight, .character-roster, .history-grid { grid-template-columns: 1fr; }
+      .chapter-card--feature, .chapter-card--compact { grid-column: span 1; min-height: 25rem; }
+      .archive-map-foot, .character-toolbar { align-items: flex-start; flex-direction: column; }
+      .quote-index { grid-template-columns: 1fr 1fr; }
+      .history-card { grid-template-columns: .75fr 1.25fr; min-height: 18rem; }
+      .history-card img { min-height: 18rem; }
+      .timeline-focus { grid-template-columns: 1fr; }
+      .timeline-focus p { grid-column: auto; }
+      .timeline-focus .button { justify-self: start; }
+    }
   </style>
 </head>
 <body>
@@ -616,7 +771,6 @@
     </nav>
     <div class="header-actions">
       <button class="icon-button" id="searchToggle" type="button" aria-label="搜索档案" title="搜索档案"><i data-lucide="search"></i></button>
-      <button class="icon-button" id="modeToggle" type="button" aria-label="切换阅读模式" title="切换阅读模式"><i data-lucide="scan-eye"></i></button>
       <button class="icon-button" id="randomQuote" type="button" aria-label="换一条引文" title="换一条引文"><i data-lucide="shuffle"></i></button>
     </div>
   </header>
@@ -651,10 +805,10 @@
       <div class="section-shell">
         <div class="section-header" data-reveal="left">
           <div>
-            <span class="section-kicker">three movements</span>
-            <h2 class="section-title">一场家族史诗<br>也是三次加冕</h2>
+            <span class="section-kicker">archive map</span>
+            <h2 class="section-title">一份笔记<br>拆成十个入口</h2>
           </div>
-          <p class="section-intro">麦克从局外人走到王座中央 每一次靠近权力 都让他离家庭更远</p>
+          <p class="section-intro">先看结构 再决定从哪一页进入正文。三部电影只是入口，完整笔记才是档案的骨架</p>
         </div>
         <div class="section-rule" data-reveal></div>
         <div class="chapter-toolbar" data-reveal data-delay="1">
@@ -664,25 +818,20 @@
             <button class="filter-button" type="button" data-filter="family"><i data-lucide="users"></i>家族</button>
             <button class="filter-button" type="button" data-filter="faith"><i data-lucide="cross"></i>信仰</button>
           </div>
-          <span class="chapter-count" id="chapterCount">03 chapters</span>
+          <span class="chapter-count" id="chapterCount">10 chapters</span>
         </div>
-        <div class="chapter-grid" id="chapterGrid">
-          <article class="chapter-card" tabindex="0" data-chapter="chapter-03" data-category="power family" data-reveal data-delay="1">
-            <img src="assets/scenes/wedding.jpg" alt="柯里昂家族婚礼现场" loading="lazy">
-            <span class="chapter-number">01</span><span class="chapter-tag">1955</span>
-            <div class="chapter-body"><small>the coronation</small><h3>权力的加冕</h3><p>婚礼的阳光之外 书房正在交换另一种誓言</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
-          </article>
-          <article class="chapter-card" tabindex="0" data-chapter="chapter-04" data-category="power family" data-reveal data-delay="2">
-            <img src="assets/scenes/fredo-boathouse.jpg" alt="太浩湖船屋中的兄弟对质" loading="lazy">
-            <span class="chapter-number">02</span><span class="chapter-tag">1958 — 1960</span>
-            <div class="chapter-body"><small>the fracture</small><h3>宗族的瓦解</h3><p>当所有人都被保护 家庭反而成了最危险的房间</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
-          </article>
-          <article class="chapter-card" tabindex="0" data-chapter="chapter-05" data-category="faith power" data-reveal data-delay="3">
-            <img src="assets/scenes/mary-steps.jpg" alt="玛丽倒在巴勒莫歌剧院台阶上" loading="lazy">
-            <span class="chapter-number">03</span><span class="chapter-tag">1979 — 1997</span>
-            <div class="chapter-body"><small>the final cost</small><h3>终极的代价</h3><p>合法化没有洗去罪孽 只把账单推迟到最后一幕</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
-          </article>
+        <div class="chapter-grid archive-map-grid" id="chapterGrid"></div>
+        <div class="archive-map-foot"><span>每一张卡片都保留对应原文</span><a href="#full-note">打开完整笔记 <i data-lucide="arrow-down-right"></i></a></div>
+      </div>
+    </section>
+
+    <section class="section rules-section" id="rules" data-section="rules">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="right">
+          <div><span class="section-kicker">family / power</span><h2 class="section-title">先看三条规则<br>再看谁被它们改变</h2></div>
+          <p class="section-intro">引言与观影方法被拆成可以展开的判断。它们不是摘要，是进入整份笔记的钥匙</p>
         </div>
+        <div class="rule-grid" id="ruleGrid"></div>
       </div>
     </section>
 
@@ -717,6 +866,7 @@
           <div class="timeline-scroll">
             <div class="timeline-items" id="timelineItems"></div>
           </div>
+          <div class="timeline-focus" id="timelineFocus" aria-live="polite"></div>
         </div>
       </div>
     </section>
@@ -742,29 +892,44 @@
     </section>
 
     <section class="section quote-section" id="quotes" data-section="quotes">
-      <div class="section-shell quote-inner" data-reveal="scale">
-        <span class="quote-mark">“</span>
-        <div class="quote-block">
-          <blockquote id="quoteText">永远不要恨你的敌人 那会影响你的判断</blockquote>
-          <p class="quote-source" id="quoteSource">Michael Corleone · Part III</p>
-          <div class="quote-controls"><button class="button" id="nextQuote" type="button"><i data-lucide="refresh-cw"></i>换一条回声</button></div>
+      <div class="section-shell quote-shell" data-reveal="scale">
+        <div class="quote-inner">
+          <span class="quote-mark">“</span>
+          <div class="quote-block">
+            <blockquote id="quoteText">档案引文正在载入</blockquote>
+            <p class="quote-translation" id="quoteTranslation"></p>
+            <p class="quote-source" id="quoteSource"></p>
+            <p class="quote-explanation" id="quoteExplanation"></p>
+            <div class="quote-controls"><button class="button" id="nextQuote" type="button"><i data-lucide="refresh-cw"></i>换一条引文</button></div>
+          </div>
+          <span class="quote-mark">“</span>
         </div>
-        <span class="quote-mark">“</span>
+        <div class="quote-index" id="quoteIndex" aria-label="引文索引"></div>
       </div>
     </section>
 
-    <section class="section" id="characters" data-section="characters">
+    <section class="section characters-section" id="characters" data-section="characters">
       <div class="section-shell">
         <div class="section-header" data-reveal="left">
-          <div><span class="section-kicker">the bloodline</span><h2 class="section-title">每个人都在<br>替家族付账</h2></div>
-          <p class="section-intro">四张面孔 四种继承方式<br>没有人能只做旁观者</p>
+          <div><span class="section-kicker">the bloodline</span><h2 class="section-title">四十四张面孔<br>一条家族暗线</h2></div>
+          <p class="section-intro">从教父到证人，从继承人到敌人。人物不再是四张海报，而是一张可以逐层打开的关系网</p>
         </div>
-        <div class="characters-grid">
-          <article class="character-card" tabindex="0" role="button" data-person="person-01" data-reveal data-delay="1"><img src="assets/portraits/vito.jpg" alt="维托柯里昂肖像" loading="lazy"><span class="character-index">01</span><div class="character-body"><small>the founder</small><h3>维托</h3><p>人情政治与古典秩序</p></div></article>
-          <article class="character-card" tabindex="0" role="button" data-person="person-02" data-reveal data-delay="2"><img src="assets/portraits/michael.jpg" alt="麦克柯里昂肖像" loading="lazy"><span class="character-index">02</span><div class="character-body"><small>the successor</small><h3>麦克</h3><p>法理冷酷与资本异化</p></div></article>
-          <article class="character-card" tabindex="0" role="button" data-person="person-07" data-reveal data-delay="3"><img src="assets/portraits/vincent.jpg" alt="文森特柯里昂肖像" loading="lazy"><span class="character-index">03</span><div class="character-body"><small>the heir</small><h3>文森特</h3><p>血性继承与最后交接</p></div></article>
-          <article class="character-card" tabindex="0" role="button" data-person="person-08" data-reveal data-delay="4"><img src="assets/portraits/mary.jpg" alt="玛丽柯里昂肖像" loading="lazy"><span class="character-index">04</span><div class="character-body"><small>the cost</small><h3>玛丽</h3><p>无辜者承担终局</p></div></article>
+        <div class="character-spotlight" id="characterSpotlight"></div>
+        <div class="character-toolbar" data-reveal>
+          <div class="filter-list" id="characterFilters" role="group" aria-label="人物群组筛选"></div>
+          <span class="chapter-count" id="characterCount">44 people</span>
         </div>
+        <div class="character-roster" id="characterRoster"></div>
+      </div>
+    </section>
+
+    <section class="section history-section" id="history" data-section="history">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="right">
+          <div><span class="section-kicker">fact / fiction</span><h2 class="section-title">电影借来的现实<br>与它重新编造的神话</h2></div>
+          <p class="section-intro">第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
+        </div>
+        <div class="history-grid" id="historyGrid"></div>
       </div>
     </section>
 
@@ -825,38 +990,22 @@
   <script src="assets/data/archive.js"></script>
   <script>
     const archive = window.CORLEONE_ARCHIVE;
-    const chapterData = {
-      'chapter-03': {
-        kicker: 'chapter three · the coronation',
-        title: '权力的加冕',
-        period: '1945 — 1955',
-        motif: '洗礼蒙太奇',
-        image: 'assets/scenes/wedding.jpg',
-        body: '第一部是一场严密的权力禅让。婚礼把家族展示给主流社会 书房却在暗处兑现另一套秩序。麦克经历医院门口 餐馆枪声与西西里流亡 最终在洗礼日完成从局外人到掌舵者的蜕变。',
-        quote: '我会给他一个无法拒绝的条件',
-        fullTarget: 'chapter-03'
-      },
-      'chapter-04': {
-        kicker: 'chapter four · the fracture',
-        title: '宗族的瓦解',
-        period: '1901 — 1960',
-        motif: '太浩湖船屋',
-        image: 'assets/scenes/fredo-boathouse.jpg',
-        body: '第二部把青年维托的建构与麦克的瓦解并置。一个人在移民逆境里用人情建立堡垒 另一个人在资本帝国里用猜疑拆掉家庭。弗雷多的背叛不是一个人的错误 而是被忽视太久的裂缝。',
-        quote: '我是你哥哥 麦克 但所有人全都越过我',
-        fullTarget: 'chapter-04'
-      },
-      'chapter-05': {
-        kicker: 'chapter five · the final cost',
-        title: '终极的代价',
-        period: '1979 — 1997',
-        motif: '歌剧院台阶',
-        image: 'assets/scenes/mary-steps.jpg',
-        body: '老年麦克试图借助金融与教廷完成合法化 却发现旧日孽债不会因为换上西装就消失。歌剧院的子弹原本射向他 最终击中了玛丽。真正的惩罚不是死亡 而是活着记住这一切。',
-        quote: '西西里人祝你长命百岁 那意味着长寿 而长寿是无法遗忘的痛苦',
-        fullTarget: 'chapter-05'
-      }
-    };
+    function chapterReaderData(id) {
+      const chapter = archive.chapters.find((item) => item.id === id);
+      if (!chapter) return null;
+      const number = String(chapter.order).padStart(2, '0');
+      const quote = archive.quotes.find((item) => item.groupIndex === Math.min(chapter.order - 1, 2));
+      return {
+        kicker: `archive chapter / ${number}`,
+        title: chapter.title,
+        period: chapter.order <= 3 ? '三部曲档案入口' : `第 ${number} 章`,
+        motif: chapter.order <= 3 ? '家庭与权力' : '完整证据页',
+        image: chapter.cover,
+        html: chapter.html,
+        quote: quote?.translation || chapter.text.slice(0, 120),
+        fullTarget: chapter.id
+      };
+    }
 
     function readerHtml(data) {
       let html = data.html;
@@ -871,12 +1020,7 @@
       return fragment.innerHTML;
     }
 
-    const quotes = [
-      ['永远不要恨你的敌人 那会影响你的判断', 'Michael Corleone · Part III'],
-      ['一个不抽时间陪伴家人的男人 永远算不上真正的男人', 'Vito Corleone · Part I'],
-      ['当我以为我已经抽身了 他们又把我拽了回去', 'Michael Corleone · Part III'],
-      ['伟大的人并非生来伟大 而是在成长中造就伟大', 'Mario Puzo · The Godfather']
-    ];
+    const quotes = archive.quotes;
 
     const body = document.body;
     body.classList.add('js-ready');
@@ -1023,24 +1167,165 @@
       observeNoteBlocks();
     }
 
+    function titleParts(title) {
+      const match = String(title).match(/^(.+?)\s*\((.+)\)$/);
+      return { main: match ? match[1].trim() : String(title), alias: match ? match[2].trim() : '' };
+    }
+
+    function cleanChapterCardTitle(title) {
+      return String(title).replace(/^[一二三四五六七八九十]+、\s*/, '').replace(/^《教父[123]》：?\s*/, '《教父》 / ');
+    }
+
+    function chapterCategories(chapter) {
+      const text = `${chapter.title} ${chapter.text}`;
+      const categories = [];
+      if (/权力|资本|合法|制度|金融|政治|组织/.test(text)) categories.push('power');
+      if (/家族|家庭|婚礼|父|兄|母|女儿|亲人|人物/.test(text)) categories.push('family');
+      if (/信仰|教廷|教皇|洗礼|告解|宗教|圣/.test(text)) categories.push('faith');
+      return categories.length ? categories : ['family'];
+    }
+
+    function renderArchiveMap() {
+      const featured = archive.chapters.filter((chapter) => ['chapter-03', 'chapter-04', 'chapter-05'].includes(chapter.id));
+      const remaining = archive.chapters.filter((chapter) => !featured.includes(chapter));
+      const chapters = [...featured, ...remaining];
+      document.getElementById('chapterGrid').innerHTML = chapters.map((chapter, index) => {
+        const categories = chapterCategories(chapter);
+        const title = cleanChapterCardTitle(chapter.title);
+        const excerpt = chapter.text.replace(/\s+/g, ' ').slice(0, index < 3 ? 110 : 82);
+        return `<article class="chapter-card ${index < 3 ? 'chapter-card--feature' : 'chapter-card--compact'}" tabindex="0" data-chapter="${chapter.id}" data-category="${categories.join(' ')}" data-reveal data-delay="${(index % 4) + 1}"><img src="${escapeHtml(chapter.cover)}" alt="${escapeHtml(title)}" loading="lazy"><span class="chapter-number">${String(index + 1).padStart(2, '0')}</span><span class="chapter-tag">${String(chapter.order).padStart(2, '0')} / ${escapeHtml(categories[0])}</span><div class="chapter-body"><small>${escapeHtml(index < 3 ? 'film dossier' : 'source section')}</small><h3>${escapeHtml(title)}</h3><p>${escapeHtml(excerpt)}${chapter.text.length > excerpt.length ? '...' : ''}</p><div class="chapter-footer"><span>打开档案</span><i data-lucide="arrow-up-right"></i></div></div></article>`;
+      }).join('');
+      document.getElementById('chapterCount').textContent = `${chapters.length} chapters`;
+      hydrateIcons();
+      document.querySelectorAll('#chapterGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
+      bindChapterCards();
+    }
+
+    function bindChapterCards() {
+      document.querySelectorAll('#chapterGrid .chapter-card').forEach((card) => {
+        const open = () => morphOpen(card);
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+        });
+      });
+    }
+
+    function renderRules() {
+      const icons = ['shield-check', 'eye', 'scale'];
+      document.getElementById('ruleGrid').innerHTML = archive.rules.map((rule, index) => `<article class="rule-card" id="${rule.id}" data-reveal data-delay="${index + 1}"><button class="rule-trigger" type="button" aria-expanded="${index === 0 ? 'true' : 'false'}"><span class="rule-number">${String(index + 1).padStart(2, '0')}</span><span><small>${escapeHtml(rule.group)}</small><strong>${escapeHtml(rule.title)}</strong></span><i data-lucide="${icons[index] || 'scale'}"></i></button><div class="rule-panel" ${index === 0 ? '' : 'hidden'}>${rule.html}</div></article>`).join('');
+      hydrateIcons();
+      document.querySelectorAll('#ruleGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
+      document.querySelectorAll('.rule-trigger').forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+          const panel = trigger.nextElementSibling;
+          const expanded = trigger.getAttribute('aria-expanded') === 'true';
+          trigger.setAttribute('aria-expanded', String(!expanded));
+          panel.hidden = expanded;
+          trigger.closest('.rule-card').classList.toggle('is-open', !expanded);
+        });
+      });
+    }
+
+    function characterMarkup(person, index, compact = false) {
+      const name = titleParts(person.title);
+      const description = person.text.replace(/\s+/g, ' ').slice(0, compact ? 74 : 104);
+      return `<article class="character-card ${compact ? 'character-card--roster' : 'character-card--spotlight'}" tabindex="0" role="button" data-person="${person.id}" data-group="${person.groupIndex}" data-reveal data-delay="${(index % 4) + 1}">${person.image ? `<img src="${escapeHtml(person.image)}" alt="${escapeHtml(name.main)}肖像" loading="lazy">` : ''}<span class="character-index">${String(index + 1).padStart(2, '0')}</span><div class="character-body"><small>${escapeHtml(person.group)}</small><h3>${escapeHtml(name.main)}</h3><p>${escapeHtml(description)}${person.text.length > description.length ? '...' : ''}</p></div></article>`;
+    }
+
+    function bindCharacterCards() {
+      document.querySelectorAll('#characters [data-person]').forEach((card) => {
+        const open = () => morphPerson(card);
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+        });
+      });
+    }
+
+    function renderCharacters() {
+      const spotlightIds = ['person-01', 'person-02', 'person-07', 'person-08'];
+      const spotlight = spotlightIds.map((id) => archive.people.find((person) => person.id === id)).filter(Boolean);
+      const rest = archive.people.filter((person) => !spotlightIds.includes(person.id));
+      document.getElementById('characterSpotlight').innerHTML = spotlight.map((person, index) => characterMarkup(person, index, false)).join('');
+      document.getElementById('characterRoster').innerHTML = rest.map((person, index) => characterMarkup(person, index + spotlight.length, true)).join('');
+      const groups = [...new Map(archive.people.map((person) => [person.groupIndex, person.group])).entries()].sort((a, b) => a[0] - b[0]);
+      document.getElementById('characterFilters').innerHTML = `<button class="filter-button is-active" type="button" data-character-filter="all">全部人物</button>${groups.map(([index, group]) => `<button class="filter-button" type="button" data-character-filter="${index}">${escapeHtml(group)}</button>`).join('')}`;
+      document.getElementById('characterCount').textContent = `${archive.people.length} people`;
+      hydrateIcons();
+      document.querySelectorAll('#characters [data-reveal]').forEach((element) => revealObserver.observe(element));
+      bindCharacterCards();
+      document.querySelectorAll('[data-character-filter]').forEach((button) => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('[data-character-filter]').forEach((item) => item.classList.remove('is-active'));
+          button.classList.add('is-active');
+          const group = button.dataset.characterFilter;
+          let visible = 0;
+          document.querySelectorAll('#characters [data-person]').forEach((card) => {
+            const show = group === 'all' || card.dataset.group === group;
+            card.hidden = !show;
+            if (show) visible += 1;
+          });
+          document.getElementById('characterCount').textContent = `${visible} people`;
+        });
+      });
+    }
+
+    function renderHistory() {
+      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy"><div class="history-card-body"><span>${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(item.title)}</h3><div>${item.html}</div></div></article>`).join('');
+      document.querySelectorAll('#historyGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
+    }
+
     function renderTimeline() {
-      document.getElementById('timelineItems').innerHTML = archive.timeline.map((item) => `<article class="timeline-item"><span class="timeline-dot"></span><small>${escapeHtml(item.era)}</small><h3>${escapeHtml(item.event.split('：')[0])}</h3><p>${escapeHtml(item.work)}<br>${escapeHtml(item.event)}</p></article>`).join('');
+      const workChapter = (work) => work.includes('教父1') ? 'chapter-03' : work.includes('教父2') ? 'chapter-04' : 'chapter-05';
+      document.getElementById('timelineItems').innerHTML = archive.timeline.map((item, index) => `<article class="timeline-item" id="${item.id}" tabindex="0" role="button" data-chapter="${workChapter(item.work)}"><span class="timeline-dot"></span><small>${escapeHtml(item.era)}</small><h3>${escapeHtml(item.event.split('：')[0])}</h3><p>${escapeHtml(item.work)}<br>${escapeHtml(item.event)}</p></article>`).join('');
+      const focus = (item, card) => {
+        document.querySelectorAll('.timeline-item').forEach((entry) => entry.classList.remove('is-active'));
+        card.classList.add('is-active');
+        document.getElementById('timelineFocus').innerHTML = `<strong>${escapeHtml(item.era)}</strong><span>${escapeHtml(item.work)}</span><p>${escapeHtml(item.event)}</p><button class="button" type="button" data-timeline-chapter="${card.dataset.chapter}"><i data-lucide="arrow-up-right"></i>打开对应电影档案</button>`;
+        hydrateIcons();
+        document.querySelector('[data-timeline-chapter]').addEventListener('click', () => document.querySelector(`#chapterGrid [data-chapter="${card.dataset.chapter}"]`)?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'center' }));
+      };
+      const items = [...document.querySelectorAll('.timeline-item')];
+      items.forEach((card, index) => {
+        const choose = () => focus(archive.timeline[index], card);
+        card.addEventListener('click', choose);
+        card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(); } });
+      });
+      if (items[0]) focus(archive.timeline[0], items[0]);
+    }
+
+    function renderQuotes() {
+      document.getElementById('quoteIndex').innerHTML = quotes.map((quote, index) => `<button type="button" id="${quote.id}" class="quote-index-button ${index === 0 ? 'is-active' : ''}" data-quote-index="${index}"><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(quote.group)}</button>`).join('');
+      document.querySelectorAll('[data-quote-index]').forEach((button) => button.addEventListener('click', () => showQuote(Number(button.dataset.quoteIndex))));
+      showQuote(0, false);
+    }
+
+    function showQuote(index, animate = true) {
+      if (!quotes.length) return;
+      quoteIndex = (index + quotes.length) % quotes.length;
+      const quote = quotes[quoteIndex];
+      const text = document.getElementById('quoteText');
+      const apply = () => {
+        text.textContent = quote.translation || quote.original;
+        document.getElementById('quoteTranslation').textContent = quote.original;
+        document.getElementById('quoteSource').textContent = `${quote.source} / ${quote.group}`;
+        document.getElementById('quoteExplanation').textContent = quote.explanation;
+        document.querySelectorAll('[data-quote-index]').forEach((button) => button.classList.toggle('is-active', Number(button.dataset.quoteIndex) === quoteIndex));
+        text.classList.remove('is-switching');
+      };
+      if (!animate || reduceMotionQuery.matches) { apply(); return; }
+      text.classList.add('is-switching');
+      setTimeout(apply, 260);
     }
 
     function renderMotifs() {
       const icons = ['circle-dot', 'fish', 'door-closed', 'cookie', 'landmark', 'church', 'eye', 'music-2', 'sun-dim', 'volume-2', 'cross', 'waves'];
-      document.getElementById('motifGrid').innerHTML = archive.motifs.map((motif, index) => `<article class="motif" tabindex="0" role="button" data-motif="${motif.id}" data-target="${motif.target}" data-reveal data-delay="${(index % 4) + 1}"><span class="motif-icon"><i data-lucide="${icons[index] || 'circle'}"></i></span><h3>${escapeHtml(motif.title)}</h3><p>${escapeHtml(motif.text.slice(0, 150))}</p></article>`).join('');
+      document.getElementById('motifGrid').innerHTML = archive.motifs.map((motif, index) => `<article class="motif" tabindex="0" role="button" data-motif="${motif.id}" data-target="${motif.target}" data-reveal data-delay="${(index % 4) + 1}"><span class="motif-icon"><i data-lucide="${icons[index] || 'circle'}"></i></span><h3>${escapeHtml(motif.title)}</h3><p>${escapeHtml(motif.text.slice(0, 150))}</p><span class="motif-action">打开完整符号 <i data-lucide="arrow-up-right"></i></span></article>`).join('');
       hydrateIcons();
       document.querySelectorAll('#motifGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
       document.querySelectorAll('#motifGrid .motif').forEach((card) => {
-        const open = () => {
-          const target = document.getElementById(card.dataset.target);
-          target?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'center' });
-          if (target) {
-            target.classList.add('search-hit');
-            setTimeout(() => target.classList.remove('search-hit'), 1700);
-          }
-        };
+        const open = () => morphMotif(card);
         card.addEventListener('click', open);
         card.addEventListener('keydown', (event) => {
           if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
@@ -1176,7 +1461,22 @@
     }
 
     function morphOpen(card) {
-      openReader(card, chapterData[card.dataset.chapter]);
+      openReader(card, chapterReaderData(card.dataset.chapter));
+    }
+
+    function morphMotif(card) {
+      const motif = archive.motifs.find((item) => item.id === card.dataset.motif);
+      if (!motif) return;
+      openReader(card, {
+        kicker: 'visual grammar / archive symbol',
+        title: motif.title,
+        period: '三部曲反复出现',
+        motif: '视听符号',
+        image: motif.cover,
+        html: motif.html,
+        quote: motif.text.slice(0, 150),
+        fullTarget: motif.target
+      });
     }
 
     function morphPerson(card) {
@@ -1199,18 +1499,6 @@
       }, closeDelay);
     }
 
-    document.querySelectorAll('.chapter-card').forEach((card) => {
-      card.addEventListener('click', () => morphOpen(card));
-      card.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); morphOpen(card); }
-      });
-    });
-    document.querySelectorAll('.character-card').forEach((card) => {
-      card.addEventListener('click', () => morphPerson(card));
-      card.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); morphPerson(card); }
-      });
-    });
     document.getElementById('readerClose').addEventListener('click', closeReader);
     document.querySelector('[data-close-reader]').addEventListener('click', closeReader);
     readerFullLink.addEventListener('click', (event) => {
@@ -1227,7 +1515,7 @@
       const text = item.text || '';
       const raw = String(value).trim();
       const index = raw ? text.toLowerCase().indexOf(raw.toLowerCase()) : -1;
-      if (index < 0) return normalizeSearchText(item.title).includes(normalizeSearchText(raw)) ? `${item.title} · ${text.slice(0, 110)}` : text.slice(0, 130);
+      if (index < 0) return normalizeSearchText(item.title).includes(normalizeSearchText(raw)) ? `${item.title} / ${text.slice(0, 110)}` : text.slice(0, 130);
       const start = Math.max(0, index - 46);
       const end = Math.min(text.length, index + raw.length + 84);
       return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`;
@@ -1254,8 +1542,8 @@
       searchMeta.textContent = matches.length ? `找到 ${matches.length} 条档案记录` : '没有找到匹配记录';
       searchResults.innerHTML = matches.map((item) => {
         const index = archive.search.indexOf(item);
-        const kind = item.kind === 'person' ? '人物' : item.kind === 'motif' ? '符号' : item.kind === 'passage' ? '正文' : '章节';
-        const icon = item.kind === 'person' ? 'user-round' : item.kind === 'motif' ? 'scan-line' : item.kind === 'passage' ? 'file-text' : 'book-open';
+        const kind = item.kind === 'person' ? '人物' : item.kind === 'motif' ? '符号' : item.kind === 'passage' ? '正文' : item.kind === 'timeline' ? '编年' : item.kind === 'quote' ? '引文' : item.kind === 'history' ? '史实' : item.kind === 'rule' ? '规则' : '章节';
+        const icon = item.kind === 'person' ? 'user-round' : item.kind === 'motif' ? 'scan-line' : item.kind === 'passage' ? 'file-text' : item.kind === 'timeline' ? 'clock-3' : item.kind === 'quote' ? 'quote' : item.kind === 'history' ? 'landmark' : item.kind === 'rule' ? 'scale' : 'book-open';
         return `<button class="search-result" type="button" data-search-index="${index}"><i data-lucide="${icon}"></i><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(searchExcerpt(item, value))}</span></div><small>${kind}</small></button>`;
       }).join('');
       hydrateIcons();
@@ -1314,15 +1602,14 @@
       }
     });
 
-    const cards = [...document.querySelectorAll('.chapter-card')];
     const chapterCount = document.getElementById('chapterCount');
-    document.querySelectorAll('[data-filter]').forEach((button) => {
+    document.querySelectorAll('#chapters [data-filter]').forEach((button) => {
       button.addEventListener('click', () => {
-        document.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('is-active'));
+        document.querySelectorAll('#chapters [data-filter]').forEach((item) => item.classList.remove('is-active'));
         button.classList.add('is-active');
         const filter = button.dataset.filter;
         let visible = 0;
-        cards.forEach((card) => {
+        document.querySelectorAll('#chapterGrid .chapter-card').forEach((card) => {
           clearTimeout(filterTimers.get(card));
           const shouldShow = filter === 'all' || card.dataset.category.includes(filter);
           if (shouldShow) {
@@ -1342,32 +1629,22 @@
     });
 
     function cycleQuote() {
-      const text = document.getElementById('quoteText');
-      const source = document.getElementById('quoteSource');
-      text.classList.add('is-switching');
-      setTimeout(() => {
-        quoteIndex = (quoteIndex + 1) % quotes.length;
-        text.textContent = quotes[quoteIndex][0];
-        source.textContent = quotes[quoteIndex][1];
-        text.classList.remove('is-switching');
-      }, 300);
+      showQuote(quoteIndex + 1);
     }
     document.getElementById('nextQuote').addEventListener('click', cycleQuote);
     document.getElementById('randomQuote').addEventListener('click', cycleQuote);
 
+    renderArchiveMap();
+    renderRules();
     renderArchive();
     renderTimeline();
+    renderQuotes();
+    renderCharacters();
+    renderHistory();
     renderMotifs();
     document.getElementById('noteStart').addEventListener('click', () => noteContent.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'start' }));
     updateScrollState();
 
-    document.getElementById('modeToggle').addEventListener('click', (event) => {
-      const reading = body.classList.toggle('reading-mode');
-      event.currentTarget.innerHTML = `<i data-lucide="${reading ? 'sun-medium' : 'scan-eye'}"></i>`;
-      event.currentTarget.setAttribute('aria-label', reading ? '退出阅读模式' : '切换阅读模式');
-      hydrateIcons();
-      showToast(reading ? '已进入无干扰阅读' : '已恢复电影模式');
-    });
     backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
     if (window.matchMedia('(pointer: coarse)').matches) cursorGlow.style.display = 'none';
