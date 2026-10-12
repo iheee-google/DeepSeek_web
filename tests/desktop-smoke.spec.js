@@ -65,9 +65,13 @@ test.describe('柯里昂档案桌面端', () => {
     const characterGroups = page.locator('#characterFilters [data-character-filter]:not([data-character-filter="all"])');
     const firstCharacterGroup = characterGroups.first();
     const secondCharacterGroup = characterGroups.nth(1);
-    const secondCharacterGroupCount = await page.locator(`#characters [data-group="${await secondCharacterGroup.getAttribute('data-character-filter')}"]`).count();
-    await firstCharacterGroup.click();
-    await secondCharacterGroup.click();
+    const firstCharacterGroupId = await firstCharacterGroup.getAttribute('data-character-filter');
+    const secondCharacterGroupId = await secondCharacterGroup.getAttribute('data-character-filter');
+    const secondCharacterGroupCount = await page.locator(`#characters [data-group="${secondCharacterGroupId}"]`).count();
+    await page.evaluate(([firstId, secondId]) => {
+      document.querySelector(`[data-character-filter="${firstId}"]`).click();
+      document.querySelector(`[data-character-filter="${secondId}"]`).click();
+    }, [firstCharacterGroupId, secondCharacterGroupId]);
     await expect(page.locator('#characters [data-person]:not([hidden])')).toHaveCount(secondCharacterGroupCount);
     await page.locator('#characterFilters [data-character-filter="all"]').click();
 
@@ -89,9 +93,10 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(firstChapter).toBeFocused();
 
     const personCard = page.locator('#characters [data-person]').first();
+    const personTarget = await page.evaluate(() => window.CORLEONE_ARCHIVE.people[0].target);
     await personCard.click();
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
-    await expect(page.locator('#readerFullLink')).toHaveAttribute('href', 'notes.html');
+    await expect(page.locator('#readerFullLink')).toHaveAttribute('href', `notes.html#${personTarget}`);
     await page.keyboard.press('Escape');
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/, { timeout: 2_000 });
 
@@ -101,6 +106,13 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(quote).not.toHaveText(initialQuote);
     await expect(page.locator('#notes-portal')).toBeVisible();
     await expect(page.locator('a[href="notes.html"]').first()).toBeVisible();
+    await personCard.click();
+    await page.locator('#readerFullLink').click();
+    await expect(page).toHaveURL(new RegExp(`notes\\.html#${personTarget}$`));
+    await expect.poll(() => page.locator(`#${personTarget}`).evaluate((node) => {
+      const rect = node.getBoundingClientRect();
+      return rect.top >= 0 && rect.top <= window.innerHeight;
+    })).toBe(true);
     await expect(page.locator('#modeToggle')).toHaveCount(0);
     await expectDiagnosticsClean(diagnostics);
   });
@@ -115,13 +127,13 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator(`[data-search-index="${ruleData.index}"]`).click();
     await expect(page.locator(`#${ruleData.id}`)).toHaveClass(/is-open/);
 
-    const quoteData = await page.evaluate(() => ({ original: window.CORLEONE_ARCHIVE.quotes[0].original, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'quote' && item.id === window.CORLEONE_ARCHIVE.quotes[0].id) }));
+    const quoteData = await page.evaluate(() => ({ original: window.CORLEONE_ARCHIVE.quotes[4].original, id: window.CORLEONE_ARCHIVE.quotes[4].id, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'quote' && item.id === window.CORLEONE_ARCHIVE.quotes[4].id) }));
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill(quoteData.original);
     await page.locator(`[data-search-index="${quoteData.index}"]`).click();
-    await expect(page.locator('#quote-01')).toHaveClass(/is-active/);
+    await expect(page.locator(`#${quoteData.id}`)).toHaveClass(/is-active/);
 
-    const timelineData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.timeline[0].id, text: window.CORLEONE_ARCHIVE.timeline[0].event.slice(0, 8), event: window.CORLEONE_ARCHIVE.timeline[0].event.slice(0, 8), index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'timeline' && item.id === window.CORLEONE_ARCHIVE.timeline[0].id) }));
+    const timelineData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.timeline[3].id, text: window.CORLEONE_ARCHIVE.timeline[3].event.slice(0, 8), event: window.CORLEONE_ARCHIVE.timeline[3].event.slice(0, 8), index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'timeline' && item.id === window.CORLEONE_ARCHIVE.timeline[3].id) }));
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill(timelineData.text);
     await page.locator(`[data-search-index="${timelineData.index}"]`).click();
@@ -177,6 +189,11 @@ test.describe('柯里昂档案桌面端', () => {
     });
     await table.scrollIntoViewIfNeeded();
     await expect.poll(() => page.locator(`#noteToc a[href="#${tableHeading}"]`).evaluate((node) => node.classList.contains('is-active'))).toBe(true);
+    await expect.poll(() => page.locator('#noteToc a.is-active').evaluate((node) => {
+      const link = node.getBoundingClientRect();
+      const rail = document.getElementById('noteToc').getBoundingClientRect();
+      return link.top >= rail.top && link.bottom <= rail.bottom;
+    })).toBe(true);
     await expect.poll(() => table.evaluate((node) => getComputedStyle(node).opacity)).toBe('1');
 
     const personTarget = await page.evaluate(() => window.CORLEONE_ARCHIVE.people[0].target);
@@ -192,6 +209,11 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#chapter-03-heading').evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'auto' }));
     await expect(page.locator('#chapter-03-heading')).toBeInViewport();
     await expect(page.locator('#noteToc a.is-active')).toHaveAttribute('href', /^#chapter-03-/);
+    await expect.poll(() => page.locator('#noteToc a.is-active').evaluate((node) => {
+      const link = node.getBoundingClientRect();
+      const rail = document.getElementById('noteToc').getBoundingClientRect();
+      return link.top >= rail.top && link.bottom <= rail.bottom;
+    })).toBe(true);
 
     const imageStatus = await page.locator('#noteContent img').evaluateAll(async (nodes) => {
       const decode = async (node) => {

@@ -194,12 +194,12 @@
         tocLinks.forEach((link) => link.classList.toggle('is-active', link.hash === `#${current.id}`));
         const activeLink = tocLinks.find((link) => link.hash === `#${current.id}`);
         if (activeLink) {
-          const top = activeLink.offsetTop;
-          const bottom = top + activeLink.offsetHeight;
-          const viewTop = noteToc.scrollTop + 8;
-          const viewBottom = noteToc.scrollTop + noteToc.clientHeight - 8;
-          if (top < viewTop) noteToc.scrollTo({ top: Math.max(0, top - 8), behavior: reduceMotion ? 'auto' : 'smooth' });
-          if (bottom > viewBottom) noteToc.scrollTo({ top: bottom - noteToc.clientHeight + 8, behavior: reduceMotion ? 'auto' : 'smooth' });
+          const railRect = noteToc.getBoundingClientRect();
+          const linkRect = activeLink.getBoundingClientRect();
+          const viewTop = railRect.top + 8;
+          const viewBottom = railRect.bottom - 8;
+          if (linkRect.top < viewTop) noteToc.scrollTo({ top: noteToc.scrollTop + linkRect.top - viewTop, behavior: reduceMotion ? 'auto' : 'smooth' });
+          if (linkRect.bottom > viewBottom) noteToc.scrollTo({ top: noteToc.scrollTop + linkRect.bottom - viewBottom, behavior: reduceMotion ? 'auto' : 'smooth' });
         }
         const chapterIndex = noteChapterList.findIndex((chapter) => chapter.contains(current));
         if (chapterIndex >= 0) noteProgress.textContent = `正文 ${String(chapterIndex + 1).padStart(2, '0')} / ${String(noteChapterList.length).padStart(2, '0')}`;
