@@ -137,6 +137,71 @@ describe('仓库结构与依赖方向', () => {
     expect(hits).toEqual([]);
   });
 
+  it('时间尺上的位置必须与它标注的日期一致', () => {
+    // 这条断言来自一次真实的静默错误：横尺的年份轴标签整体写错了一年，
+    // 「2024 机器人大赛」和标着「2023」的年份刻度挤在同一个位置。
+    // --t 与标签文本是两个各自独立写下的值，没有任何东西约束它们一致，
+    // 所以必须由测试来算一遍：t == 该日期距轴起点的月数 / 轴总月数。
+    const months = (y: number, m: number) => y * 12 + m;
+    const hits: string[] = [];
+    for (const file of walk(resolve(ROOT, 'prototypes')).filter((f) => f.endsWith('.html'))) {
+      const html = readFileSync(file, 'utf8');
+      const axis = /data-axis="(\d{4})-(\d{2})"/.exec(html);
+      const axisEnd = /data-axis-end="(\d{4})-(\d{2})"/.exec(html);
+      if (!axis || !axisEnd) continue;
+      const start = months(Number(axis[1]), Number(axis[2]));
+      const span = months(Number(axisEnd[1]), Number(axisEnd[2])) - start;
+      // 取每个带 --t 且文本里含年份的元素。'.yl' 只有年份，'.ev b' 形如 2022.09。
+      const re = /<span[^>]*style="[^"]*--t:([\d.]+)[^"]*"[^>]*>([^<]*)/g;
+      let m: RegExpExecArray | null;
+      while ((m = re.exec(html)) !== null) {
+        const t = Number(m[1]);
+        const text = m[2] ?? '';
+        const date = /(\d{4})(?:\.(\d{2}))?/.exec(text);
+        if (!date) continue;
+        // 只知道年份的事件按该年 1 月落点，与 HTML 里的刻度约定一致。
+        const year = Number(date[1]);
+        const month = date[2] ? Number(date[2]) : 1;
+        const expected = (months(year, month) - start) / span;
+        if (Math.abs(t - expected) > 0.002) {
+          hits.push(
+            `${relative(ROOT, file)}: 「${text.trim()}」标在 --t:${t}，` +
+              `按轴 2022-09 → 2026-10 应为 ${expected.toFixed(4)}`,
+          );
+        }
+      }
+    }
+    expect(hits).toEqual([]);
+  });
+
+  it('横尺的年份刻度线与年份数字必须落在同一位置', () => {
+    // 轴上的短线（.tick.yr）与它上方的数字（.yl）在 HTML 里是各写一遍的 --t。
+    // 两者不一致时，线和字都还在，只是错开；页面不报错，在一条 49 个月长的轴上
+    // 肉眼也未必看得出来。这条断言是补第一次「故意写错」时发现的洞。
+    const hits: string[] = [];
+    for (const file of walk(resolve(ROOT, 'prototypes')).filter((f) => f.endsWith('.html'))) {
+      const html = readFileSync(file, 'utf8');
+      const ticks = new Set<string>();
+      for (const m of html.matchAll(
+        /<span[^>]*class="[^"]*\btick\b[^"]*\byr\b[^"]*"[^>]*style="--t:([\d.]+)"/g,
+      )) {
+        ticks.add(m[1] ?? '');
+      }
+      if (ticks.size === 0) continue;
+      for (const m of html.matchAll(
+        /<span[^>]*class="[^"]*\byl\b[^"]*"[^>]*style="--t:([\d.]+)"[^>]*>(\d{4})</g,
+      )) {
+        if (!ticks.has(m[1] ?? '')) {
+          hits.push(
+            `${relative(ROOT, file)}: 年份数字 ${m[2]} 落在 --t:${m[1]}，` +
+              `但轴上没有同位置的年份刻度线`,
+          );
+        }
+      }
+    }
+    expect(hits).toEqual([]);
+  });
+
   it('禁止用 overflow:hidden 做裁剪（会冻结滚动驱动动画）', () => {
     // 依据 docs/design-docs/animation-capabilities.md：任何成为滚动容器的元素
     // 都会冻结其内部 animation-timeline: view()，裁剪一律用 overflow: clip。
