@@ -1,350 +1,240 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>方案 B 一件件（首页）</title>
+<title>何楚福　AI 算法工程师</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/home.css">
 <style>
-@font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
-@font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+/* ═══ B 一件件：首屏直接进最硬的一件事，作品排在自我介绍前面 ═══ */
+.hero{min-height:100svh;display:flex;flex-direction:column;
+  justify-content:flex-end;padding:clamp(104px,15vh,168px) var(--pad) clamp(44px,7vh,84px)}
+.hero .meta{margin-bottom:clamp(20px,3.4vh,40px)}
+.hero .lead{margin-top:clamp(22px,3.4vh,40px);max-width:34em}
 
-:root{
-  --bg:#0B0907; --fg:#F0E9DB; --dim:#A89E8F; --faint:#6F665B;
-  --gold:#C39A45; --rule:#2A2521;
-  --pad:clamp(20px,4.4vw,64px);
-  --ease-out:cubic-bezier(.22,1,.36,1);
-  --ease-io:cubic-bezier(.77,0,.175,1);
-  --t-press:120ms; --t-hover:160ms; --t-reveal:500ms;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{overflow-x:clip}
-body{overflow-x:clip;background:var(--bg);color:var(--fg);
-  font-family:"Noto Serif SC",Georgia,serif;font-size:16px;line-height:1.85;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-a{color:inherit;text-decoration:none}
-:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:1px}
-.num{font-variant-numeric:tabular-nums}
-.skip{position:absolute;left:-9999px}
-.skip:focus{left:var(--pad);top:12px;z-index:99;background:var(--bg);
-  padding:8px 14px;border:1px solid var(--gold);font-size:13px}
-
-/* ─────────── 顶栏 ─────────── */
-.bar{position:fixed;inset:0 0 auto;z-index:60;display:flex;align-items:baseline;gap:26px;
-  padding:16px var(--pad);font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px;
-  color:var(--faint);font-variant-numeric:tabular-nums;border-bottom:1px solid transparent;
-  transition:background var(--t-hover) ease,border-color var(--t-hover) ease}
-.bar.solid{background:var(--bg);border-bottom-color:var(--rule)}
-.bar .me{color:var(--fg);font-weight:600;letter-spacing:.04em}
-.bar .me em{font-style:normal;color:var(--faint);font-weight:400;margin-left:10px}
-.bar .nav{margin-left:auto;display:flex;gap:24px}
-.bar a{transition:color var(--t-hover) ease}
-.bar a:hover{color:var(--fg)}
-
-/* ─────────── 右侧主题导航 ─────────── */
-.rail{position:fixed;right:var(--pad);top:50%;transform:translateY(-50%);z-index:50;
-  display:flex;flex-direction:column;align-items:flex-end;
-  font-family:"Noto Sans SC",sans-serif;font-size:11px}
-.rail a{display:flex;align-items:center;gap:11px;padding:9px 0;color:var(--faint);
-  letter-spacing:.08em;transition:color var(--t-hover) ease}
-.rail a i{display:block;width:16px;height:1px;background:currentColor;
-  transition:width 320ms var(--ease-out)}
-.rail a[aria-current="true"]{color:var(--gold)}
-.rail a[aria-current="true"] i{width:34px}
-.rail a:hover{color:var(--fg)}
-
-/* ─────────── 案例 ─────────── */
-.case{position:relative;padding:0 var(--pad);
-  min-height:100svh;display:flex;flex-direction:column;justify-content:center}
-.case+.case{border-top:1px solid var(--rule)}
-.case .inner{width:100%;max-width:1180px}
-
-/* 处境句：页面最大的字 */
-.sit{font-size:clamp(25px,3.5vw,56px);font-weight:500;line-height:1.44;
-  letter-spacing:-.012em;max-width:26ch}
-.sit .ln{display:block;overflow:clip}
-.sit .ln i{display:block;font-style:normal;transform:translateY(105%);
-  transition:transform 820ms var(--ease-out)}
-.case.in .sit .ln i{transform:none}
-.case.in .sit .ln:nth-child(2) i{transition-delay:90ms}
-.case.in .sit .ln:nth-child(3) i{transition-delay:180ms}
-.sit b{font-weight:500;color:var(--gold)}
-
-/* 做法 */
-.how{margin-top:clamp(26px,4.4vh,52px);max-width:60ch;
-  opacity:0;transform:translateY(14px);
-  transition:opacity 620ms var(--ease-out) 320ms,transform 620ms var(--ease-out) 320ms}
-.case.in .how{opacity:1;transform:none}
-.how p{font-size:15.5px;line-height:1.95;color:var(--dim)}
-.how p+p{margin-top:13px}
-.how strong{font-weight:400;color:var(--fg)}
-.how ul{margin-top:15px;list-style:none;display:flex;flex-direction:column;gap:8px}
-.how li{position:relative;padding-left:17px;font-size:14px;line-height:1.8;
-  color:var(--faint)}
-.how li::before{content:"";position:absolute;left:0;top:.78em;width:7px;height:1px;
-  background:var(--faint)}
-
-/* 结果：金色只出现在这里 */
-.res{margin-top:clamp(30px,5vh,58px);padding-top:22px;border-top:1px solid var(--rule);
-  display:flex;align-items:baseline;gap:18px;flex-wrap:wrap;
-  opacity:0;transform:translateY(14px);
-  transition:opacity 620ms var(--ease-out) 440ms,transform 620ms var(--ease-out) 440ms}
-.case.in .res{opacity:1;transform:none}
-.res .n{font-size:clamp(30px,3.6vw,54px);font-weight:600;line-height:1;
-  color:var(--gold);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.res .n.wide{font-size:clamp(20px,2.1vw,30px)}
-.res .l{font-family:"Noto Sans SC",sans-serif;font-size:13px;color:var(--dim);
-  line-height:1.6;max-width:34ch}
-.res .l s{text-decoration:none;color:var(--faint)}
-
-.src{margin-top:clamp(24px,4vh,44px);font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  color:var(--faint);line-height:1.9;font-variant-numeric:tabular-nums;
-  opacity:0;transition:opacity 620ms var(--ease-out) 540ms}
-.case.in .src{opacity:1}
-.src .tag{color:var(--dim)}
-
-/* ─────────── 尾 ─────────── */
-.tail{padding:clamp(90px,16vh,190px) var(--pad) clamp(80px,14vh,160px);
-  border-top:1px solid var(--rule)}
-.tail .inner{max-width:1180px}
-.tail h2{font-size:clamp(22px,2.6vw,38px);font-weight:600;line-height:1.42;
-  max-width:22ch}
-.rec{margin-top:clamp(40px,6vh,68px);display:grid;gap:clamp(24px,4vw,60px);
-  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
-.rec h3{font-family:"Noto Sans SC",sans-serif;font-size:11px;font-weight:400;
-  letter-spacing:.16em;color:var(--faint);padding-bottom:11px;
-  border-bottom:1px solid var(--rule)}
-.rec ul{margin-top:15px;list-style:none;display:flex;flex-direction:column;gap:11px}
-.rec li{font-size:14px;line-height:1.72;color:var(--dim)}
-.rec li b{display:block;font-weight:500;color:var(--fg);font-size:14.5px}
-.rec li span{font-family:"Noto Sans SC",sans-serif;font-size:11.5px;color:var(--faint);
-  font-variant-numeric:tabular-nums}
-.ct{margin-top:clamp(44px,7vh,80px);padding-top:26px;border-top:1px solid var(--rule);
-  display:flex;flex-wrap:wrap;gap:12px 30px;font-family:"Noto Sans SC",sans-serif;
-  font-size:13px;color:var(--dim)}
-.ct a{display:inline-flex;align-items:center;gap:8px;transition:color var(--t-hover) ease}
-.ct a:hover{color:var(--gold)}
-.ct svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6;
-  stroke-linecap:round;stroke-linejoin:round}
-
-/* ─────────── 滚动驱动（渐进增强） ─────────── */
-@supports (animation-timeline:view()){
-  /* 离场：整条案例上移、变暗，给下一条让位 */
-  body .case .inner{
-    animation:case-out linear both;
-    animation-timeline:view(block);
-    animation-range:exit 0% exit 78%;
-  }
-}
-@keyframes case-out{
-  from{transform:none;opacity:1}
-  to{transform:translateY(-38px) scale(.985);opacity:0}
-}
+/* 六类单证：把一份规格表放大成版面主体 */
+.kinds{list-style:none;border-top:1px solid var(--rule)}
+.kinds li{border-bottom:1px solid var(--rule);padding:clamp(6px,.9vh,12px) 0;
+  display:flex;align-items:baseline;gap:clamp(14px,2.4vw,32px)}
+.kinds .k{font-size:clamp(28px,4.6vw,72px);font-weight:800;line-height:1.22;
+  letter-spacing:-.01em;flex:1 1 auto;min-width:0;
+  clip-path:inset(0 100% 0 0);animation:sweep .82s var(--ease-io) both;
+  animation-delay:var(--d,0ms)}
+.kinds .n{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12px;
+  color:var(--ink-3);letter-spacing:.04em;flex:none}
 
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
-  .sit .ln i{transform:none}
-  .how,.res,.src{opacity:1;transform:none;transition:opacity 200ms ease}
-  @supports (animation-timeline:view()){
-    body .case .inner{animation:reduced-hold linear both;
-      animation-timeline:scroll(root block);animation-range:0 1px}
-  }
-  @keyframes reduced-hold{from{opacity:1}to{opacity:1}}
+  /* 去掉揭幕动作，六类单证直接完整呈现 */
+  .kinds .k{animation:none;clip-path:none}
 }
 
-@media (max-width:900px){
-  .rail{display:none}
-  .sit{max-width:none}
-  .sit .ln{overflow:visible}
-  .sit .ln i{transform:none}
-  .case{min-height:auto;padding-top:clamp(80px,14vh,140px);padding-bottom:clamp(70px,12vh,120px)}
-}
+/* 案例 */
+.case{display:grid;grid-template-columns:minmax(0,1.42fr) minmax(0,.58fr);
+  gap:clamp(20px,4vw,64px);padding:clamp(44px,7vh,88px) 0;
+  border-top:1px solid var(--rule);align-items:start}
+.case:first-of-type{border-top:0}
+.case .h2{max-width:19em;margin-bottom:.7em}
+.case ul{margin:1.1em 0 0;padding:0;list-style:none;max-width:36em}
+.case li{position:relative;padding-left:1.2em;color:var(--ink-2);line-height:1.8}
+.case li::before{content:"";position:absolute;left:0;top:.85em;width:7px;height:1px;background:var(--ink-3)}
+.case .cite{margin-top:1.4em}
+.res{border-top:1px solid var(--ink);padding-top:clamp(12px,2vh,20px)}
+.res .n{display:block;font-size:clamp(40px,5.4vw,86px);font-weight:900;line-height:1.02;
+  letter-spacing:-.02em;color:var(--vermilion)}
+.res .n small{font-size:.38em;font-weight:700;letter-spacing:0}
+.res .l{display:block;margin-top:.7em;font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:12.5px;line-height:1.7;color:var(--ink-3)}
+.res .l li{list-style:none}
+
+/* 引一句笔记原文 */
+.pull{padding:clamp(56px,9vh,104px) var(--pad);display:grid;gap:clamp(24px,4vh,44px);
+  justify-items:start}
+.pull blockquote{max-width:26em}
+.pull blockquote p{font-size:clamp(22px,2.9vw,40px);font-weight:700;line-height:1.5;
+  letter-spacing:-.008em;text-wrap:pretty}
+.pull blockquote p::before{content:"「"}
+.pull blockquote p::after{content:"」"}
+.pull .cite{margin-top:clamp(18px,2.6vh,28px)}
+.band.tall{height:clamp(340px,68vh,660px)}
+
+/* 收尾：履历与笔记各一张清单 */
+.tail{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+  gap:clamp(28px,5vw,72px)}
+.tail h3{margin-bottom:1em}
+.tail dl{margin:0}
+.tail dt{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12.5px;
+  color:var(--ink-3);letter-spacing:.03em;margin-top:1.15em}
+.tail dd{margin:.35em 0 0;color:var(--ink-2);line-height:1.75}
 </style>
 </head>
 <body>
-<a class="skip" href="#c1">跳到第一条</a>
+<a class="skip" href="#main">跳到正文</a>
 
 <header class="bar" id="bar">
-  <span class="me">何楚福<em>AI 算法工程师 · 2026 届</em></span>
+  <span class="me">何楚福</span>
+  <span>AI 算法工程师　2026 届</span>
   <nav class="nav">
-    <a href="#tail">笔记</a>
-    <a href="#tail">项目</a>
-    <a href="#tail">履历</a>
-    <a href="#tail">联系</a>
+    <a href="#work">项目</a>
+    <a href="#notes">笔记</a>
+    <a href="#resume">履历</a>
+    <a href="https://github.com/iheee-google" rel="me noopener">GitHub</a>
   </nav>
 </header>
 
-<nav class="rail" aria-label="各条主题">
-  <a href="#c1"><span>分类</span><i></i></a>
-  <a href="#c2"><span>溯源</span><i></i></a>
-  <a href="#c3"><span>并发</span><i></i></a>
-  <a href="#c4"><span>成本</span><i></i></a>
-</nav>
+<main id="main">
 
-<main>
-  <!-- ══════ 1 ══════ -->
-  <section class="case" id="c1" aria-label="文档分类">
-    <div class="inner">
-      <p class="sit">
-        <span class="ln"><i>报关单证有<b>六种</b>类型。</i></span>
-        <span class="ln"><i>每份文件都问一次模型，</i></span>
-        <span class="ln"><i>分错的那批要人工挑出来。</i></span>
-      </p>
-      <div class="how">
-        <p>先用字段规则筛一遍。明显不属于当前类型的直接排除，剩下的才交给 LLM 分类。<strong>规则挡在前面，模型只处理规则判不了的那些。</strong></p>
-        <p>OCR 用了两个引擎：合合 OCR 2.0 与百度 OCR。PDF 先转成 2x 到 4x 的高分辨率 PNG 再送识别。</p>
-      </div>
-      <div class="res">
-        <span class="n num">50%+</span>
-        <span class="l">无效 LLM 调用减少<br><s>六类：报关单、发票、装箱单、<br>合同、申报要素、其他</s></span>
-      </div>
-      <p class="src"><span class="tag">智能海关报关单证处理系统</span>　实习　2025.07 至 2026.05</p>
+  <section class="hero">
+    <p class="meta rise">深圳科蓝金信科技发展有限公司　算法开发工程师（实习）　2025.07 至 2026.05</p>
+    <h1 class="display rise" style="--d:120ms">报关单证<br>有六种类型。</h1>
+    <div class="lead rise" style="--d:260ms;max-width:37em">
+      <p>每份文件送进系统，第一件事是判断它属于哪一类，分类做完才轮到字段提取。</p>
+      <p>下面这一页讲的是这套系统里我做过的事，以及哪些还没做。</p>
     </div>
   </section>
 
-  <!-- ══════ 2 ══════ -->
-  <section class="case" id="c2" aria-label="字段级溯源">
-    <div class="inner">
-      <p class="sit">
-        <span class="ln"><i>同一个字段，</i></span>
-        <span class="ln"><i>四份文件里对不上。</i></span>
-      </p>
-      <div class="how">
-        <p>做多源冲突检测：把同一字段在每份文档里的取值都取出来比对，不一致的交给 LLM 结合上下文筛。<strong>筛完不算完，还得让人看得见它从哪来的。</strong></p>
-        <p>前端做字段级溯源。红色表示这个值有多个来源且互相冲突，黄色表示只有一个来源。点字段，用 Canvas 在原始文档上画红框定位到具体那一行。</p>
+  <section class="plate" id="work" style="padding-top:0">
+    <ul class="kinds">
+      <li><span class="k" style="--d:120ms">报关单</span><span class="n">进出境货物申报</span></li>
+      <li><span class="k" style="--d:200ms">发票</span><span class="n">成交价格与币制</span></li>
+      <li><span class="k" style="--d:280ms">装箱单</span><span class="n">件数、重量、体积</span></li>
+      <li><span class="k" style="--d:360ms">合同</span><span class="n">买卖双方与条款</span></li>
+      <li><span class="k" style="--d:440ms">申报要素</span><span class="n">归类所需的规格描述</span></li>
+      <li><span class="k" style="--d:520ms">其他</span><span class="n">六类之外，人工处理</span></li>
+    </ul>
+    <p class="cite" style="margin-top:clamp(20px,3vh,32px)">
+      类型划分与右侧说明来自实习期间的项目实现记录　识别用合合 OCR 2.0 与百度 OCR 双引擎，
+      PDF 先转成 2x 到 4x 的 PNG
+    </p>
+  </section>
+
+  <section class="plate">
+    <article class="case in">
+      <div>
+        <h2 class="h2">规则挡在前面，模型只处理规则判不了的那些。</h2>
+        <p class="lead">
+          先用字段规则筛一遍，明显不属于当前类型的直接排除，剩下的才交给 LLM 分类。模型在这一层做的是兜底，不是第一道关。
+        </p>
+        <p class="cite">实习期间的项目实现记录　规则预筛与 LLM 双层分类</p>
+      </div>
+      <div class="res">
+        <span class="n">50<small>%+</small></span>
+        <span class="l">无效 LLM 调用减少</span>
+      </div>
+    </article>
+
+    <article class="case in">
+      <div>
+        <h2 class="h2">同一个字段在四份文件里对不上。</h2>
+        <p class="lead">
+          做多源冲突检测：把同一字段在每份文档里的取值都取出来比对，不一致的交给 LLM 结合上下文筛。筛完不算完，还得让人看得见这个值是从哪来的。前端做字段级溯源，红色表示有多个来源且互相冲突，黄色表示只有一个来源；点字段，用 Canvas 在原始文档上画红框定位到具体那一行。
+        </p>
         <ul>
           <li>7 大字段组：收发货人、运输、日期、监管、地点、交易、包装，每组 3 到 8 个字段</li>
-          <li>业务规则指导提取，校验规则检查质量，两套分开</li>
-          <li>进口出口双模式，8 个关键字段标签动态切换</li>
+          <li>业务规则指导提取，校验规则检查质量，两套分开维护</li>
+          <li>进口出口双模式，8 个关键字段的标签动态切换</li>
+          <li>字段规则与业务代码分离，业务人员可以自行维护</li>
         </ul>
+        <p class="cite">实习期间的项目实现记录　冲突检测与字段级溯源</p>
       </div>
       <div class="res">
-        <span class="n wide num">7 组字段　8 个关键字段</span>
-        <span class="l">字段规则与业务代码分离，业务人员可自行维护</span>
+        <span class="n">7<small> 组</small></span>
+        <span class="l">字段组，每组 3 到 8 个字段<br>另有 8 个关键字段随进出口切换</span>
       </div>
-      <p class="src"><span class="tag">智能海关报关单证处理系统</span>　实习　2025.07 至 2026.05</p>
+    </article>
+
+    <article class="case in">
+      <div>
+        <h2 class="h2">一批上百份文件，一份一份跑要等到没人用。</h2>
+        <p class="lead">
+          三级并行，每级一个 ThreadPoolExecutor：批次级让多个业务批次同时跑，文件级让一个批次内的多份文件并发做 OCR 和转换，字段级让一份文件的多个字段组并发提取。进度用 SSE 推到前端，七个阶段的处理状态实时可见，不用等整批跑完才知道卡在哪。
+        </p>
+        <p class="cite">实习期间的项目实现记录　三级线程池与 SSE 阶段推送</p>
+      </div>
+      <div class="res">
+        <span class="n">百<small> 级</small></span>
+        <span class="l">文件批量处理<br>批次、文件、字段组各一层线程池</span>
+      </div>
+    </article>
+
+    <article class="case in">
+      <div>
+        <h2 class="h2">模型调了很多次。钱花在哪一段，当时没人知道。</h2>
+        <p class="lead">
+          预初始化 6 个模型服务，DeepSeek、Qwen、Kimi、Doubao 等，封一层统一的获取接口，业务代码不直接碰具体模型。默认模型写在 config.yaml 的 DEFAULT_LLM 里，改配置就能换。再加一个全局 Token 计数器，按阶段统计每次调用的成本。
+        </p>
+        <p class="cite">
+          实习期间的项目实现记录　作者自注三条未实现：基于任务类型的自动路由、前端进出口切换、自动故障转移
+        </p>
+      </div>
+      <div class="res">
+        <span class="n">6<small> 个</small></span>
+        <span class="l">模型服务预初始化<br>Qwen 服务加了轮询负载均衡</span>
+      </div>
+    </article>
+  </section>
+
+  <figure class="band tall">
+    <img class="settle" src="assets/godfather/scene-oranges.jpg"
+         alt="《教父》中维托在街头水果摊前挑橙子">
+  </figure>
+
+  <section class="pull" id="notes">
+    <blockquote class="in">
+      <p>维托遇刺前在街头挑选橙子，中弹倒地后橙子滚落泥泞街头。</p>
+      <p class="cite">《教父》三部曲全景笔记　视听语言与电影符号系统　橙子　第 768 行</p>
+    </blockquote>
+    <p class="lead" style="max-width:34em">
+      笔记是这一页的另一半。67 篇、10,254 行、412 张影像：目标检测 14 篇，linux.do 帖子 8 篇，安卓逆向 7 篇，毕设 7 篇，以及工作、面试、程序设计、AIGC 各若干。最长的一篇是《教父》三部曲，827 行、11 章、80 张影像。
+    </p>
+    <p class="cite">本地笔记库逐文件统计　67 篇　10,254 行　412 张影像</p>
+  </section>
+
+  <section class="plate" id="resume">
+    <div class="tail">
+      <div>
+        <h3 class="h3">工作与教育</h3>
+        <dl>
+          <dt>2025.07 至 2026.05　深圳科蓝金信科技发展有限公司</dt>
+          <dd>算法开发工程师（实习）　智能海关报关单证处理系统</dd>
+          <dt>2025.01 至 2025.05　茂名千翔安全环保科技有限公司</dt>
+          <dd>算法工程师　气体泄漏监测系统，YOLOv8 与改进检测头</dd>
+          <dt>2022.09 至 2026.06　广东石油化工学院</dt>
+          <dd>人工智能　本科　GPA 3.0/4.0　核心专业课均分 90+</dd>
+          <dt>奖学金与竞赛</dt>
+          <dd>校级一等奖学金（专业前 5%）、二等奖学金两次；
+            2023「典阅杯」国家级二等奖；2024 中国机器人大赛国家级二等奖</dd>
+        </dl>
+      </div>
+      <div>
+        <h3 class="h3">还有这些</h3>
+        <dl>
+          <dt>毕业设计</dt>
+          <dd>基于知识图谱的电影问答系统，过程写在 7 篇笔记里</dd>
+          <dt>个人项目</dt>
+          <dd>iHeNovel　AI 小说创作助手</dd>
+          <dt>联系</dt>
+          <dd><a class="press" href="mailto:2100918674@qq.com">2100918674@qq.com</a><br>
+            <a class="press" href="https://github.com/iheee-google" rel="me noopener">github.com/iheee-google</a></dd>
+        </dl>
+      </div>
     </div>
   </section>
 
-  <!-- ══════ 3 ══════ -->
-  <section class="case" id="c3" aria-label="并发处理">
-    <div class="inner">
-      <p class="sit">
-        <span class="ln"><i>一批上百份文件，</i></span>
-        <span class="ln"><i>一份一份跑要等到没人用。</i></span>
-      </p>
-      <div class="how">
-        <p>三级并行，每级用 ThreadPoolExecutor：批次级让多个业务批次同时跑，文件级让一个批次内的多份文件并发做 OCR 和转换，字段级让一份文件的多个字段组并发提取。</p>
-        <p>进度用 SSE 推到前端，<strong>七个阶段的处理状态实时可见</strong>，不用等整批跑完才知道卡在哪。</p>
-      </div>
-      <div class="res">
-        <span class="n num">百级</span>
-        <span class="l">文件批量处理<br><s>批次 · 文件 · 字段组，三层各一个线程池</s></span>
-      </div>
-      <p class="src"><span class="tag">智能海关报关单证处理系统</span>　实习　2025.07 至 2026.05</p>
-    </div>
-  </section>
-
-  <!-- ══════ 4 ══════ -->
-  <section class="case" id="c4" aria-label="成本统计">
-    <div class="inner">
-      <p class="sit">
-        <span class="ln"><i>模型调了很多次，</i></span>
-        <span class="ln"><i>没人知道钱花在哪一段。</i></span>
-      </p>
-      <div class="how">
-        <p>预初始化 6 个模型服务，DeepSeek、Qwen、Kimi、Doubao 等，封一层统一的获取接口，业务代码不直接碰具体模型。默认模型写在 config.yaml 的 DEFAULT_LLM 里，改配置就能换。</p>
-        <p>加一个全局 Token 计数器，<strong>按阶段统计每次调用的成本</strong>。这是后面做智能路由的底数。</p>
-        <p style="color:var(--faint)">智能路由本身没做。作者自注：当前用的是统一默认模型，故障转移也没有，只能靠改配置切备用。</p>
-      </div>
-      <div class="res">
-        <span class="n num">6</span>
-        <span class="l">个模型服务预初始化<br><s>Qwen 服务加了轮询负载均衡</s></span>
-      </div>
-      <p class="src"><span class="tag">智能海关报关单证处理系统</span>　实习　2025.07 至 2026.05</p>
-    </div>
-  </section>
-
-  <!-- ══════ 尾：把这个人放回坐标里 ══════ -->
-  <footer class="tail" id="tail">
-    <div class="inner">
-      <h2>上面四条都出自同一段实习。除此之外还有这些。</h2>
-
-      <div class="rec">
-        <div>
-          <h3>实习</h3>
-          <ul>
-            <li><b>深圳科蓝金信科技发展有限公司</b><span>算法开发工程师　2025.07 至 2026.05</span></li>
-            <li><b>茂名千翔安全环保科技有限公司</b><span>算法工程师　2025.01 至 2025.05</span></li>
-          </ul>
-        </div>
-        <div>
-          <h3>项目</h3>
-          <ul>
-            <li><b>智能海关报关单证处理系统</b><span>OCR + LLM，实习期间</span></li>
-            <li><b>气体泄漏监测系统</b><span>YOLOv8 与改进检测头</span></li>
-            <li><b>语音助手意图识别与工具调用</b><span>实习期间</span></li>
-            <li><b>基于知识图谱的电影问答系统</b><span>毕业设计　7 篇笔记</span></li>
-            <li><b>iHeNovel</b><span>AI 小说创作助手　个人项目</span></li>
-          </ul>
-        </div>
-        <div>
-          <h3>笔记</h3>
-          <ul>
-            <li><b>67 篇　10,254 行　412 张影像</b><span>2024 至 2026</span></li>
-            <li><b>linux.do 帖子 8 篇</b><span>3056 行，最长一篇 761 行</span></li>
-            <li><b>安卓逆向 7 篇</b><span>1819 行，最长一篇 954 行</span></li>
-            <li><b>目标检测 14 篇</b><span>1310 行</span></li>
-            <li><b>《教父》三部曲</b><span>827 行、80 张影像的旗舰条目</span></li>
-          </ul>
-        </div>
-        <div>
-          <h3>教育</h3>
-          <ul>
-            <li><b>广东石油化工学院 · 人工智能</b><span>本科　2022.09 至 2026.06</span></li>
-            <li><b>GPA 3.0/4.0</b><span>核心专业课均分 90+</span></li>
-            <li><b>校级一等奖学金</b><span>专业前 5%，另有二等奖学金 ×2</span></li>
-            <li><b>2023「典阅杯」国家级二等奖</b><span>2024 中国机器人大赛国家级二等奖</span></li>
-          </ul>
-        </div>
-      </div>
-
-      <p class="ct">
-        <a href="mailto:2100918674@qq.com">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-          2100918674@qq.com</a>
-        <a href="https://github.com/iheee-google">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-          github.com/iheee-google</a>
-        <span style="color:var(--faint)">简历拆成网页结构，不提供 PDF 下载</span>
-      </p>
-    </div>
-  </footer>
 </main>
+
+<footer class="foot" id="contact">
+  <span class="rule-fill"></span>
+  <span class="h3">何楚福</span>
+  <span class="meta">AI 算法工程师　2026 届　求职中</span>
+  <span class="meta" style="margin-left:auto">首页候选 B　一件件</span>
+</footer>
 
 <script>
 const bar = document.getElementById('bar');
-new IntersectionObserver(([e]) => bar.classList.toggle('solid', e.intersectionRatio < 0.999),
-  { threshold: [1] }).observe(document.getElementById('c1'));
-
-const io = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-}, { rootMargin: '0px 0px -18% 0px' });
-document.querySelectorAll('.case').forEach((el) => io.observe(el));
-
-const cases = [...document.querySelectorAll('.case')];
-const railLinks = [...document.querySelectorAll('.rail a')];
-const spy = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) {
-    const i = cases.indexOf(e.target);
-    railLinks.forEach((a, k) => a.setAttribute('aria-current', String(k === i)));
-  }
-}, { rootMargin: '-45% 0px -45% 0px' });
-cases.forEach((c) => spy.observe(c));
-railLinks.forEach((a) => a.addEventListener('click', (ev) => {
-  const t = document.querySelector(a.getAttribute('href'));
-  if (t) { ev.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-}));
+const onScroll = () => bar.classList.toggle('solid', window.scrollY > 40);
+onScroll();
+addEventListener('scroll', onScroll, { passive: true });
 </script>
 </body>
 </html>

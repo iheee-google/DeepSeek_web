@@ -1,0 +1,150 @@
+/* ═══════════════════════════════════════════════════════════════
+   首页候选 · 共享设计系统
+   三个原型共用本文件，差异只在结构 —— 这样比较的是结构，不是配色。
+   规范依据：docs/DESIGN.md §1（验收标准）、§5（高调白场）、
+             docs/design-docs/animation-capabilities.md（六条写法约束）
+   ═══════════════════════════════════════════════════════════════ */
+
+@font-face{font-family:"Noto Serif SC";src:url("fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+@font-face{font-family:"Noto Sans SC";src:url("fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+
+:root{
+  /* 高调白场：页面是纸，颜色只来自影像 */
+  --paper:#FFFFFF;
+  --wash:#F1F1EF;          /* 冷中性灰白，刻意不偏暖 */
+  --ink:#14110F;           /* 只用于文字，不作背景 */
+  --ink-2:#57534D;
+  --ink-3:#8B8781;
+  --rule:#DEDDD8;
+  --vermilion:#D4370F;     /* 唯一合成彩色，只进状态与交互 */
+
+  --pad:clamp(20px,4.6vw,72px);
+  --measure:34em;
+  --gutter:clamp(18px,2.4vw,34px);
+
+  --ease-out:cubic-bezier(.22,1,.36,1);   /* 进入 */
+  --ease-io:cubic-bezier(.77,0,.175,1);   /* 换场 */
+
+  --t-press:110ms;
+  --t-hover:180ms;
+  --t-rise:620ms;
+  --t-wipe:900ms;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:clip}                       /* 一律 clip：hidden 会冻结 view() 时间轴 */
+body{overflow-x:clip;background:var(--paper);color:var(--ink);
+  font-family:"Noto Serif SC",Georgia,serif;font-size:16px;line-height:1.85;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--vermilion);outline-offset:3px;border-radius:1px}
+
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:var(--pad);top:12px;z-index:99;background:var(--paper);
+  padding:8px 14px;border:1px solid var(--vermilion);font-size:13px}
+
+/* ── 字阶 ─────────────────────────────────────────────── */
+.display{font-size:clamp(50px,11.4vw,188px);font-weight:900;line-height:.99;
+  letter-spacing:-.012em;text-wrap:balance}
+.h2{font-size:clamp(25px,3.4vw,50px);font-weight:800;line-height:1.3;letter-spacing:-.006em}
+.h3{font-size:clamp(18px,2vw,27px);font-weight:700;line-height:1.45}
+.lead{font-size:clamp(16.5px,1.45vw,20px);line-height:1.9;color:var(--ink-2);
+  text-wrap:pretty}
+.sans{font-family:"Noto Sans SC",system-ui,sans-serif}
+.meta{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12.5px;
+  line-height:1.7;letter-spacing:.02em;color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+.vm{color:var(--vermilion)}
+
+/* ── 顶栏 ─────────────────────────────────────────────── */
+.bar{position:fixed;inset:0 0 auto;z-index:60;display:flex;align-items:baseline;
+  gap:clamp(16px,2.6vw,30px);padding:15px var(--pad);
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12px;color:var(--ink-3);
+  border-bottom:1px solid transparent;background:transparent;
+  transition:background var(--t-hover) ease,border-color var(--t-hover) ease}
+.bar.solid{background:var(--paper);border-bottom-color:var(--rule)}
+.bar .me{color:var(--ink);font-weight:600;letter-spacing:.02em}
+.bar .nav{margin-left:auto;display:flex;gap:clamp(14px,2.2vw,26px)}
+.bar a{transition:color var(--t-hover) ease}
+.bar a:hover{color:var(--ink)}
+
+/* ── 出处（本项目的signature：每条主张带一行可核对的来源）── */
+.cite{display:flex;align-items:baseline;gap:10px;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12.5px;line-height:1.7;
+  color:var(--ink-3);letter-spacing:.02em}
+.cite::before{content:"";flex:none;width:13px;height:2px;background:var(--vermilion);
+  transform:translateY(-.32em)}
+.cite b{font-weight:500;color:var(--ink-2)}
+.cite.right{justify-content:flex-end}
+
+/* ── 全出血影像带：页面唯一的大面积浓色 ──────────────── */
+.band{position:relative;width:100%;overflow:clip;background:var(--wash)}
+.band img{width:100%;height:100%;object-fit:cover}
+.band figcaption{position:absolute;left:var(--pad);bottom:14px;right:var(--pad);
+  color:#fff;text-shadow:0 1px 12px rgba(0,0,0,.5)}
+
+/* ── 版面 ─────────────────────────────────────────────── */
+.plate{padding:clamp(72px,11vh,150px) var(--pad)}
+.plate + .plate{border-top:1px solid var(--rule)}
+.wrap{max-width:var(--measure)}
+.eyebrow-free{margin-bottom:clamp(20px,3vh,38px)}
+
+/* ═══ 动效 ═══════════════════════════════════════════════
+   一次编排好的开场，不是散落各处的淡入。
+   ─────────────────────────────────────────────────────── */
+.rise{opacity:1;translate:0 0;
+  transition:opacity var(--t-rise) var(--ease-out),translate var(--t-rise) var(--ease-out);
+  transition-delay:var(--d,0ms)}
+@starting-style{.rise{opacity:0;translate:0 16px}}
+
+.wipe{clip-path:inset(0 0 0 0);
+  transition:clip-path var(--t-wipe) var(--ease-out);transition-delay:var(--d,0ms)}
+@starting-style{.wipe{clip-path:inset(0 0 100% 0)}}
+
+.grow{transform-origin:left center;animation:sweep var(--t-wipe) var(--ease-io) both;
+  animation-delay:var(--d,0ms)}
+@keyframes sweep{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+
+/* 滚动驱动：仅作为增强，不支持的浏览器看到完整静态页面 */
+@supports (animation-timeline: view()){
+  .settle{animation:settle linear both;animation-timeline:view();animation-range:entry 0% cover 42%}
+  @keyframes settle{from{scale:1.06}to{scale:1}}
+
+  /* 进入视口时展开。只动 opacity 与 translate，都在合成层上 */
+  .in{animation:in-view linear both;animation-timeline:view();
+    animation-range:entry 0% entry 58%}
+  @keyframes in-view{from{opacity:0;translate:0 20px}to{opacity:1;translate:0 0}}
+
+  /* 一段一段揭示：块内子元素依次错峰。--i 由 HTML 给 */
+  .in-seq > *{animation:in-view linear both;animation-timeline:view();
+    animation-range:entry 0% entry 58%}
+}
+
+/* 小交互：按压有轻微缩放 */
+.press{transition:scale var(--t-press) var(--ease-out),color var(--t-hover) ease}
+.press:active{scale:.97}
+
+@media (prefers-reduced-motion:reduce){
+  /* 降级是「更少更温和」，不是全部移除：保留透明度与颜色，去掉位移与缩放 */
+  .rise{transition-property:opacity;translate:none}
+  @starting-style{.rise{translate:none}}
+  .wipe{clip-path:none}
+  @starting-style{.wipe{clip-path:none}}
+  .grow{animation:none;clip-path:none}
+  .settle{animation:none}
+  .in,.in-seq > *{animation:none}
+  .press:active{scale:none}
+}
+
+/* ── 页脚 ─────────────────────────────────────────────── */
+.foot{padding:clamp(56px,8vh,96px) var(--pad) clamp(40px,6vh,64px);
+  border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;
+  gap:20px clamp(24px,5vw,64px);align-items:baseline}
+.foot .rule-fill{flex:1 1 100%;height:1px;background:var(--rule)}
+@supports (animation-timeline: scroll()){
+  /* 多一个 body 提升特异性，阻止压缩器把时间轴折进 animation 简写 */
+  body .foot .rule-fill{animation:rule-grow linear both;animation-timeline:scroll(root block)}
+}
+/* scale 属性只吃数字（1–3 个），没有 x/y 轴名 —— 写成 scale:x 0 会整条规则失效 */
+@keyframes rule-grow{from{scale:0 1}to{scale:1 1}}

@@ -1,479 +1,257 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>方案 A 一条线（首页）</title>
+<title>何楚福　AI 算法工程师</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/home.css">
 <style>
-@font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
-@font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+/* ═══ A 一条线：首屏是一把横尺，全页按时间展开 ═══ */
+.hero{padding:clamp(104px,15vh,168px) var(--pad) clamp(36px,6vh,72px);
+  min-height:100svh;display:flex;flex-direction:column;justify-content:center}
+.hero .lead{margin-top:clamp(16px,2.4vh,26px);max-width:32em}
 
-:root{
-  --bg:#0B0907; --fg:#F0E9DB; --dim:#A89E8F; --faint:#6F665B;
-  --gold:#C39A45; --rule:#2A2521;
-  --pad:clamp(20px,4.4vw,64px);
-  --rail:clamp(78px,11vw,156px);
-  --ease-out:cubic-bezier(.22,1,.36,1);
-  --ease-io:cubic-bezier(.77,0,.175,1);
-  --t-press:120ms; --t-hover:160ms; --t-reveal:500ms;
-}
+.ruler{position:relative;height:clamp(176px,29vh,256px);margin-top:clamp(28px,5vh,58px)}
+.ruler .span-band{position:absolute;top:50%;left:0;right:0;height:clamp(30px,5vh,46px);
+  transform:translateY(-50%);background:var(--wash)}
+.ruler .line{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--ink);
+  transform-origin:left center;margin-top:-.5px}
+.ruler .tick{position:absolute;top:50%;left:calc(var(--t) * 100%);width:1px;height:7px;
+  background:#CDCCC6;transform:translate(-50%,-50%)}
+.ruler .tick.yr{height:20px;background:var(--ink-3)}
+.ruler .yl{position:absolute;top:calc(50% + 16px);left:calc(var(--t) * 100%);
+  transform:translateX(-50%);font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:12px;letter-spacing:.05em;color:var(--ink-3)}
+.ruler .ev{position:absolute;top:50%;left:calc(var(--t) * 100%);width:0;height:0}
+.ruler .ev i{position:absolute;left:0;width:1px;background:#CDCCC6;
+  height:clamp(32px,5.6vh,52px)}
+.ruler .ev b{position:absolute;left:0;display:block;width:max-content;max-width:min(190px,21vw);
+  transform:translateX(-50%);text-align:center;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:12.5px;font-weight:400;
+  line-height:1.5;color:var(--ink-2)}
+.ruler .ev b em{display:block;font-style:normal;color:var(--ink-3);font-size:11.5px;
+  letter-spacing:.03em}
+.ruler .ev.up i{bottom:0}
+.ruler .ev.up b{bottom:calc(clamp(32px,5.6vh,52px) + 8px)}
+.ruler .ev.dn i{top:0}
+.ruler .ev.dn b{top:calc(clamp(32px,5.6vh,52px) + 8px)}
+.ruler .ev.first b{transform:none;text-align:left}
+.ruler .ev.last b{transform:translateX(-100%);text-align:right}
+.ruler .dot{position:absolute;left:calc(var(--t) * 100%);top:50%;width:9px;height:9px;
+  border-radius:50%;background:var(--ink);transform:translate(-50%,-50%)}
+.ruler .dot.hollow{background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.ruler .dot.now{width:12px;height:12px;background:var(--vermilion)}
+.ruler .nowlabel{position:absolute;top:calc(50% - 32px);left:calc(100% - 2px);
+  transform:translateX(-100%);font-family:"Noto Sans SC",system-ui,sans-serif;
+  font-size:12px;color:var(--vermilion);letter-spacing:.04em;white-space:nowrap}
 
-*{box-sizing:border-box;margin:0;padding:0}
-html{overflow-x:clip}
-body{overflow-x:clip;background:var(--bg);color:var(--fg);
-  font-family:"Noto Serif SC",Georgia,serif;font-size:16px;line-height:1.85;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-a{color:inherit;text-decoration:none}
-:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:1px}
-.sans{font-family:"Noto Sans SC",system-ui,sans-serif}
-.num{font-variant-numeric:tabular-nums}
-.skip{position:absolute;left:-9999px}
-.skip:focus{left:var(--pad);top:12px;z-index:99;background:var(--bg);
-  padding:8px 14px;border:1px solid var(--gold);font-size:13px}
+/* 编年条目 */
+.rec{display:grid;grid-template-columns:clamp(112px,13vw,176px) 1fr;
+  gap:clamp(16px,3vw,44px);padding:clamp(26px,4vh,44px) 0;border-top:1px solid var(--rule)}
+#record .rec:first-of-type{border-top:0}
+.rec .when{font-family:"Noto Sans SC",system-ui,sans-serif;font-size:13px;
+  line-height:1.7;color:var(--ink-3);letter-spacing:.02em;padding-top:.4em}
+.rec h3{margin-bottom:.4em;max-width:22em}
+.rec ul{margin:1em 0 0;padding:0;list-style:none;max-width:40em}
+.rec li{position:relative;padding-left:1.2em;color:var(--ink-2);line-height:1.8}
+.rec li::before{content:"";position:absolute;left:0;top:.85em;width:7px;height:1px;background:var(--ink-3)}
+.rec .cite{margin-top:1.2em}
 
-/* ─────────── 顶栏 ─────────── */
-.bar{position:fixed;inset:0 0 auto;z-index:60;display:flex;align-items:baseline;
-  gap:26px;padding:16px var(--pad);font-family:"Noto Sans SC",system-ui,sans-serif;
-  font-size:11.5px;color:var(--faint);font-variant-numeric:tabular-nums;
-  transition:background var(--t-hover) ease,border-color var(--t-hover) ease;
-  border-bottom:1px solid transparent;background:transparent}
-.bar.solid{background:var(--bg);border-bottom-color:var(--rule)}
-.bar .me{color:var(--fg);font-weight:600;letter-spacing:.04em}
-.bar .me em{font-style:normal;color:var(--faint);font-weight:400;margin-left:10px}
-.bar .nav{margin-left:auto;display:flex;gap:24px}
-.bar a{transition:color var(--t-hover) ease}
-.bar a:hover{color:var(--fg)}
-
-/* ─────────── 首屏：年尺 ─────────── */
-.hero{position:relative;height:100svh;display:flex;flex-direction:column;
-  justify-content:flex-end;padding:0 var(--pad) clamp(40px,7vh,76px)}
-.ruler{position:absolute;left:var(--pad);right:var(--pad);top:46svh;height:1px}
-.rule{position:absolute;inset:0;background:var(--fg);opacity:.28;
-  transform-origin:center;
-  clip-path:inset(0 50% 0 50%);
-  animation:rule-open 760ms var(--ease-out) 120ms forwards}
-@keyframes rule-open{to{clip-path:inset(0 0 0 0)}}
-
-/* 刻度：--t 是真实时间比例，不是等分 */
-.tick{position:absolute;left:calc(var(--t) * 100%);top:0;width:0;
-  opacity:0;transform:translateY(7px);
-  animation:tick-in 460ms var(--ease-out) forwards;
-  animation-delay:calc(300ms + var(--i) * 62ms)}
-@keyframes tick-in{to{opacity:1;transform:none}}
-.tick .stem{position:absolute;left:-.5px;width:1px;background:var(--fg);
-  opacity:.4;height:var(--stem,10px);top:calc(-1 * var(--stem,10px))}
-.tick .pip{position:absolute;left:-4px;top:-4px;width:8px;height:8px;border-radius:50%;
-  background:var(--gold)}
-.tick.approx .pip{background:transparent;border:1px solid var(--gold)}
-.tick .date{position:absolute;left:0;bottom:var(--stem,10px);white-space:nowrap;
-  transform:translateX(-50%);font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  letter-spacing:.06em;color:var(--dim);font-variant-numeric:tabular-nums;
-  padding-bottom:8px}
-.tick .what{position:absolute;left:0;top:14px;white-space:nowrap;
-  transform:translateX(-50%);font-family:"Noto Sans SC",sans-serif;font-size:11.5px;
-  color:var(--faint);transition:color var(--t-hover) ease}
-.tick.now .what{color:var(--gold)}
-.tick.t2 .what{top:34px}
-.tick:first-child .date,.tick:first-child .what{transform:none}
-.tick.now .date,.tick.now .what{transform:translateX(-100%)}
-.tick a{position:absolute;left:-16px;top:-16px;width:32px;height:32px;display:block}
-.tick:hover .what,.tick:focus-within .what{color:var(--fg)}
-
-/* 在校区间标注：把空档变成信息 */
-.span-band{position:absolute;top:-30px;left:0;width:calc(28 / 49 * 100%);
-  border-top:1px solid var(--rule);height:0;
-  opacity:0;animation:tick-in 500ms var(--ease-out) 260ms forwards}
-.span-band b{position:absolute;left:0;top:5px;font-family:"Noto Sans SC",sans-serif;
-  font-weight:400;font-size:10.5px;letter-spacing:.14em;color:var(--faint)}
-
-/* 姓名块 */
-.who{position:relative;z-index:2;max-width:1000px}
-.who .nm{font-size:clamp(38px,7.6vw,116px);font-weight:600;line-height:1;
-  letter-spacing:-.02em;
-  opacity:0;transform:translateY(18px);
-  animation:who-in 700ms var(--ease-out) 420ms forwards}
-.who .rl{margin-top:clamp(12px,2.2vh,22px);font-size:clamp(15px,1.5vw,20px);
-  color:var(--dim);opacity:0;transform:translateY(14px);
-  animation:who-in 700ms var(--ease-out) 500ms forwards}
-.who .ct{margin-top:clamp(14px,2.6vh,26px);display:flex;flex-wrap:wrap;gap:8px 26px;
-  font-family:"Noto Sans SC",sans-serif;font-size:12px;color:var(--faint);
-  opacity:0;transform:translateY(12px);
-  animation:who-in 700ms var(--ease-out) 580ms forwards}
-.who .ct a{display:inline-flex;align-items:center;gap:7px;
-  transition:color var(--t-hover) ease}
-.who .ct a:hover{color:var(--gold)}
-.who .ct svg{width:13px;height:13px;stroke:currentColor;fill:none;
-  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-@keyframes who-in{to{opacity:1;transform:none}}
-
-/* 首屏淡出（离开时收拢、下沉，接成左侧竖轴） */
-.hero .ruler,.hero .who{transform-origin:left center}
-
-/* ─────────── 走轴 ─────────── */
-.walk{position:relative;padding:clamp(80px,14vh,180px) var(--pad) clamp(80px,16vh,200px)}
-.spine{position:absolute;left:calc(var(--pad) + var(--rail) - .5px);top:0;bottom:0;
-  width:1px;background:var(--rule)}
-.spine i{display:block;width:100%;height:100%;background:var(--gold);
-  transform-origin:top center;transform:scaleY(0)}
-.marks{display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
-.marks>.hd{grid-column:1/-1;display:grid;grid-template-columns:subgrid;
-  padding-bottom:clamp(28px,4vh,52px)}
-.marks>.hd p{grid-column:2;font-family:"Noto Sans SC",sans-serif;font-size:12px;
-  color:var(--faint);letter-spacing:.06em}
-
-.ev{grid-column:1/-1;display:grid;grid-template-columns:subgrid;
-  padding:clamp(30px,5vh,62px) 0;border-top:1px solid var(--rule);
-  opacity:0;transform:translateY(20px);
-  transition:opacity 620ms var(--ease-out),transform 620ms var(--ease-out)}
-.ev.in{opacity:1;transform:none}
-.ev .when{position:relative;text-align:right;padding-right:26px;
-  font-family:"Noto Sans SC",sans-serif;font-size:12px;color:var(--dim);
-  font-variant-numeric:tabular-nums;letter-spacing:.03em;line-height:1.5}
-.ev .when .dot{position:absolute;right:-5px;top:.5em;width:10px;height:10px;
-  border-radius:50%;background:var(--gold);
-  transform:scale(0);transition:transform 420ms var(--ease-out)}
-.ev .when .dot.approx{background:transparent;border:1px solid var(--gold)}
-.ev.in .when .dot{transform:scale(1)}
-.ev .kind{display:block;color:var(--faint);font-size:10.5px;letter-spacing:.16em;
-  margin-bottom:5px}
-
-.ev .body{max-width:64ch}
-.ev h2{font-size:clamp(21px,2.5vw,34px);font-weight:600;line-height:1.32;
-  letter-spacing:-.01em}
-.ev .org{margin-top:7px;color:var(--dim);font-size:clamp(14px,1.35vw,17px)}
-.ev .note{margin-top:clamp(14px,2vh,20px);color:var(--fg);font-size:15.5px;
-  line-height:1.9}
-.ev .note em{font-style:normal;color:var(--gold)}
-.ev ul{margin-top:14px;list-style:none;display:flex;flex-direction:column;gap:7px}
-.ev li{position:relative;padding-left:16px;font-size:14px;color:var(--dim);
-  line-height:1.75}
-.ev li::before{content:"";position:absolute;left:0;top:.72em;width:7px;height:1px;
-  background:var(--faint)}
-.ev .src{margin-top:16px;font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  color:var(--faint);font-variant-numeric:tabular-nums}
-.ev .gap{margin-top:16px;display:inline-block;font-family:"Noto Sans SC",sans-serif;
-  font-size:11px;color:var(--faint);border:1px dashed var(--rule);
-  padding:5px 11px;border-radius:2px}
-
-/* 语料横条 */
-.bars{margin-top:18px;display:flex;flex-direction:column;gap:5px}
-.bar-row{display:grid;grid-template-columns:minmax(0,15ch) minmax(0,1fr) 5.5ch;
-  align-items:center;gap:14px;font-family:"Noto Sans SC",sans-serif;font-size:12px;
-  color:var(--dim)}
-.bar-row .lb{overflow:clip;text-overflow:ellipsis;white-space:nowrap}
-.bar-row .tr{position:relative;height:9px}
-.bar-row .tr i{position:absolute;inset:0 auto 0 0;width:calc(var(--w) * 100%);
-  background:var(--rule);border-left:1px solid var(--faint);
-  transform-origin:left center;transform:scaleX(0);
-  transition:transform 800ms var(--ease-out)}
-.bar-row .tr i.hi{background:#C39A4526;border-left-color:var(--gold)}
-.ev.in .bar-row .tr i{transform:scaleX(1)}
-.bar-row .vv{text-align:right;font-variant-numeric:tabular-nums;color:var(--faint)}
-
-/* ─────────── 尾 ─────────── */
-.tail{padding:clamp(60px,10vh,120px) var(--pad) clamp(70px,12vh,140px);
-  border-top:1px solid var(--rule);
-  display:grid;grid-template-columns:var(--rail) minmax(0,1fr)}
-.tail .inner{grid-column:2;max-width:64ch}
-.tail h2{font-size:clamp(20px,2.2vw,30px);font-weight:600;line-height:1.4}
-.tail .ct{margin-top:22px;display:flex;flex-wrap:wrap;gap:10px 30px;
-  font-family:"Noto Sans SC",sans-serif;font-size:13px;color:var(--dim)}
-.tail .ct a{display:inline-flex;align-items:center;gap:8px;
-  transition:color var(--t-hover) ease}
-.tail .ct a:hover{color:var(--gold)}
-.tail .ct svg{width:14px;height:14px;stroke:currentColor;fill:none;
-  stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.tail .meta{margin-top:44px;font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  color:var(--faint);line-height:2;font-variant-numeric:tabular-nums}
-
-/* ─────────── 滚动驱动（渐进增强） ─────────── */
-@supports (animation-timeline:scroll()){
-  body .hero .ruler{
-    animation:ruler-fold linear both;
-    animation-timeline:scroll(root block);
-    animation-range:34vh 88vh;
-  }
-  body .hero .who{
-    animation:who-sink linear both;
-    animation-timeline:scroll(root block);
-    animation-range:10vh 70vh;
-  }
-  body .spine i{
-    animation:spine-grow linear both;
-    animation-timeline:scroll(root block);
-    animation-range:70vh 180vh;
-  }
-  body .ev{
-    animation:ev-fade linear both;
-    animation-timeline:view(block);
-    animation-range:exit 0% exit 92%;
-  }
-}
-@keyframes ruler-fold{
-  from{transform:none;opacity:1}
-  to{transform:translateX(-38vw) scaleX(.06);opacity:0}
-}
-@keyframes who-sink{
-  from{transform:none;opacity:1}
-  to{transform:translateY(34px);opacity:0}
-}
-@keyframes spine-grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
-@keyframes ev-fade{from{opacity:1}to{opacity:.22}}
-
-@media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
-  .rule{clip-path:none}
-  .tick,.who .nm,.who .rl,.who .ct,.span-band{opacity:1;transform:none}
-  .ev{opacity:1;transform:none;transition:opacity 200ms ease}
-  .ev .when .dot{transform:scale(1)}
-  .bar-row .tr i{transform:scaleX(1)}
-  @supports (animation-timeline:scroll()){
-    body .hero .ruler,body .hero .who,body .spine i,body .ev{
-      animation:reduced-fade linear both;
-      animation-timeline:scroll(root block);
-      animation-range:0 1px;
-    }
-  }
-  @keyframes reduced-fade{from{opacity:1}to{opacity:1}}
-}
-
-/* 窄屏：竖轴收窄，尺子上的字缩小（本方案以桌面为准，这里只做不破版） */
-@media (max-width:860px){
-  :root{--rail:64px}
-  .tick .what{font-size:10px}
-  .ev .when{font-size:10.5px;padding-right:18px}
-  .bar-row{grid-template-columns:minmax(0,11ch) minmax(0,1fr) 4.5ch;gap:9px;font-size:11px}
-}
+/* 在手稿上引一句原文 */
+.pull{padding:clamp(56px,9vh,104px) var(--pad);display:grid;
+  gap:clamp(24px,4vh,44px);justify-items:start}
+.pull blockquote{max-width:26em}
+.pull blockquote p{font-size:clamp(22px,2.9vw,40px);font-weight:700;line-height:1.5;
+  letter-spacing:-.008em;text-wrap:pretty}
+.pull blockquote p::before{content:"「"}
+.pull blockquote p::after{content:"」"}
+.pull .cite{margin-top:clamp(18px,2.6vh,28px)}
+.band.tall{height:clamp(340px,68vh,660px)}
 </style>
 </head>
 <body>
-<a class="skip" href="#walk">跳到正文</a>
+<a class="skip" href="#main">跳到正文</a>
 
 <header class="bar" id="bar">
-  <span class="me">何楚福<em>AI 算法工程师</em></span>
+  <span class="me">何楚福</span>
+  <span>AI 算法工程师　2026 届</span>
   <nav class="nav">
-    <a href="#e-notes">笔记</a>
-    <a href="#e-work2">项目</a>
-    <a href="#e-edu">履历</a>
+    <a href="#record">履历</a>
+    <a href="#notes">笔记</a>
     <a href="#contact">联系</a>
+    <a href="https://github.com/iheee-google" rel="me noopener">GitHub</a>
   </nav>
 </header>
 
-<main>
-  <!-- ══════════ 首屏：一条按真实时间比例的年尺 ══════════ -->
-  <section class="hero" aria-label="时间线">
-    <div class="ruler">
-      <div class="rule"></div>
-      <div class="span-band"><b>在校</b></div>
+<main id="main">
 
-      <div class="tick" style="--t:0;--i:0;--stem:16px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2022.09</span>
-        <span class="what">入学</span>
-        <a href="#e-edu" aria-label="入学，2022 年 9 月"></a>
-      </div>
-
-      <div class="tick approx t2" style="--t:.082;--i:1;--stem:9px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2023</span>
-        <span class="what">典阅杯</span>
-        <a href="#e-edu" aria-label="2023 年典阅杯国家级二等奖，月份未标注"></a>
-      </div>
-
-      <div class="tick approx" style="--t:.327;--i:2;--stem:16px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2024</span>
-        <span class="what">机器人大赛</span>
-        <a href="#e-edu" aria-label="2024 年中国机器人大赛国家级二等奖，月份未标注"></a>
-      </div>
-
-      <div class="tick" style="--t:.571;--i:3;--stem:16px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2025.01</span>
-        <span class="what">茂名千翔</span>
-        <a href="#e-work1" aria-label="2025 年 1 月，茂名千翔实习开始"></a>
-      </div>
-
-      <div class="tick t2" style="--t:.694;--i:4;--stem:9px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2025.07</span>
-        <span class="what">科蓝金信</span>
-        <a href="#e-work2" aria-label="2025 年 7 月，深圳科蓝金信实习开始"></a>
-      </div>
-
-      <div class="tick" style="--t:.755;--i:5;--stem:16px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2025.10</span>
-        <span class="what">iHeNovel</span>
-        <a href="#e-work2" aria-label="2025 年 10 月，iHeNovel 开始"></a>
-      </div>
-
-      <div class="tick t2" style="--t:.918;--i:6;--stem:9px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">2026.06</span>
-        <span class="what">毕业</span>
-        <a href="#e-edu" aria-label="2026 年 6 月毕业"></a>
-      </div>
-
-      <div class="tick now" style="--t:1;--i:7;--stem:16px">
-        <i class="stem"></i><i class="pip"></i>
-        <span class="date">现在</span>
-        <span class="what">求职中</span>
-        <a href="#contact" aria-label="现在，求职中"></a>
-      </div>
+  <section class="hero">
+    <h1 class="display rise">何楚福</h1>
+    <div class="lead rise" style="--d:120ms;max-width:37em">
+      <p>AI 算法工程师　2026 届　广东石油化工学院 人工智能。</p>
+      <p>这一页按时间排，下面每一格都落在上面尺子的某个刻度上。</p>
     </div>
 
-    <div class="who">
-      <h1 class="nm">何楚福</h1>
-      <p class="rl">AI 算法工程师　广东石油化工学院 人工智能　2026 届</p>
-      <p class="ct">
-        <a href="mailto:2100918674@qq.com">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-          2100918674@qq.com</a>
-        <a href="https://github.com/iheee-google">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-          github.com/iheee-google</a>
-      </p>
+    <div class="ruler rise" style="--d:260ms" role="img"
+         data-axis="2022-09" data-axis-end="2026-10"
+         aria-label="2022 年 9 月至 2026 年 10 月的时间尺，标注入学、两次竞赛、两段实习、个人项目与毕业">
+      <span class="span-band"></span>
+      <span class="tick" style="--t:0"></span>
+      <span class="tick" style="--t:.0204"></span><span class="tick" style="--t:.0408"></span>
+      <span class="tick" style="--t:.0612"></span><span class="tick" style="--t:.0816"></span>
+      <span class="tick" style="--t:.1020"></span><span class="tick" style="--t:.1224"></span>
+      <span class="tick" style="--t:.1429"></span><span class="tick" style="--t:.1633"></span>
+      <span class="tick" style="--t:.1837"></span><span class="tick" style="--t:.2041"></span>
+      <span class="tick" style="--t:.2245"></span><span class="tick" style="--t:.2449"></span>
+      <span class="tick" style="--t:.2653"></span><span class="tick" style="--t:.2857"></span>
+      <span class="tick" style="--t:.3061"></span><span class="tick yr" style="--t:.3265"></span>
+      <span class="tick" style="--t:.3469"></span><span class="tick" style="--t:.3673"></span>
+      <span class="tick" style="--t:.3878"></span><span class="tick" style="--t:.4082"></span>
+      <span class="tick" style="--t:.4286"></span><span class="tick" style="--t:.4490"></span>
+      <span class="tick" style="--t:.4694"></span><span class="tick" style="--t:.4898"></span>
+      <span class="tick" style="--t:.5102"></span><span class="tick" style="--t:.5306"></span>
+      <span class="tick" style="--t:.5510"></span><span class="tick yr" style="--t:.5714"></span>
+      <span class="tick" style="--t:.5918"></span><span class="tick" style="--t:.6122"></span>
+      <span class="tick" style="--t:.6327"></span><span class="tick" style="--t:.6531"></span>
+      <span class="tick" style="--t:.6735"></span><span class="tick" style="--t:.6939"></span>
+      <span class="tick" style="--t:.7143"></span><span class="tick" style="--t:.7347"></span>
+      <span class="tick" style="--t:.7551"></span><span class="tick" style="--t:.7755"></span>
+      <span class="tick" style="--t:.7959"></span><span class="tick yr" style="--t:.8163"></span>
+      <span class="tick" style="--t:.8367"></span><span class="tick" style="--t:.8571"></span>
+      <span class="tick" style="--t:.8776"></span><span class="tick" style="--t:.8980"></span>
+      <span class="tick" style="--t:.9184"></span><span class="tick" style="--t:.9388"></span>
+      <span class="tick" style="--t:.9592"></span><span class="tick" style="--t:.9796"></span>
+      <span class="tick" style="--t:1"></span>
+
+      <span class="yl" style="--t:.3265">2024</span>
+      <span class="yl" style="--t:.5714">2025</span>
+      <span class="yl" style="--t:.8163">2026</span>
+
+      <span class="ev first dn" style="--t:0"><i></i><b>2022.09<em>入学</em></b></span>
+      <span class="ev up" style="--t:.0816"><i></i><b>2023<em>典阅杯</em></b></span>
+      <span class="ev dn" style="--t:.3265"><i></i><b>2024<em>机器人大赛</em></b></span>
+      <span class="ev up" style="--t:.5714"><i></i><b>2025.01<em>茂名千翔</em></b></span>
+      <span class="ev dn" style="--t:.6939"><i></i><b>2025.07<em>科蓝金信</em></b></span>
+      <span class="ev up" style="--t:.7551"><i></i><b>2025.10<em>iHeNovel</em></b></span>
+      <span class="ev dn" style="--t:.9184"><i></i><b>2026.06<em>毕业</em></b></span>
+
+      <span class="dot" style="--t:0"></span>
+      <span class="dot hollow" style="--t:.0816"></span>
+      <span class="dot hollow" style="--t:.3265"></span>
+      <span class="dot" style="--t:.5714"></span>
+      <span class="dot" style="--t:.6939"></span>
+      <span class="dot" style="--t:.7551"></span>
+      <span class="dot" style="--t:.9184"></span>
+      <span class="dot now" style="--t:1"></span>
+      <span class="nowlabel">2026.10　现在</span>
+
+      <span class="line grow" style="--d:420ms"></span>
     </div>
   </section>
 
-  <!-- ══════════ 走轴 ══════════ -->
-  <section class="walk" id="walk" aria-label="履历">
-    <div class="spine"><i></i></div>
-    <div class="marks">
-      <div class="hd"><p>下面每一格都对应上面尺子上的一个刻度。年份精确到月的画实心点，只知道年份的画空心点。</p></div>
+  <section class="plate" id="record">
+    <p class="meta" style="margin-bottom:clamp(20px,3vh,34px)">
+      尺子上实心是月份已知，空心是只知道年份。下面按时间倒序。
+    </p>
 
-      <article class="ev" id="e-edu">
-        <div class="when"><span class="kind">教育</span><span class="dot"></span>2022.09 至 2026.06</div>
-        <div class="body">
-          <h2>广东石油化工学院 · 人工智能</h2>
-          <p class="org">本科　GPA 3.0/4.0　核心专业课均分 90+</p>
-          <ul>
-            <li>校级一等奖学金（专业前 5%）、二等奖学金 ×2</li>
-            <li><span class="num">2023</span>「典阅杯」国家级二等奖　·　<span class="num">2024</span> 中国机器人大赛国家级二等奖　<span class="sans" style="color:var(--faint)">（仅知年份）</span></li>
-          </ul>
-          <p class="src">来源：简历 PDF　何楚福.pdf</p>
-        </div>
-      </article>
+    <article class="rec in">
+      <div class="when">2026.10　现在</div>
+      <div>
+        <h3 class="h3">求职中，方向是 AI 算法与工程</h3>
+        <p class="lead">2026 届。下面每一条都能回到实习记录或某篇笔记的原文。</p>
+      </div>
+    </article>
 
-      <article class="ev" id="e-work1">
-        <div class="when"><span class="kind">实习</span><span class="dot"></span>2025.01 至 2025.05</div>
-        <div class="body">
-          <h2>茂名千翔安全环保科技有限公司</h2>
-          <p class="org">算法工程师</p>
-          <p class="note">气体泄漏监测系统。YOLOv8 目标检测，改动检测头。</p>
-          <p class="gap">这一段的具体指标与界面截图尚未收集，这里先留空位</p>
-          <p class="src">来源：简历 PDF　何楚福.pdf</p>
-        </div>
-      </article>
+    <article class="rec in">
+      <div class="when">2025.07 至<br>2026.05</div>
+      <div>
+        <h3 class="h3">深圳科蓝金信科技发展有限公司　算法开发工程师（实习）</h3>
+        <p class="lead">智能海关报关单证处理系统。这段描述基于代码的实际实现。</p>
+        <ul>
+          <li>合合 OCR 2.0 与百度 OCR 双引擎，PDF 先转成 2x 到 4x 的 PNG 再识别</li>
+          <li>规则预筛挡在模型前面，减少 50% 以上的无效 LLM 调用</li>
+          <li>三级并行，批次、文件、字段组各一层 ThreadPoolExecutor，支撑百级文件批量处理</li>
+          <li>同一字段在多份文档里取值不同时做冲突检测，再交给 LLM 结合上下文筛</li>
+          <li>前端字段级溯源，点字段用 Canvas 在原始文档上画红框定位</li>
+          <li>全局 Token 计数器，按阶段统计每次 LLM 调用的成本</li>
+        </ul>
+        <p class="cite">实习期间的项目实现记录　作者自注三条未实现：自动路由、前端进出口切换、自动故障转移</p>
+      </div>
+    </article>
 
-      <article class="ev" id="e-work2">
-        <div class="when"><span class="kind">实习</span><span class="dot"></span>2025.07 至 2026.05</div>
-        <div class="body">
-          <h2>深圳科蓝金信科技发展有限公司</h2>
-          <p class="org">算法开发工程师</p>
-          <p class="note">智能海关报关单证处理系统。合合 OCR 与百度 OCR 双引擎识别多格式文档，LLM 把文档分成六类，规则预筛挡掉一部分调用。</p>
-          <ul>
-            <li>三级并行：批次、文件、字段组各一层，用 ThreadPoolExecutor</li>
-            <li>同一字段在多份文档里取值不同时做冲突检测，再交给 LLM 结合上下文筛</li>
-            <li>前端字段级溯源，点字段在原文上画框定位</li>
-            <li>全局 Token 计数器，按阶段统计 LLM 调用成本</li>
-          </ul>
-          <p class="note" style="margin-top:16px">作者自注三条未实现：基于任务类型的自动路由、前端进出口切换、自动故障转移。</p>
-          <p class="src">来源：实习期间的项目实现记录</p>
-        </div>
-      </article>
+    <article class="rec in">
+      <div class="when">2025.10 至<br>2026.03</div>
+      <div>
+        <h3 class="h3">iHeNovel　AI 小说创作助手</h3>
+        <p class="lead">个人项目。磁盘上没有留界面截图，这一段暂时只有文字。</p>
+      </div>
+    </article>
 
-      <article class="ev" id="e-work3">
-        <div class="when"><span class="kind">个人项目</span><span class="dot"></span>2025.10 至 2026.03</div>
-        <div class="body">
-          <h2>iHeNovel · AI 小说创作助手</h2>
-          <p class="org">个人项目</p>
-          <p class="gap">磁盘上没有任何界面截图，这一段要么补图，要么改成纯文字描述</p>
-          <p class="src">来源：简历 PDF　何楚福.pdf</p>
-        </div>
-      </article>
+    <article class="rec in">
+      <div class="when">2025.01 至<br>2025.05</div>
+      <div>
+        <h3 class="h3">茂名千翔安全环保科技有限公司　算法工程师</h3>
+        <p class="lead">气体泄漏监测系统。YOLOv8 目标检测，改动了检测头。</p>
+        <p class="cite">这一段的具体指标与界面截图尚未收集，先留空位</p>
+      </div>
+    </article>
 
-      <article class="ev" id="e-grad">
-        <div class="when"><span class="kind">毕业设计</span><span class="dot approx"></span>2026</div>
-        <div class="body">
-          <h2>基于知识图谱的电影问答系统</h2>
-          <p class="org">毕业设计　7 篇笔记</p>
-          <p class="note">电影知识图谱数据构建、问答 NLU 模型、系统实现与可视化、答辩材料。</p>
-          <p class="src">来源：毕设项目的笔记原文</p>
-        </div>
-      </article>
+    <article class="rec in">
+      <div class="when">2026　毕业设计</div>
+      <div>
+        <h3 class="h3">基于知识图谱的电影问答系统</h3>
+        <p class="lead">电影知识图谱数据构建、问答 NLU 模型、系统实现与可视化、答辩材料。过程写在 7 篇笔记里。</p>
+      </div>
+    </article>
 
-      <article class="ev" id="e-notes">
-        <div class="when"><span class="kind">写作</span><span class="dot approx"></span>2024 至 2026</div>
-        <div class="body">
-          <h2>67 篇笔记　10,254 行　412 张影像</h2>
-          <p class="org">按目录，横条长度就是这一组的真实行数</p>
-          <div class="bars">
-            <div class="bar-row"><span class="lb">linux.do 帖子</span><span class="tr"><i style="--w:.297"></i></span><span class="vv">3056</span></div>
-            <div class="bar-row"><span class="lb">安卓逆向</span><span class="tr"><i style="--w:.177"></i></span><span class="vv">1819</span></div>
-            <div class="bar-row"><span class="lb">目标检测</span><span class="tr"><i style="--w:.127"></i></span><span class="vv">1310</span></div>
-            <div class="bar-row"><span class="lb">工作</span><span class="tr"><i style="--w:.102"></i></span><span class="vv">1046</span></div>
-            <div class="bar-row"><span class="lb">毕业设计</span><span class="tr"><i style="--w:.097"></i></span><span class="vv">993</span></div>
-            <div class="bar-row"><span class="lb">程序设计</span><span class="tr"><i style="--w:.071"></i></span><span class="vv">726</span></div>
-            <div class="bar-row"><span class="lb">面试</span><span class="tr"><i style="--w:.056"></i></span><span class="vv">580</span></div>
-            <div class="bar-row"><span class="lb">项目</span><span class="tr"><i style="--w:.048"></i></span><span class="vv">497</span></div>
-            <div class="bar-row"><span class="lb">AIGC</span><span class="tr"><i style="--w:.022"></i></span><span class="vv">227</span></div>
-            <div class="bar-row"><span class="lb">《教父》三部曲</span><span class="tr"><i class="hi" style="--w:.080"></i></span><span class="vv">827</span></div>
-          </div>
-          <p class="note" style="margin-top:18px">最长的单篇是<span class="num"> 954 </span>行的《apk 签名》，最短的是<span class="num"> 17 </span>行的一张算法卡片。《教父》是笔记栏目下的一个条目，占全部行数的百分之八。</p>
-          <p class="src">来源：本地笔记库逐文件统计</p>
-        </div>
-      </article>
-
-      <article class="ev" id="contact">
-        <div class="when"><span class="kind">现在</span><span class="dot"></span>2026.10</div>
-        <div class="body">
-          <h2>2026 届　求职中</h2>
-          <p class="org">找 AI 算法与工程方向的工作</p>
-          <p class="note">
-            <a href="mailto:2100918674@qq.com" style="color:var(--gold)">2100918674@qq.com</a>　
-            <a href="https://github.com/iheee-google" style="color:var(--gold)">github.com/iheee-google</a>
-          </p>
-          <p class="src">简历拆成网页结构，不提供 PDF 下载（用户 2026-10-11 第 10 条回答）</p>
-        </div>
-      </article>
-    </div>
+    <article class="rec in">
+      <div class="when">2022.09 至<br>2026.06</div>
+      <div>
+        <h3 class="h3">广东石油化工学院　人工智能　本科</h3>
+        <p class="lead">GPA 3.0/4.0，核心专业课均分 90+，校级一等奖学金（专业前 5%）与二等奖学金两次。</p>
+        <ul>
+          <li>2023　「典阅杯」国家级二等奖</li>
+          <li>2024　中国机器人大赛国家级二等奖</li>
+        </ul>
+        <p class="cite">这两项只知道年份，尺子上画的是空心点</p>
+      </div>
+    </article>
   </section>
+
+  <figure class="band tall">
+    <img class="settle" src="assets/godfather/scene-oranges.jpg"
+         alt="《教父》中维托在街头水果摊前挑橙子">
+  </figure>
+
+  <section class="pull" id="notes">
+    <blockquote class="in">
+      <p>维托遇刺前在街头挑选橙子，中弹倒地后橙子滚落泥泞街头。</p>
+      <p class="cite">《教父》三部曲全景笔记　视听语言与电影符号系统　橙子　第 768 行</p>
+    </blockquote>
+    <p class="lead" style="max-width:34em">
+      这是笔记库里最长的一篇，827 行、11 章、80 张影像。此外还有 66 篇，加起来 10,254 行：linux.do 帖子 8 篇，安卓逆向 7 篇，目标检测 14 篇，毕设 7 篇，以及工作、面试、程序设计、AIGC 各若干。最长的单篇是 954 行的《apk 签名》。
+    </p>
+    <p class="cite">本地笔记库逐文件统计　67 篇　10,254 行　412 张影像</p>
+  </section>
+
 </main>
 
-<footer class="tail">
-  <div class="inner">
-    <h2>整页没有一句关于"我"的评价。</h2>
-    <p class="ct">上面每一条都能回到实习记录或某篇笔记的原文。</p>
-    <p class="meta">
-      方案 A　一条线　原型，非正式实现<br>
-      本页数字均为实测：67 篇 / 10,254 行 / 412 张 / 《教父》827 行
-    </p>
-  </div>
+<footer class="foot" id="contact">
+  <span class="rule-fill"></span>
+  <span class="h3">何楚福</span>
+  <span class="meta">AI 算法工程师　2026 届　求职中</span>
+  <a class="meta press" href="mailto:2100918674@qq.com">2100918674@qq.com</a>
+  <a class="meta press" href="https://github.com/iheee-google" rel="me noopener">github.com/iheee-google</a>
+  <span class="meta" style="margin-left:auto">首页候选 A　一条线</span>
 </footer>
 
 <script>
-// 顶栏压底
+// 顶栏：滚离首屏后加底色，避免压在文字上看不清
 const bar = document.getElementById('bar');
-new IntersectionObserver(([e]) => {
-  bar.classList.toggle('solid', !e.isIntersecting);
-}, { rootMargin: '-60px 0px 0px 0px' }).observe(document.querySelector('.hero'));
-
-// 条目进场 / 离场标记（离场的位移交给滚动驱动动画）
-const io = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-}, { rootMargin: '0px 0px -12% 0px' });
-document.querySelectorAll('.ev').forEach((el) => io.observe(el));
-
-// 尺子刻度跳到对应条目
-document.querySelectorAll('.tick a').forEach((a) => {
-  a.addEventListener('click', (ev) => {
-    const t = document.querySelector(a.getAttribute('href'));
-    if (t) { ev.preventDefault(); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-  });
-});
+const onScroll = () => bar.classList.toggle('solid', window.scrollY > 40);
+onScroll();
+addEventListener('scroll', onScroll, { passive: true });
 </script>
 </body>
 </html>

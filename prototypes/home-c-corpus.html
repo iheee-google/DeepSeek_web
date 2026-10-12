@@ -1,399 +1,397 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>方案 C 一堆（首页）</title>
+<title>何楚福　AI 算法工程师</title>
 <link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/home.css">
 <style>
-@font-face{font-family:"Noto Serif SC";src:url("assets/fonts/NotoSerifSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
-@font-face{font-family:"Noto Sans SC";src:url("assets/fonts/NotoSansSC-VF.ttf") format("truetype-variations");font-weight:100 900;font-display:swap}
+/* ═══ C 一堆：首屏是笔记库本身的体量轮廓，正文按目录各给一种形状 ═══ */
+.hero{padding:clamp(104px,15vh,168px) var(--pad) clamp(48px,8vh,92px);
+  min-height:100svh;display:flex;flex-direction:column;justify-content:center}
+.hero .lead{margin-top:clamp(18px,2.8vh,30px);max-width:34em}
 
-:root{
-  --bg:#0B0907; --fg:#F0E9DB; --dim:#A89E8F; --faint:#6F665B;
-  --gold:#C39A45; --rule:#2A2521;
-  --pad:clamp(20px,4.4vw,64px);
-  --ease-out:cubic-bezier(.22,1,.36,1);
-  --ease-io:cubic-bezier(.77,0,.175,1);
-  --t-hover:160ms;
+/* 轮廓：67 条，长度就是这一篇的真实行数，全库最长的一篇占满 */
+.sil{margin-top:clamp(32px,5.4vh,60px);display:flex;flex-direction:column;gap:4px}
+.sil .r{height:3px}
+.sil .r i{display:block;height:100%;width:calc(var(--w) * 100%);background:var(--ink);
+  transform-origin:left center;
+  clip-path:inset(0 100% 0 0);
+  animation:sweep .72s var(--ease-io) both;
+  animation-delay:calc(160ms + var(--i) * 12ms)}
+.sil .r.long i{background:var(--vermilion)}
+.sil-foot{display:flex;flex-wrap:wrap;gap:7px clamp(18px,3vw,38px);
+  margin-top:clamp(22px,3.4vh,36px)}
+.sil-foot .rule-vm{flex:1 1 100%;height:2px;background:var(--vermilion)}
+
+/* 形状一：主干与知识点 */
+.tree{display:flex;flex-direction:column;gap:9px;margin-top:clamp(24px,4vh,42px)}
+.tree .r{display:grid;grid-template-columns:minmax(0,20em) minmax(0,1fr) auto;
+  gap:clamp(12px,2.4vw,30px);align-items:center}
+.tree .r span{font-size:15px;color:var(--ink-2)}
+.tree .r .bar{height:9px;background:var(--wash);position:relative}
+.tree .r .bar i{position:absolute;inset:0 auto 0 0;display:block;
+  width:calc(var(--w) * 100%);background:var(--ink)}
+.tree .r em{font-family:"Noto Sans SC",system-ui,sans-serif;font-style:normal;
+  font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.kids{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:10px;margin-top:clamp(28px,4.4vh,48px)}
+.kids .c{border-top:1px solid var(--rule);padding-top:11px}
+.kids .c b{display:block;font-weight:400;font-size:14.5px;line-height:1.5;color:var(--ink-2)}
+.kids .c em{display:block;font-style:normal;margin-top:.45em;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px;color:var(--ink-3)}
+
+/* 形状二：一排柱子，高度就是篇幅 */
+.chain{display:flex;align-items:flex-end;gap:clamp(8px,1.4vw,20px);
+  height:clamp(190px,30vh,300px);margin-top:clamp(28px,4.4vh,48px);
+  border-bottom:1px solid var(--ink);padding-bottom:0}
+.chain .c{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;
+  height:100%}
+.chain .c i{display:block;width:100%;height:calc(var(--h) * 100%);background:var(--ink);
+  transform-origin:bottom center}
+.chain .c.big i{background:var(--vermilion)}
+.chain .lb{margin-top:10px;font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px;
+  line-height:1.45;color:var(--ink-3)}
+.chain .lb b{display:block;font-weight:400;color:var(--ink-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chain-foot{margin-top:clamp(18px,2.6vh,28px)}
+
+/* 形状三：按子目录分组，组内是短条 */
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:clamp(20px,3vw,40px);margin-top:clamp(28px,4.4vh,48px)}
+.chips .g h4{font-size:14px;font-weight:600;margin-bottom:.9em}
+.chips .g h4 em{font-style:normal;font-weight:400;color:var(--ink-3);margin-left:.6em;
+  font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px}
+.chips .g .b{height:7px;background:var(--wash);margin-bottom:5px;position:relative}
+.chips .g .b i{position:absolute;inset:0 auto 0 0;display:block;
+  width:calc(var(--w) * 100%);background:var(--ink-3)}
+.chips .g p{margin-top:.9em;font-size:13.5px; color:var(--ink-2);line-height:1.7}
+
+/* 引一句笔记原文 */
+.pull{padding:clamp(56px,9vh,104px) var(--pad);display:grid;gap:clamp(24px,4vh,44px);
+  justify-items:start}
+.pull blockquote{max-width:26em}
+.pull blockquote p{font-size:clamp(22px,2.9vw,40px);font-weight:700;line-height:1.5;
+  letter-spacing:-.008em;text-wrap:pretty}
+.pull blockquote p::before{content:"「"}
+.pull blockquote p::after{content:"」"}
+.pull .cite{margin-top:clamp(18px,2.6vh,28px)}
+.band.tall{height:clamp(340px,68vh,660px)}
+
+/* 滚动驱动：柱子随进入视口长出来。scale 属性只吃数字，没有 x/y 轴名。 */
+@supports (animation-timeline: view()){
+  .grow-y{animation:gy linear both;animation-timeline:view();
+    animation-range:entry 12% cover 46%}
+  @keyframes gy{from{scale:1 0}to{scale:1 1}}
+  .grow-x{animation:gx linear both;animation-timeline:view();
+    animation-range:entry 12% cover 42%}
+  @keyframes gx{from{scale:0 1}to{scale:1 1}}
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html{overflow-x:clip}
-body{overflow-x:clip;background:var(--bg);color:var(--fg);
-  font-family:"Noto Serif SC",Georgia,serif;font-size:16px;line-height:1.8;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-a{color:inherit;text-decoration:none}
-:focus-visible{outline:2px solid var(--gold);outline-offset:4px;border-radius:1px}
-.num{font-variant-numeric:tabular-nums}
-.skip{position:absolute;left:-9999px}
-.skip:focus{left:var(--pad);top:12px;z-index:99;background:var(--bg);
-  padding:8px 14px;border:1px solid var(--gold);font-size:13px}
-
-/* ─────────── 顶栏 ─────────── */
-.bar{position:fixed;inset:0 0 auto;z-index:60;display:flex;align-items:baseline;gap:26px;
-  padding:16px var(--pad);font-family:"Noto Sans SC",system-ui,sans-serif;font-size:11.5px;
-  color:var(--faint);font-variant-numeric:tabular-nums;border-bottom:1px solid transparent;
-  transition:background var(--t-hover) ease,border-color var(--t-hover) ease}
-.bar.solid{background:var(--bg);border-bottom-color:var(--rule)}
-.bar .me{color:var(--fg);font-weight:600;letter-spacing:.04em}
-.bar .me em{font-style:normal;color:var(--faint);font-weight:400;margin-left:10px}
-.bar .nav{margin-left:auto;display:flex;gap:24px}
-.bar a{transition:color var(--t-hover) ease}
-.bar a:hover{color:var(--fg)}
-
-/* ─────────── 首屏：全部 67 篇的轮廓 ─────────── */
-.hero{height:100svh;display:flex;flex-direction:column;
-  padding:clamp(78px,11vh,116px) var(--pad) clamp(30px,5vh,52px)}
-.hero .hd{display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;
-  font-family:"Noto Sans SC",sans-serif;font-size:11.5px;color:var(--faint);
-  font-variant-numeric:tabular-nums;padding-bottom:14px}
-.hero .hd b{font-family:"Noto Serif SC",serif;font-size:15px;font-weight:600;
-  color:var(--fg);letter-spacing:.02em}
-.hero .hd .r{margin-left:auto}
-.sil{flex:1;min-height:0;display:flex;flex-direction:column;gap:1px;
-  padding-top:16px;border-top:1px solid var(--rule);
-  transform-origin:top left}
-.sil li{flex:1;min-height:0;position:relative;list-style:none}
-.sil li i{position:absolute;left:0;top:0;bottom:0;width:calc(var(--w) * 100%);
-  background:var(--rule);transform-origin:left center;
-  transform:scaleX(0);animation:sweep 900ms var(--ease-out) forwards;
-  animation-delay:calc(var(--i) * 9ms)}
-.sil li.milestone i{background:#C39A4552;box-shadow:inset 1px 0 0 var(--gold)}
-.sil li.undated i{background:#3A322A}
-@keyframes sweep{to{transform:scaleX(1)}}
-.hero .ft{margin-top:16px;padding-top:13px;border-top:1px solid var(--rule);
-  display:flex;flex-wrap:wrap;gap:6px 40px;font-family:"Noto Sans SC",sans-serif;
-  font-size:11.5px;color:var(--faint);line-height:1.7}
-.hero .ft b{font-weight:500;color:var(--dim)}
-.hero .ft .lg{display:inline-flex;align-items:center;gap:8px}
-.hero .ft .lg s{display:block;width:22px;height:5px;text-decoration:none;
-  background:var(--rule)}
-.hero .ft .lg.g s{background:#C39A4552;box-shadow:inset 1px 0 0 var(--gold)}
-.hero .ft .lg.u s{background:#3A322A}
-
-/* ─────────── 按目录 ─────────── */
-.idx{padding:clamp(56px,9vh,110px) var(--pad) clamp(70px,12vh,150px)}
-.idx>.lead{max-width:70ch;padding-bottom:clamp(34px,5vh,60px);
-  border-bottom:1px solid var(--rule)}
-.idx>.lead h1{font-size:clamp(21px,2.3vw,32px);font-weight:600;line-height:1.45}
-.idx>.lead p{margin-top:12px;font-family:"Noto Sans SC",sans-serif;font-size:12px;
-  color:var(--faint);line-height:1.9}
-
-.sec{padding:clamp(34px,5.4vh,64px) 0;border-bottom:1px solid var(--rule)}
-.sec>.sh{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;
-  padding-bottom:clamp(18px,2.6vh,30px)}
-.sec h2{font-size:clamp(19px,2vw,28px);font-weight:600;letter-spacing:-.01em}
-.sec .cnt{margin-left:auto;font-family:"Noto Sans SC",sans-serif;font-size:11.5px;
-  color:var(--faint);font-variant-numeric:tabular-nums;white-space:nowrap}
-.sec .cnt b{font-weight:500;color:var(--dim)}
-
-/* 行式 */
-.rows{list-style:none;display:flex;flex-direction:column;
-  gap:clamp(7px,1vh,11px)}
-.rows li{display:grid;grid-template-columns:minmax(0,1fr) 46% 6ch;align-items:baseline;
-  gap:clamp(10px,1.6vw,26px)}
-.rows .tt{font-size:13.5px;line-height:1.55;color:var(--dim);
-  overflow:clip;text-overflow:ellipsis;white-space:nowrap}
-.rows .bk{position:relative;height:8px;align-self:center}
-.rows .bk i{position:absolute;inset:0 auto 0 0;width:calc(var(--w) * 100%);
-  background:var(--rule);transform-origin:left center;transform:scaleX(0);
-  transition:transform 760ms var(--ease-out)}
-.rows .vv{text-align:right;font-family:"Noto Sans SC",sans-serif;font-size:11.5px;
-  color:var(--faint);font-variant-numeric:tabular-nums}
-.rows li.milestone .bk i{background:#C39A4552;box-shadow:inset 1px 0 0 var(--gold)}
-.rows li.milestone .tt{color:var(--fg)}
-.sec.in .rows li .bk i{transform:scaleX(1)}
-
-/* 树（目标检测：主条目 + 知识点） */
-.tree{list-style:none;display:flex;flex-direction:column;gap:clamp(9px,1.3vh,14px)}
-.tree>li{display:grid;grid-template-columns:minmax(0,1fr) 46% 6ch;
-  align-items:baseline;gap:clamp(10px,1.6vw,26px)}
-.tree .tt{font-size:13.5px;color:var(--dim);white-space:nowrap;overflow:clip;
-  text-overflow:ellipsis}
-.tree .bk{position:relative;height:8px;align-self:center}
-.tree .bk i{position:absolute;inset:0 auto 0 0;width:calc(var(--w) * 100%);
-  background:var(--rule);transform-origin:left center;transform:scaleX(0);
-  transition:transform 760ms var(--ease-out)}
-.tree .vv{text-align:right;font-family:"Noto Sans SC",sans-serif;font-size:11.5px;
-  color:var(--faint);font-variant-numeric:tabular-nums}
-.sec.in .tree .bk i{transform:scaleX(1)}
-.kids{list-style:none;margin:8px 0 4px 0;padding-left:clamp(18px,2.6vw,40px);
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-  gap:5px clamp(16px,3vw,44px);position:relative}
-.kids::before{content:"";position:absolute;left:clamp(6px,1vw,14px);top:2px;bottom:2px;
-  width:1px;background:var(--rule)}
-.kids li{display:flex;align-items:baseline;gap:12px;
-  font-family:"Noto Sans SC",sans-serif;font-size:11.5px;color:var(--faint)}
-.kids li span{flex:1;overflow:clip;text-overflow:ellipsis;white-space:nowrap}
-.kids li b{font-weight:400;font-variant-numeric:tabular-nums}
-
-/* 链（毕设：一个项目的七章） */
-.chain{list-style:none;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(250px,1fr));
-  gap:clamp(14px,2.4vw,34px);position:relative}
-.chain li{position:relative;padding-left:22px}
-.chain li::before{content:"";position:absolute;left:4px;top:.62em;width:9px;height:9px;
-  border-radius:50%;border:1px solid var(--gold);background:var(--bg)}
-.chain li::after{content:"";position:absolute;left:8px;top:calc(.62em + 11px);
-  bottom:-14px;width:1px;background:var(--rule)}
-.chain li:last-child::after{display:none}
-.chain .tt{font-size:13.5px;color:var(--dim);line-height:1.6}
-.chain .vv{display:block;font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  color:var(--faint);font-variant-numeric:tabular-nums;margin-top:3px}
-
-/* 短条堆（程序设计：19 张卡片，按子目录分组） */
-.cgs{display:flex;flex-direction:column;gap:clamp(16px,2.4vh,26px)}
-.cg{display:grid;grid-template-columns:clamp(72px,8vw,110px) minmax(0,1fr);
-  gap:clamp(12px,2vw,30px);align-items:start}
-.cg h3{font-family:"Noto Sans SC",sans-serif;font-size:12px;font-weight:500;
-  color:var(--dim);line-height:1.6;position:sticky;top:74px}
-.cg h3 span{display:block;color:var(--faint);font-size:11px;
-  font-variant-numeric:tabular-nums}
-.chips{list-style:none;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
-  gap:3px clamp(18px,3vw,46px)}
-.chips li{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:baseline;
-  gap:12px;padding:3.5px 0;font-family:"Noto Sans SC",sans-serif;font-size:12px;
-  color:var(--faint);border-bottom:1px solid #1A1614}
-.chips li span{overflow:clip;text-overflow:ellipsis;white-space:nowrap}
-.chips li b{text-align:right;font-weight:400;font-variant-numeric:tabular-nums}
-.chips li.hot{color:var(--dim)}
-.chips li s{display:inline-block;height:4px;vertical-align:middle;margin-right:9px;
-  width:calc(var(--w) * 100%);background:var(--rule);text-decoration:none}
-.chips li.hot s{background:#C39A4552;box-shadow:inset 1px 0 0 var(--gold)}
-
-/* 悬停：整行亮起 */
-.rows li:hover .tt,.tree li:hover .tt,.chain li:hover .tt,.chips li:hover{color:var(--fg)}
-.rows li:hover .vv,.tree li:hover .vv{color:var(--gold)}
-
-/* 离场 */
-@supports (animation-timeline:view()){
-  body .sec .sh,body .sec .rows,body .sec .tree,body .sec .chain,body .sec .chips{
-    animation:sec-out linear both;
-    animation-timeline:view(block);
-    animation-range:exit 0% exit 96%;
-  }
-  body .sil{
-    animation:sil-out linear both;
-    animation-timeline:scroll(root block);
-    animation-range:70vh 120vh;
-  }
-}
-@keyframes sec-out{from{opacity:1}to{opacity:.24}}
-@keyframes sil-out{from{transform:none;opacity:1}
-  to{transform:translateY(-24px);opacity:0}}
-
-/* ─────────── 尾 ─────────── */
-.tail{padding:clamp(70px,11vh,140px) var(--pad) clamp(80px,13vh,160px)}
-.tail h2{font-size:clamp(20px,2.2vw,32px);font-weight:600;line-height:1.45;
-  max-width:24ch}
-.tail .warn{margin-top:20px;max-width:66ch;font-size:14.5px;color:var(--dim)}
-.tail .warn b{font-weight:500;color:var(--gold)}
-.ct{margin-top:clamp(34px,5vh,56px);padding-top:24px;border-top:1px solid var(--rule);
-  display:flex;flex-wrap:wrap;gap:12px 30px;font-family:"Noto Sans SC",sans-serif;
-  font-size:13px;color:var(--dim);align-items:center}
-.ct a{display:inline-flex;align-items:center;gap:8px;transition:color var(--t-hover) ease}
-.ct a:hover{color:var(--gold)}
-.ct svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.6;
-  stroke-linecap:round;stroke-linejoin:round}
-.meta{margin-top:34px;font-family:"Noto Sans SC",sans-serif;font-size:11px;
-  color:var(--faint);line-height:2;font-variant-numeric:tabular-nums}
+.tree .r .bar i,.chips .g .b i{transform-origin:left center}
 
 @media (prefers-reduced-motion:reduce){
-  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important}
-  .sil li i,.rows .bk i,.tree .bk i{transform:scaleX(1)}
-  @supports (animation-timeline:view()){
-    body .sec .sh,body .sec .rows,body .sec .tree,body .sec .chain,body .sec .chips,
-    body .sil{animation:hold linear both;animation-timeline:scroll(root block);
-      animation-range:0 1px}
-  }
-  @keyframes hold{from{opacity:1;transform:none}to{opacity:1;transform:none}}
-}
-@media (max-width:820px){
-  .rows li,.tree>li{grid-template-columns:minmax(0,1fr) 30% 5ch}
-  .cg{grid-template-columns:minmax(0,1fr);gap:8px}
-  .cg h3{position:static}
-  .hero .ft{gap:4px 22px;font-size:10.5px}
+  /* 保留长度信息，去掉生长动作：条形本身仍然完整可见 */
+  .sil .r i{animation:none;clip-path:none}
+  .grow-x,.grow-y{animation:none}
 }
 </style>
 </head>
 <body>
-<a class="skip" href="#idx">跳到目录</a>
+<a class="skip" href="#main">跳到正文</a>
 
 <header class="bar" id="bar">
-  <span class="me">何楚福<em>AI 算法工程师 · 2026 届</em></span>
+  <span class="me">何楚福</span>
+  <span>AI 算法工程师　2026 届</span>
   <nav class="nav">
-    <a href="#idx">笔记</a>
-    <a href="#idx">项目</a>
-    <a href="#tail">履历</a>
-    <a href="#tail">联系</a>
+    <a href="#corpus">笔记</a>
+    <a href="#resume">履历</a>
+    <a href="#contact">联系</a>
+    <a href="https://github.com/iheee-google" rel="me noopener">GitHub</a>
   </nav>
 </header>
 
-<main>
-  <!-- ══════ 首屏：全部 67 篇的真实体量轮廓 ══════ -->
-  <section class="hero" aria-label="全部笔记的体量轮廓">
-    <div class="hd">
-      <b>何楚福</b>
-      <span>AI 算法工程师　广东石油化工学院 人工智能</span>
-      <span class="r" id="hd-count"></span>
+<main id="main">
+
+  <section class="hero">
+    <h1 class="display rise">10,254 行</h1>
+    <div class="lead rise" style="--d:140ms;max-width:37em">
+      <p>这是笔记库的总行数，67 篇，412 张影像，从 2024 年写到 2026 年。</p>
+      <p>下面每一条横线的长度，就是那一篇的真实行数。</p>
     </div>
-
-    <ol class="sil" id="sil" aria-label="每一篇笔记一条，宽度就是它的行数"></ol>
-
-    <div class="ft">
-      <span class="lg"><s></s>金色：全文最长的五篇</span>
-      <span class="lg u"><s></s>暗色：没有日期信号，只能确认到它被整理过</span>
-      <span id="f-max"></span>
-      <span id="f-min"></span>
-      <span id="f-mid"></span>
-      <span id="f-und"></span>
+    <div class="sil" role="img" aria-label="笔记库 67 篇的篇幅轮廓，最长一篇 954 行，最短 14 行">
+      <div class="r long" style="--i:0"><i style="--w:1.0000" title="安卓逆向 / apk签名　954 行"></i></div>
+      <div class="r" style="--i:1"><i style="--w:0.7977" title="linuxdo帖子 / 从 vibe coding 到 spec coding：我用 T…　761 行"></i></div>
+      <div class="r" style="--i:2"><i style="--w:0.5786" title="面试 / AI Agent 应用开发面试问答　552 行"></i></div>
+      <div class="r" style="--i:3"><i style="--w:0.5241" title="linuxdo帖子 / 【开源推广】作为一名在读博士生，我在日常是如何与 AI 协作的？…　500 行"></i></div>
+      <div class="r" style="--i:4"><i style="--w:0.5063" title="项目 / advanced-rag-main　483 行"></i></div>
+      <div class="r" style="--i:5"><i style="--w:0.4633" title="linuxdo帖子 / 佬们，做 Agent 用 LangGraph 是不是方向不太对？　442 行"></i></div>
+      <div class="r" style="--i:6"><i style="--w:0.3920" title="linuxdo帖子 / 【InkWell Ai】不只是”文本生成”——Ai搓出来的一个从…　374 行"></i></div>
+      <div class="r" style="--i:7"><i style="--w:0.3648" title="目标检测 / YOLOv8　348 行"></i></div>
+      <div class="r" style="--i:8"><i style="--w:0.3637" title="工作 / Qwen Image Service　347 行"></i></div>
+      <div class="r" style="--i:9"><i style="--w:0.3543" title="linuxdo帖子 / AI 中转站大起底：什么是中转站，倍率是什么（科普贴）　338 行"></i></div>
+      <div class="r" style="--i:10"><i style="--w:0.3281" title="linuxdo帖子 / 企业知识库项目落地好难…求助　313 行"></i></div>
+      <div class="r" style="--i:11"><i style="--w:0.3103" title="linuxdo帖子 / AI 时代的思维框架　296 行"></i></div>
+      <div class="r" style="--i:12"><i style="--w:0.2862" title="目标检测 / YOLOv5　273 行"></i></div>
+      <div class="r" style="--i:13"><i style="--w:0.2683" title="毕设 / 毕设答辩 PPT　256 行"></i></div>
+      <div class="r" style="--i:14"><i style="--w:0.2631" title="安卓逆向 / xposed　251 行"></i></div>
+      <div class="r" style="--i:15"><i style="--w:0.2568" title="安卓逆向 / 广告弹窗　245 行"></i></div>
+      <div class="r" style="--i:16"><i style="--w:0.2149" title="工作 / Z-Image-Turbo　205 行"></i></div>
+      <div class="r" style="--i:17"><i style="--w:0.2107" title="AIGC / 原理　201 行"></i></div>
+      <div class="r" style="--i:18"><i style="--w:0.2023" title="工作 / Ideogram 4.0 vs Z-Image-Turbo 模型对比　193 行"></i></div>
+      <div class="r" style="--i:19"><i style="--w:0.2023" title="目标检测 / 注意力机制　193 行"></i></div>
+      <div class="r" style="--i:20"><i style="--w:0.2002" title="安卓逆向 / smail　191 行"></i></div>
+      <div class="r" style="--i:21"><i style="--w:0.1824" title="毕设 / 电影问答 NLU 模型　174 行"></i></div>
+      <div class="r" style="--i:22"><i style="--w:0.1541" title="毕设 / 基于知识图谱的电影问答系统　147 行"></i></div>
+      <div class="r" style="--i:23"><i style="--w:0.1509" title="工作 / 文生图双主体测试集　144 行"></i></div>
+      <div class="r" style="--i:24"><i style="--w:0.1488" title="毕设 / 电影问答系统实现与可视化　142 行"></i></div>
+      <div class="r" style="--i:25"><i style="--w:0.1468" title="程序设计 / （爬楼梯）模版　140 行"></i></div>
+      <div class="r" style="--i:26"><i style="--w:0.1331" title="工作 / 文生图双主体图集　127 行"></i></div>
+      <div class="r" style="--i:27"><i style="--w:0.1300" title="毕设 / 电影知识图谱数据构建　124 行"></i></div>
+      <div class="r" style="--i:28"><i style="--w:0.1164" title="毕设 / 毕设答辩材料与问答　111 行"></i></div>
+      <div class="r" style="--i:29"><i style="--w:0.0912" title="安卓逆向 / 破解注册码　87 行"></i></div>
+      <div class="r" style="--i:30"><i style="--w:0.0891" title="程序设计 / 二分基础　85 行"></i></div>
+      <div class="r" style="--i:31"><i style="--w:0.0797" title="目标检测 / 上下采样　76 行"></i></div>
+      <div class="r" style="--i:32"><i style="--w:0.0723" title="程序设计 / 将列表添加到集合里很耗时　69 行"></i></div>
+      <div class="r" style="--i:33"><i style="--w:0.0692" title="安卓逆向 / 初识APK文件结构　66 行"></i></div>
+      <div class="r" style="--i:34"><i style="--w:0.0671" title="目标检测 / FasterRCNN　64 行"></i></div>
+      <div class="r" style="--i:35"><i style="--w:0.0608" title="目标检测 / FastRCNN　58 行"></i></div>
+      <div class="r" style="--i:36"><i style="--w:0.0587" title="目标检测 / 解耦合头　56 行"></i></div>
+      <div class="r" style="--i:37"><i style="--w:0.0577" title="程序设计 / 滑动窗口中遇到循环数组要取模进行运算　55 行"></i></div>
+      <div class="r" style="--i:38"><i style="--w:0.0566" title="目标检测 / R-CNN　54 行"></i></div>
+      <div class="r" style="--i:39"><i style="--w:0.0566" title="程序设计 / 程序设计　54 行"></i></div>
+      <div class="r" style="--i:40"><i style="--w:0.0482" title="目标检测 / Silu激活函数　46 行"></i></div>
+      <div class="r" style="--i:41"><i style="--w:0.0451" title="目标检测 / 特征图大小与目标大小的对应关系　43 行"></i></div>
+      <div class="r" style="--i:42"><i style="--w:0.0419" title="程序设计 / 字符串方法　40 行"></i></div>
+      <div class="r" style="--i:43"><i style="--w:0.0409" title="毕设 / 毕设　39 行"></i></div>
+      <div class="r" style="--i:44"><i style="--w:0.0367" title="目标检测 / 目标检测　35 行"></i></div>
+      <div class="r" style="--i:45"><i style="--w:0.0346" title="程序设计 / 差分模板　33 行"></i></div>
+      <div class="r" style="--i:46"><i style="--w:0.0335" title="linuxdo帖子 / linuxdo帖子　32 行"></i></div>
+      <div class="r" style="--i:47"><i style="--w:0.0314" title="工作 / 工作　30 行"></i></div>
+      <div class="r" style="--i:48"><i style="--w:0.0314" title="目标检测 / Haar特征　30 行"></i></div>
+      <div class="r" style="--i:49"><i style="--w:0.0294" title="面试 / 面试　28 行"></i></div>
+      <div class="r" style="--i:50"><i style="--w:0.0273" title="AIGC / AIGC　26 行"></i></div>
+      <div class="r" style="--i:51"><i style="--w:0.0262" title="安卓逆向 / 安卓逆向　25 行"></i></div>
+      <div class="r" style="--i:52"><i style="--w:0.0262" title="程序设计 / 如果是数字0和1统计个数少用字典　25 行"></i></div>
+      <div class="r" style="--i:53"><i style="--w:0.0241" title="程序设计 / 将列表统计频率可直接加和any的用法　23 行"></i></div>
+      <div class="r" style="--i:54"><i style="--w:0.0241" title="程序设计 / 滑动+利用列表索引计数排序　23 行"></i></div>
+      <div class="r" style="--i:55"><i style="--w:0.0241" title="程序设计 / 遇到从左到右的子数组套路　23 行"></i></div>
+      <div class="r" style="--i:56"><i style="--w:0.0220" title="程序设计 / 二分函数　21 行"></i></div>
+      <div class="r" style="--i:57"><i style="--w:0.0220" title="程序设计 / 不定长滑动窗口要左右指针　21 行"></i></div>
+      <div class="r" style="--i:58"><i style="--w:0.0220" title="程序设计 / 对于单个元素进行计数可用户count　21 行"></i></div>
+      <div class="r" style="--i:59"><i style="--w:0.0220" title="程序设计 / 看到无限想到取模类似于循环数组　21 行"></i></div>
+      <div class="r" style="--i:60"><i style="--w:0.0210" title="目标检测 / 感受野　20 行"></i></div>
+      <div class="r" style="--i:61"><i style="--w:0.0199" title="程序设计 / 单调　19 行"></i></div>
+      <div class="r" style="--i:62"><i style="--w:0.0199" title="程序设计 / 字典涵盖可直接用大于小于　19 行"></i></div>
+      <div class="r" style="--i:63"><i style="--w:0.0178" title="程序设计 / 原地前缀和　17 行"></i></div>
+      <div class="r" style="--i:64"><i style="--w:0.0178" title="程序设计 / 向上取整　17 行"></i></div>
+      <div class="r" style="--i:65"><i style="--w:0.0147" title="目标检测 / Selective Search　14 行"></i></div>
+      <div class="r" style="--i:66"><i style="--w:0.0147" title="项目 / 项目　14 行"></i></div>
+    </div>
+    <div class="sil-foot">
+      <span class="rule-vm"></span>
+      <span class="meta">最长 954 行　《apk 签名》</span>
+      <span class="meta">中位 66 行</span>
+      <span class="meta">最短 14 行　《Selective Search》</span>
+      <span class="meta">31 篇没有日期信号</span>
+      <span class="meta">合计 10,254 行</span>
     </div>
   </section>
 
-  <!-- ══════ 按目录 ══════ -->
-  <section class="idx" id="idx">
-    <div class="lead">
-      <h1>下面是同一批笔记，按目录重排一遍。</h1>
-      <p>每个目录用它自己的形状画：长文是条，知识点是树，一个项目的几章是链，算法卡片是一堆短条。横条长度用同一把尺子（全部笔记里最长的那篇 = 满格），所以跨目录也能比较。</p>
-    </div>
-    <div id="sections"></div>
-  </section>
-
-  <footer class="tail" id="tail">
-    <h2>这一页现在还不能点进去。</h2>
-    <p class="warn">上面的 67 篇笔记还在本地 Obsidian 库里，<b>尚未接入仓库</b>（技术债 D1）。所以本页画的是真实数据的骨架，不是已上线的目录。接入之后每一条才会变成链接。</p>
-
-    <div class="ct">
-      <a href="mailto:2100918674@qq.com">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>
-        2100918674@qq.com</a>
-      <a href="https://github.com/iheee-google">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-        github.com/iheee-google</a>
-      <span style="color:var(--faint)">简历拆成网页结构，不提供 PDF 下载</span>
-    </div>
-
-    <p class="meta">
-      方案 C　一堆　原型，非正式实现<br>
-      本页数字由脚本从本地笔记库与《教父》笔记逐文件统计
+    <section class="plate" id="corpus">
+    <h2 class="h2">目标检测</h2>
+    <p class="lead" style="margin-top:1em;max-width:34em">
+      14 篇，1,310 行。主线是几个检测器一路读下来，另有 8 篇知识点单独存放，其中最长的《注意力机制》193 行。
     </p>
-  </footer>
+    <div class="tree">
+        <div class="r">
+          <span>YOLOv8</span>
+          <span class="bar"><i class="grow-x" style="--w:1.0000"></i></span>
+          <em>348</em>
+        </div>
+        <div class="r">
+          <span>YOLOv5</span>
+          <span class="bar"><i class="grow-x" style="--w:0.7845"></i></span>
+          <em>273</em>
+        </div>
+        <div class="r">
+          <span>FasterRCNN</span>
+          <span class="bar"><i class="grow-x" style="--w:0.1839"></i></span>
+          <em>64</em>
+        </div>
+        <div class="r">
+          <span>FastRCNN</span>
+          <span class="bar"><i class="grow-x" style="--w:0.1667"></i></span>
+          <em>58</em>
+        </div>
+        <div class="r">
+          <span>R-CNN</span>
+          <span class="bar"><i class="grow-x" style="--w:0.1552"></i></span>
+          <em>54</em>
+        </div>
+        <div class="r">
+          <span>目标检测（目录索引）</span>
+          <span class="bar"><i class="grow-x" style="--w:0.1006"></i></span>
+          <em>35</em>
+        </div>
+    </div>
+    <div class="kids">
+        <div class="c"><b>注意力机制</b><em>193 行</em></div>
+        <div class="c"><b>上下采样</b><em>76 行</em></div>
+        <div class="c"><b>解耦合头</b><em>56 行</em></div>
+        <div class="c"><b>Silu激活函数</b><em>46 行</em></div>
+        <div class="c"><b>特征图大小与目标大小的对应关系</b><em>43 行</em></div>
+        <div class="c"><b>Haar特征</b><em>30 行</em></div>
+        <div class="c"><b>感受野</b><em>20 行</em></div>
+        <div class="c"><b>Selective Search</b><em>14 行</em></div>
+    </div>
+    <p class="cite" style="margin-top:clamp(22px,3.4vh,38px)">
+      本地笔记库逐文件统计　目标检测目录 14 篇　1,310 行
+    </p>
+  </section>
+
+  <section class="plate">
+    <h2 class="h2">linux.do 帖子</h2>
+    <p class="lead" style="margin-top:1em;max-width:34em">
+      8 篇，3,056 行，是行数最多的一个目录。柱子的高度就是篇幅，最长的一篇 761 行，短的一篇 32 行。
+    </p>
+    <div class="chain">
+      <div class="c big">
+        <i class="grow-y" style="--h:1.0000"></i>
+        <span class="lb"><b>从 vibe coding 到 spec coding：我用 T…</b>761 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.6570"></i>
+        <span class="lb"><b>【开源推广】作为一名在读博士生，我在日常是如何与 AI 协作的？…</b>500 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.5808"></i>
+        <span class="lb"><b>佬们，做 Agent 用 LangGraph 是不是方向不太对？</b>442 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.4915"></i>
+        <span class="lb"><b>【InkWell Ai】不只是”文本生成”——Ai搓出来的一个从…</b>374 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.4442"></i>
+        <span class="lb"><b>AI 中转站大起底：什么是中转站，倍率是什么（科普贴）</b>338 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.4113"></i>
+        <span class="lb"><b>企业知识库项目落地好难…求助</b>313 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.3890"></i>
+        <span class="lb"><b>AI 时代的思维框架</b>296 行</span>
+      </div>
+      <div class="c">
+        <i class="grow-y" style="--h:0.0420"></i>
+        <span class="lb"><b>linuxdo帖子</b>32 行</span>
+      </div>
+    </div>
+    <p class="cite chain-foot">
+      本地笔记库逐文件统计　linux.do 目录 8 篇　3,056 行
+    </p>
+  </section>
+
+  <section class="plate">
+    <h2 class="h2">程序设计</h2>
+    <p class="lead" style="margin-top:1em;max-width:34em">
+      19 篇，726 行。这个目录不按主题分，按题型分，6 组里多数是几十行的短条目，最长的一条 140 行。
+    </p>
+    <div class="chips">
+      <div class="g">
+        <h4>滑动<em>11 篇　340 行</em></h4>
+        <div class="b" title="不定长滑动窗口要左右指针　21 行"><i class="grow-x" style="--w:0.1500"></i></div>
+        <div class="b" title="如果是数字0和1统计个数少用字典　25 行"><i class="grow-x" style="--w:0.1786"></i></div>
+        <div class="b" title="字典涵盖可直接用大于小于　19 行"><i class="grow-x" style="--w:0.1357"></i></div>
+        <div class="b" title="字符串方法　40 行"><i class="grow-x" style="--w:0.2857"></i></div>
+        <div class="b" title="对于单个元素进行计数可用户count　21 行"><i class="grow-x" style="--w:0.1500"></i></div>
+        <div class="b" title="将列表添加到集合里很耗时　69 行"><i class="grow-x" style="--w:0.4929"></i></div>
+        <div class="b" title="将列表统计频率可直接加和any的用法　23 行"><i class="grow-x" style="--w:0.1643"></i></div>
+        <div class="b" title="滑动+利用列表索引计数排序　23 行"><i class="grow-x" style="--w:0.1643"></i></div>
+        <div class="b" title="滑动窗口中遇到循环数组要取模进行运算　55 行"><i class="grow-x" style="--w:0.3929"></i></div>
+        <div class="b" title="看到无限想到取模类似于循环数组　21 行"><i class="grow-x" style="--w:0.1500"></i></div>
+        <div class="b" title="遇到从左到右的子数组套路　23 行"><i class="grow-x" style="--w:0.1643"></i></div>
+      </div>
+      <div class="g">
+        <h4>二分<em>2 篇　106 行</em></h4>
+        <div class="b" title="二分函数　21 行"><i class="grow-x" style="--w:0.1500"></i></div>
+        <div class="b" title="二分基础　85 行"><i class="grow-x" style="--w:0.6071"></i></div>
+      </div>
+      <div class="g">
+        <h4>通用<em>2 篇　34 行</em></h4>
+        <div class="b" title="原地前缀和　17 行"><i class="grow-x" style="--w:0.1214"></i></div>
+        <div class="b" title="向上取整　17 行"><i class="grow-x" style="--w:0.1214"></i></div>
+      </div>
+      <div class="g">
+        <h4>动态<em>1 篇　140 行</em></h4>
+        <div class="b" title="（爬楼梯）模版　140 行"><i class="grow-x" style="--w:1.0000"></i></div>
+      </div>
+      <div class="g">
+        <h4>单调栈<em>1 篇　19 行</em></h4>
+        <div class="b" title="单调　19 行"><i class="grow-x" style="--w:0.1357"></i></div>
+      </div>
+      <div class="g">
+        <h4>差分<em>1 篇　33 行</em></h4>
+        <div class="b" title="差分模板　33 行"><i class="grow-x" style="--w:0.2357"></i></div>
+      </div>
+    </div>
+    <p class="cite" style="margin-top:clamp(22px,3.4vh,38px)">
+      本地笔记库逐文件统计　程序设计目录 19 篇　726 行　另有目录索引 1 篇
+    </p>
+  </section>
+
+  <figure class="band tall">
+    <img class="settle" src="assets/godfather/scene-oranges.jpg"
+         alt="《教父》中维托在街头水果摊前挑橙子">
+  </figure>
+
+  <section class="pull" id="resume">
+    <blockquote>
+      <p>维托遇刺前在街头挑选橙子，中弹倒地后橙子滚落泥泞街头。</p>
+      <p class="cite">《教父》三部曲全景笔记　视听语言与电影符号系统　橙子　第 768 行</p>
+    </blockquote>
+    <p class="lead" style="max-width:34em">
+      《教父》三部曲是其中最长的一篇，827 行、11 章、80 张影像，在轮廓里标成红色。其余 66 篇分别落在目标检测、程序设计、安卓逆向、linux.do 帖子、工作、毕设、面试、AIGC 这几个目录下。
+    </p>
+    <p class="cite">本地笔记库逐文件统计　67 篇　10,254 行　412 张影像</p>
+  </section>
+
+  <section class="plate">
+    <div class="tail" style="display:grid;gap:clamp(28px,5vw,72px);
+         grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+      <div>
+        <h3 class="h3" style="margin-bottom:1em">何楚福</h3>
+        <p class="lead">AI 算法工程师　2026 届　广东石油化工学院 人工智能　本科</p>
+        <p class="lead" style="margin-top:1em">
+          两段实习：深圳科蓝金信科技发展有限公司（智能海关报关单证处理系统）、茂名千翔安全环保科技有限公司（气体泄漏监测系统）。毕业设计是基于知识图谱的电影问答系统。
+        </p>
+      </div>
+      <div>
+        <h3 class="h3" style="margin-bottom:1em">联系</h3>
+        <p class="lead">
+          <a class="press" href="mailto:2100918674@qq.com">2100918674@qq.com</a><br>
+          <a class="press" href="https://github.com/iheee-google" rel="me noopener">github.com/iheee-google</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
 </main>
 
+<footer class="foot" id="contact">
+  <span class="rule-fill"></span>
+  <span class="h3">何楚福</span>
+  <span class="meta">AI 算法工程师　2026 届　求职中</span>
+  <span class="meta" style="margin-left:auto">首页候选 C　一堆</span>
+</footer>
+
 <script>
-/* 由 scripts/ 生成的真实数据：67 篇笔记 + 《教父》旗舰笔记 */
-const NOTES = [{"title":"AIGC","sec":"AIGC","lines":26,"undated":true,"index":true},{"title":"原理","sec":"AIGC","lines":201,"undated":true,"group":"文本生成"},{"title":"AI 中转站大起底：什么是中转站，倍率是什么（科普贴）","sec":"linuxdo帖子","lines":338,"undated":false},{"title":"AI 时代的思维框架","sec":"linuxdo帖子","lines":296,"undated":false},{"title":"linuxdo帖子","sec":"linuxdo帖子","lines":32,"undated":false,"index":true},{"title":"【InkWell Ai】不只是”文本生成”——Ai搓出来的一个从…","sec":"linuxdo帖子","lines":374,"undated":false},{"title":"【开源推广】作为一名在读博士生，我在日常是如何与 AI 协作的？…","sec":"linuxdo帖子","lines":500,"undated":false},{"title":"从 vibe coding 到 spec coding：我用 T…","sec":"linuxdo帖子","lines":761,"undated":false},{"title":"企业知识库项目落地好难…求助","sec":"linuxdo帖子","lines":313,"undated":false},{"title":"佬们，做 Agent 用 LangGraph 是不是方向不太对？","sec":"linuxdo帖子","lines":442,"undated":false},{"title":"apk签名","sec":"安卓逆向","lines":954,"undated":false},{"title":"smail","sec":"安卓逆向","lines":191,"undated":true},{"title":"xposed","sec":"安卓逆向","lines":251,"undated":true},{"title":"初识APK文件结构","sec":"安卓逆向","lines":66,"undated":true},{"title":"安卓逆向","sec":"安卓逆向","lines":25,"undated":true,"index":true},{"title":"广告弹窗","sec":"安卓逆向","lines":245,"undated":false},{"title":"破解注册码","sec":"安卓逆向","lines":87,"undated":false},{"title":"Ideogram 4.0 vs Z-Image-Turbo 模型对比","sec":"工作","lines":193,"undated":true},{"title":"Qwen Image Service","sec":"工作","lines":347,"undated":true},{"title":"Z-Image-Turbo","sec":"工作","lines":205,"undated":true},{"title":"工作","sec":"工作","lines":30,"undated":true,"index":true},{"title":"文生图双主体图集","sec":"工作","lines":127,"undated":true},{"title":"文生图双主体测试集","sec":"工作","lines":144,"undated":true},{"title":"基于知识图谱的电影问答系统","sec":"毕设","lines":147,"undated":true},{"title":"毕设","sec":"毕设","lines":39,"undated":true,"index":true},{"title":"毕设答辩 PPT","sec":"毕设","lines":256,"undated":true},{"title":"毕设答辩材料与问答","sec":"毕设","lines":111,"undated":true},{"title":"电影知识图谱数据构建","sec":"毕设","lines":124,"undated":true},{"title":"电影问答 NLU 模型","sec":"毕设","lines":174,"undated":true},{"title":"电影问答系统实现与可视化","sec":"毕设","lines":142,"undated":true},{"title":"FastRCNN","sec":"目标检测","lines":58,"undated":false},{"title":"FasterRCNN","sec":"目标检测","lines":64,"undated":false},{"title":"R-CNN","sec":"目标检测","lines":54,"undated":false},{"title":"YOLOv5","sec":"目标检测","lines":273,"undated":true},{"title":"YOLOv8","sec":"目标检测","lines":348,"undated":true},{"title":"目标检测","sec":"目标检测","lines":35,"undated":true,"index":true},{"title":"Haar特征","sec":"目标检测","lines":30,"undated":false,"group":"知识点","sub":true},{"title":"Selective Search","sec":"目标检测","lines":14,"undated":false,"group":"知识点","sub":true},{"title":"Silu激活函数","sec":"目标检测","lines":46,"undated":true,"group":"知识点","sub":true},{"title":"上下采样","sec":"目标检测","lines":76,"undated":true,"group":"知识点","sub":true},{"title":"感受野","sec":"目标检测","lines":20,"undated":false,"group":"知识点","sub":true},{"title":"注意力机制","sec":"目标检测","lines":193,"undated":true,"group":"知识点","sub":true},{"title":"特征图大小与目标大小的对应关系","sec":"目标检测","lines":43,"undated":true,"group":"知识点","sub":true},{"title":"解耦合头","sec":"目标检测","lines":56,"undated":true,"group":"知识点","sub":true},{"title":"二分函数","sec":"程序设计","lines":21,"undated":false,"group":"二分"},{"title":"二分基础","sec":"程序设计","lines":85,"undated":false,"group":"二分"},{"title":"（爬楼梯）模版","sec":"程序设计","lines":140,"undated":false,"group":"动态"},{"title":"单调","sec":"程序设计","lines":19,"undated":false,"group":"单调栈"},{"title":"差分模板","sec":"程序设计","lines":33,"undated":false,"group":"差分"},{"title":"不定长滑动窗口要左右指针","sec":"程序设计","lines":21,"undated":false,"group":"滑动"},{"title":"如果是数字0和1统计个数少用字典","sec":"程序设计","lines":25,"undated":false,"group":"滑动"},{"title":"字典涵盖可直接用大于小于","sec":"程序设计","lines":19,"undated":false,"group":"滑动"},{"title":"字符串方法","sec":"程序设计","lines":40,"undated":true,"group":"滑动"},{"title":"对于单个元素进行计数可用户count","sec":"程序设计","lines":21,"undated":false,"group":"滑动"},{"title":"将列表添加到集合里很耗时","sec":"程序设计","lines":69,"undated":false,"group":"滑动"},{"title":"将列表统计频率可直接加和any的用法","sec":"程序设计","lines":23,"undated":false,"group":"滑动"},{"title":"滑动+利用列表索引计数排序","sec":"程序设计","lines":23,"undated":false,"group":"滑动"},{"title":"滑动窗口中遇到循环数组要取模进行运算","sec":"程序设计","lines":55,"undated":false,"group":"滑动"},{"title":"看到无限想到取模类似于循环数组","sec":"程序设计","lines":21,"undated":false,"group":"滑动"},{"title":"遇到从左到右的子数组套路","sec":"程序设计","lines":23,"undated":false,"group":"滑动"},{"title":"程序设计","sec":"程序设计","lines":54,"undated":true,"index":true},{"title":"原地前缀和","sec":"程序设计","lines":17,"undated":false,"group":"通用"},{"title":"向上取整","sec":"程序设计","lines":17,"undated":false,"group":"通用"},{"title":"AI Agent 应用开发面试问答","sec":"面试","lines":552,"undated":true},{"title":"面试","sec":"面试","lines":28,"undated":true,"index":true},{"title":"advanced-rag-main","sec":"项目","lines":483,"undated":false},{"title":"项目","sec":"项目","lines":14,"undated":false,"index":true},{"title":"《教父》三部曲笔记","sec":"教父","lines":827,"undated":false,"flag":true}];
-const SECTIONS = [
-  { key:'linuxdo帖子', label:'linux.do 帖子', shape:'rows',  note:'8 篇，全部是长文。最长的一篇 761 行。' },
-  { key:'安卓逆向',    label:'安卓逆向',      shape:'rows',  note:'7 篇。全库最长的一篇在这里。' },
-  { key:'目标检测',    label:'目标检测',      shape:'tree',  note:'6 篇主干，加 8 张知识点卡片。' },
-  { key:'毕设',        label:'毕业设计',      shape:'chain', note:'一个项目的七章，从数据构建到答辩。' },
-  { key:'工作',        label:'工作',          shape:'rows',  note:'6 篇，实习期间留下的记录。' },
-  { key:'程序设计',    label:'程序设计',      shape:'chips', note:'19 张卡片，分在六组里：滑动窗口占十二张，剩下的是二分、动态、单调栈、差分、通用。这一堆的意义在数量，不在单篇长度。' },
-  { key:'面试',        label:'面试',          shape:'rows',  note:'2 篇。' },
-  { key:'项目',        label:'项目',          shape:'rows',  note:'2 篇。' },
-  { key:'AIGC',        label:'AIGC',          shape:'rows',  note:'2 篇。' },
-  { key:'教父',        label:'《教父》三部曲', shape:'rows',  note:'笔记栏目下的旗舰条目，80 张影像。' },
-];
-
-const MAX = Math.max(...NOTES.map(n => n.lines));
-const SIL_MAX = 5;
-/* 金色只给全库最长的五篇 + 旗舰笔记。图上写着「金色：全文最长的五篇」，所以它必须是同一把尺子。 */
-const TOP = new Set([...NOTES].sort((a, b) => b.lines - a.lines).slice(0, SIL_MAX));
-const gold = (n) => TOP.has(n) || Boolean(n.flag);
-
-/* ── 首屏轮廓：按行数降序，一条一篇 ── */
-const sil = document.getElementById('sil');
-const sorted = [...NOTES].sort((a, b) => b.lines - a.lines);
-sorted.forEach((n, i) => {
-  const li = document.createElement('li');
-  li.style.setProperty('--w', (n.lines / MAX).toFixed(4));
-  li.style.setProperty('--i', i);
-  li.className = (i < SIL_MAX ? 'milestone ' : '') + (n.undated ? 'undated' : '');
-  li.title = n.title + '　' + n.lines + ' 行';
-  li.innerHTML = '<i></i>';
-  sil.appendChild(li);
-});
-
-/* ── 首屏的四个数字，全部从 NOTES 算出来，不写死 ── */
-const VAULT = NOTES.filter(n => n.sec !== '教父');
-const total = VAULT.reduce((a, n) => a + n.lines, 0);
-const asc = [...VAULT].sort((a, b) => a.lines - b.lines);
-const body = asc.filter(n => !n.index); // 索引页只有目录链接，不参与「最短」
-const put = (id, html) => { document.getElementById(id).innerHTML = html; };
-put('hd-count', VAULT.length + ' 篇笔记　' + total.toLocaleString('en-US') + ' 行　412 张影像');
-put('f-max', '最长 ' + asc[asc.length - 1].lines + ' 行，<b>' + esc(asc[asc.length - 1].sec + ' / ' + asc[asc.length - 1].title) + '</b>');
-put('f-min', '最短 ' + body[0].lines + ' 行，<b>' + esc(body[0].sec + ' / ' + body[0].title) + '</b>');
-put('f-mid', '中位数 ' + asc[Math.floor(asc.length / 2)].lines + ' 行');
-put('f-und', VAULT.filter(n => n.undated).length + ' 篇没有日期信号，归入未标注');
-document.querySelector('#sil').setAttribute('aria-label',
-  VAULT.length + ' 篇笔记按行数排序，每一条的宽度就是它的行数');
-
-/* ── 目录 ── */
-const host = document.getElementById('sections');
-for (const s of SECTIONS) {
-  const list = NOTES.filter(n => n.sec === s.key).sort((a, b) => b.lines - a.lines);
-  if (!list.length) continue;
-  const rows = list.reduce((a, n) => a + n.lines, 0);
-  const sec = document.createElement('section');
-  sec.className = 'sec';
-  sec.innerHTML =
-    '<div class="sh"><h2>' + s.label + '</h2>' +
-    '<span class="cnt">' + list.length + ' 篇　<b>' + rows.toLocaleString('en-US') + '</b> 行</span></div>' +
-    (s.note ? '<p class="cnt" style="margin:0 0 16px;text-align:left;font-size:11.5px;color:var(--faint)">' + s.note + '</p>' : '') +
-    render(s.shape, list);
-  host.appendChild(sec);
-}
-
-function render(shape, list) {
-  if (shape === 'tree') {
-    const main = list.filter(n => !n.sub);
-    const kids = list.filter(n => n.sub);
-    return '<ul class="tree">' + main.map(row).join('') + '</ul>' +
-      (kids.length ? '<ul class="kids">' + kids.map(n =>
-        '<li><span>' + esc(n.title) + '</span><b>' + n.lines + '</b></li>').join('') + '</ul>' : '');
-  }
-  if (shape === 'chain') {
-    return '<ol class="chain">' + list.map(n =>
-      '<li><span class="tt">' + esc(n.title) + '</span><span class="vv">' + n.lines + ' 行</span></li>').join('') + '</ol>';
-  }
-  if (shape === 'chips') {
-    const groups = new Map();
-    for (const n of list) {
-      const g = n.group || '其他';
-      if (!groups.has(g)) groups.set(g, []);
-      groups.get(g).push(n);
-    }
-    return '<div class="cgs">' + [...groups].map(([g, items]) =>
-      '<div class="cg"><h3>' + esc(g) + '<span>' + items.length + '</span></h3>' +
-      '<ul class="chips">' + items.map(n =>
-        '<li class="' + (gold(n) ? 'hot' : '') + '" style="--w:' + (n.lines / MAX).toFixed(4) + '">' +
-        '<span>' + esc(n.title) + '</span><b>' + n.lines + '</b></li>').join('') + '</ul></div>').join('') + '</div>';
-  }
-  return '<ul class="rows">' + list.map(row).join('') + '</ul>';
-}
-
-function row(n, i) {
-  const hot = gold(n);
-  return '<li class="' + (hot ? 'milestone ' : '') + '" style="--w:' + (n.lines / MAX).toFixed(4) + '">' +
-    '<span class="tt">' + esc(n.title) + '</span>' +
-    '<span class="bk"><i style="transition-delay:' + Math.min(i * 26, 260) + 'ms"></i></span>' +
-    '<span class="vv">' + n.lines + '</span></li>';
-}
-function esc(s) {
-  return String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
-}
-
-/* ── 进场 / 顶栏 / 离场 ── */
 const bar = document.getElementById('bar');
-new IntersectionObserver(([e]) => bar.classList.toggle('solid', !e.isIntersecting),
-  { rootMargin: '-64px 0px 0px 0px' }).observe(document.querySelector('.hero'));
-
-const io = new IntersectionObserver((es) => {
-  for (const e of es) if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-}, { rootMargin: '0px 0px -14% 0px' });
-document.querySelectorAll('.sec').forEach(el => io.observe(el));
+const onScroll = () => bar.classList.toggle('solid', window.scrollY > 40);
+onScroll();
+addEventListener('scroll', onScroll, { passive: true });
 </script>
 </body>
 </html>

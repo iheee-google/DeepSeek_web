@@ -37,9 +37,9 @@ const FILES = [
  * 数量变化时同步更新这里的数字，并在提交信息里说明原因。
  */
 const MIN_TIMELINES = {
-  'home-a-record': 10,
-  'home-b-cases': 4,
-  'home-c-corpus': 27,
+  'home-a-record': 9, // 1 图 settle + 1 页脚横线 + 6 段记录 + 1 引文
+  'home-b-cases': 7, // 1 图 settle + 1 页脚横线 + 4 个案例 + 1 引文
+  'home-c-corpus': 34, // 1 图 settle + 1 页脚横线 + 6 主干 + 8 柱 + 18 分组条
 };
 
 async function loadPlaywright() {
