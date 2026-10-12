@@ -52,6 +52,8 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#ruleGrid .rule-card')).toHaveCount(3);
     await expect(page.locator('#quoteIndex .quote-index-button')).toHaveCount(9);
     await expect(page.locator('#characters [data-person]')).toHaveCount(44);
+    await expect(page.locator('#timelineItems .timeline-item')).toHaveCount(14);
+    await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await page.locator('#ruleGrid .rule-trigger').nth(1).click();
     await expect(page.locator('#ruleGrid .rule-card').nth(1)).toHaveClass(/is-open/);
@@ -60,10 +62,13 @@ test.describe('柯里昂档案桌面端', () => {
 
     await page.locator('#quote-09').click();
     await expect(page.locator('#quote-09')).toHaveClass(/is-active/);
-    const firstCharacterGroup = page.locator('#characterFilters [data-character-filter]:not([data-character-filter="all"])').first();
-    const firstCharacterGroupCount = await page.locator(`#characters [data-group="${await firstCharacterGroup.getAttribute('data-character-filter')}"]`).count();
+    const characterGroups = page.locator('#characterFilters [data-character-filter]:not([data-character-filter="all"])');
+    const firstCharacterGroup = characterGroups.first();
+    const secondCharacterGroup = characterGroups.nth(1);
+    const secondCharacterGroupCount = await page.locator(`#characters [data-group="${await secondCharacterGroup.getAttribute('data-character-filter')}"]`).count();
     await firstCharacterGroup.click();
-    await expect(page.locator('#characters [data-person]:not([hidden])')).toHaveCount(firstCharacterGroupCount);
+    await secondCharacterGroup.click();
+    await expect(page.locator('#characters [data-person]:not([hidden])')).toHaveCount(secondCharacterGroupCount);
     await page.locator('#characterFilters [data-character-filter="all"]').click();
 
     const firstChapter = page.locator('#chapterGrid .chapter-card').first();
@@ -82,6 +87,13 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(reader).not.toHaveClass(/is-open/, { timeout: 2_000 });
     await expect(firstChapter).toBeFocused();
+
+    const personCard = page.locator('#characters [data-person]').first();
+    await personCard.click();
+    await expect(page.locator('#reader')).toHaveClass(/is-open/);
+    await expect(page.locator('#readerFullLink')).toHaveAttribute('href', 'notes.html');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#reader')).not.toHaveClass(/is-open/, { timeout: 2_000 });
 
     const quote = page.locator('#quoteText');
     const initialQuote = await quote.textContent();
@@ -109,12 +121,23 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator(`[data-search-index="${quoteData.index}"]`).click();
     await expect(page.locator('#quote-01')).toHaveClass(/is-active/);
 
-    const timelineData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.timeline[0].id, text: window.CORLEONE_ARCHIVE.timeline[0].era, event: window.CORLEONE_ARCHIVE.timeline[0].event.slice(0, 8), index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'timeline' && item.id === window.CORLEONE_ARCHIVE.timeline[0].id) }));
+    const timelineData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.timeline[0].id, text: window.CORLEONE_ARCHIVE.timeline[0].event.slice(0, 8), event: window.CORLEONE_ARCHIVE.timeline[0].event.slice(0, 8), index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'timeline' && item.id === window.CORLEONE_ARCHIVE.timeline[0].id) }));
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill(timelineData.text);
     await page.locator(`[data-search-index="${timelineData.index}"]`).click();
     await expect(page.locator(`#${timelineData.id}`)).toHaveClass(/is-active/);
     await expect(page.locator('#timelineFocus')).toContainText(timelineData.event);
+
+    await page.locator('#searchToggle').click();
+    await expect(page.locator('#searchInput')).toBeFocused();
+    await page.locator('#searchInput').fill('不存在的档案词条');
+    await expect(page.locator('#searchMeta')).toHaveText('没有找到匹配记录');
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#searchClose')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#searchInput')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#searchPanel')).toHaveAttribute('aria-hidden', 'true');
 
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill('托马西诺庇护');
@@ -139,6 +162,11 @@ test.describe('柯里昂档案桌面端', () => {
       .map((item) => item.target));
     const invalidTargets = await page.evaluate((targets) => targets.filter((target) => !target || document.querySelectorAll(`#${CSS.escape(target)}`).length !== 1), sourceTargets);
     expect(invalidTargets).toEqual([]);
+    const duplicateIds = await page.locator('[id]').evaluateAll((nodes) => {
+      const ids = nodes.map((node) => node.id).filter(Boolean);
+      return ids.filter((id, index) => ids.indexOf(id) !== index);
+    });
+    expect(duplicateIds).toEqual([]);
 
     const table = page.locator('#noteContent table').first();
     const tableHeading = await table.evaluate((node) => {
@@ -159,8 +187,11 @@ test.describe('柯里昂档案桌面端', () => {
     })).toBe(true);
     await expect(page.locator('#noteToc a.is-active')).toHaveAttribute('href', /^#chapter-06-/);
 
-    await page.goto('/notes.html#chapter-03-heading', { waitUntil: 'networkidle' });
-    await expect(page.locator('#noteToc a[href="#chapter-03-heading"]')).toHaveClass(/is-active/);
+    await page.locator('#noteContent table').first().scrollIntoViewIfNeeded();
+    await expect(page.locator('#noteToc a[href="#chapter-07-heading"]')).toHaveClass(/is-active/);
+    await page.locator('#chapter-03-heading').evaluate((node) => node.scrollIntoView({ block: 'start', behavior: 'auto' }));
+    await expect(page.locator('#chapter-03-heading')).toBeInViewport();
+    await expect(page.locator('#noteToc a.is-active')).toHaveAttribute('href', /^#chapter-03-/);
 
     const imageStatus = await page.locator('#noteContent img').evaluateAll(async (nodes) => {
       const decode = async (node) => {
@@ -176,9 +207,12 @@ test.describe('柯里昂档案桌面端', () => {
         }
         if (!node.naturalWidth) return false;
         try {
-          await Promise.race([node.decode(), new Promise((resolve) => setTimeout(resolve, 4_000))]);
+          const decoded = await Promise.race([
+            node.decode().then(() => true).catch(() => false),
+            new Promise((resolve) => setTimeout(() => resolve(false), 4_000))
+          ]);
+          return decoded === true;
         } catch { return false; }
-        return node.naturalWidth > 0;
       };
       return Promise.all(nodes.map(decode));
     });

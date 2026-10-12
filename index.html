@@ -1547,6 +1547,7 @@
         const title = normalizeSearchText(item.title);
         if (title === query) return 0;
         if (title.includes(query)) return 1;
+        if (item.kind === 'timeline' && normalizeSearchText(item.text).includes(query)) return 2;
         if (item.kind === 'passage' && normalizeSearchText(item.text).includes(query)) return 2;
         return normalizeSearchText(item.text).includes(query) ? 3 : 4;
       };
