@@ -24,6 +24,7 @@
 
   --ease-out:cubic-bezier(.22,1,.36,1);   /* 进入 */
   --ease-io:cubic-bezier(.77,0,.175,1);   /* 换场 */
+  --ease-overshoot:cubic-bezier(.34,1.36,.64,1); /* 回弹，只给小元素落位用 */
 
   --t-press:110ms;
   --t-hover:180ms;
@@ -106,6 +107,11 @@ a{color:inherit;text-decoration:none}
   animation-delay:var(--d,0ms)}
 @keyframes sweep{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
 
+/* 标题像被压印出来：从下往上揭开。比淡入更像印刷品，是这一版的默认标题入场 */
+.mask{clip-path:inset(0 0 0 0);
+  transition:clip-path var(--t-wipe) var(--ease-io);transition-delay:var(--d,0ms)}
+@starting-style{.mask{clip-path:inset(0 0 108% 0)}}
+
 /* 滚动驱动：仅作为增强，不支持的浏览器看到完整静态页面 */
 @supports (animation-timeline: view()){
   .settle{animation:settle linear both;animation-timeline:view();animation-range:entry 0% cover 42%}
@@ -134,6 +140,9 @@ a{color:inherit;text-decoration:none}
   .grow{animation:none;clip-path:none}
   .settle{animation:none}
   .in,.in-seq > *{animation:none}
+  .mask{clip-path:none}
+  @starting-style{.mask{clip-path:none}}
+  body .hero{animation:none}
   .press:active{scale:none}
 }
 
@@ -146,5 +155,16 @@ a{color:inherit;text-decoration:none}
   /* 多一个 body 提升特异性，阻止压缩器把时间轴折进 animation 简写 */
   body .foot .rule-fill{animation:rule-grow linear both;animation-timeline:scroll(root block)}
 }
-/* scale 属性只吃数字（1–3 个），没有 x/y 轴名 —— 写成 scale:x 0 会整条规则失效 */
+
+/* 封面退场：用 view() 的 exit 段，页面离场时整块首屏才后退并化开。
+   用 scroll(root) 会过早淡掉、在顶部留一条空白带；exit 段保证淡完时它已经离开视口 */
+/* 缩放原点必须钉在底边。默认原点在中心，首屏下沿会被抬起二十几像素，
+   在首屏与正文之间裂出一条随滚动变宽的缝。钉住底边，下沿就一直贴着下一节 */
+.hero{transform-origin:50% 100%}
+@supports (animation-timeline: view()){
+  body .hero{animation:hero-out linear both;animation-timeline:view();
+    animation-range:exit 0% exit 100%}
+}
+@keyframes hero-out{from{opacity:1;scale:1}to{opacity:0;scale:.945}}
+/* scale 属性只吃数字（1 到 3 个），没有 x/y 轴名，写成 scale:x 0 会整条规则失效 */
 @keyframes rule-grow{from{scale:0 1}to{scale:1 1}}

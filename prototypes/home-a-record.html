@@ -46,6 +46,42 @@
   transform:translateX(-100%);font-family:"Noto Sans SC",system-ui,sans-serif;
   font-size:12px;color:var(--vermilion);letter-spacing:.04em;white-space:nowrap}
 
+/* ═══ 尺子自己组装出来 ═══════════════════════════════════
+   每根刻度的延迟由它自己的位置 --t 推出，不在 48 个标签上各写一遍错峰序号。
+   于是整条尺从左向右依次落成：线先扫出来，刻度跟着落，数字与圆点跟上，
+   最后事件标签升起。这是一次编排好的开场，不是散落淡入。
+   ═══════════════════════════════════════════════════════ */
+.ruler .span-band{animation:band-in 620ms var(--ease-out) both;animation-delay:340ms}
+@keyframes band-in{from{opacity:0}to{opacity:1}}
+
+.ruler .tick{animation:tick-drop 300ms var(--ease-out) both;
+  animation-delay:calc(380ms + var(--t) * 780ms)}
+@keyframes tick-drop{from{scale:1 0;opacity:0}to{scale:1 1;opacity:1}}
+
+.ruler .ev i{transform-origin:center}
+.ruler .ev.up i{transform-origin:center bottom}
+.ruler .ev.dn i{transform-origin:center top}
+.ruler .ev i{animation:stem-grow 460ms var(--ease-io) both;
+  animation-delay:calc(560ms + var(--t) * 780ms)}
+@keyframes stem-grow{from{scale:1 0}to{scale:1 1}}
+
+.ruler .yl{animation:lab-in 420ms var(--ease-out) both;
+  animation-delay:calc(520ms + var(--t) * 780ms)}
+@keyframes lab-in{from{opacity:0;translate:0 7px}to{opacity:1;translate:0 0}}
+
+.ruler .dot{animation:dot-in 360ms var(--ease-overshoot) both;
+  animation-delay:calc(640ms + var(--t) * 780ms)}
+@keyframes dot-in{from{scale:0}to{scale:1}}
+
+.ruler .ev b{animation:lab-in 480ms var(--ease-out) both;
+  animation-delay:calc(700ms + var(--t) * 780ms)}
+.ruler .nowlabel{animation:lab-in 520ms var(--ease-out) both;animation-delay:1520ms}
+
+@media (prefers-reduced-motion:reduce){
+  .ruler .tick,.ruler .yl,.ruler .dot,.ruler .ev i,.ruler .ev b,
+  .ruler .nowlabel,.ruler .span-band{animation:none;opacity:1;scale:none;translate:none}
+}
+
 /* 编年条目 */
 .rec{display:grid;grid-template-columns:clamp(112px,13vw,176px) 1fr;
   gap:clamp(16px,3vw,44px);padding:clamp(26px,4vh,44px) 0;border-top:1px solid var(--rule)}
@@ -87,13 +123,13 @@
 <main id="main">
 
   <section class="hero">
-    <h1 class="display rise">何楚福</h1>
+    <h1 class="display mask">何楚福</h1>
     <div class="lead rise" style="--d:120ms;max-width:37em">
       <p>AI 算法工程师　2026 届　广东石油化工学院 人工智能。</p>
       <p>这一页按时间排，下面每一格都落在上面尺子的某个刻度上。</p>
     </div>
 
-    <div class="ruler rise" style="--d:260ms" role="img"
+    <div class="ruler" role="img"
          data-axis="2022-09" data-axis-end="2026-10"
          aria-label="2022 年 9 月至 2026 年 10 月的时间尺，标注入学、两次竞赛、两段实习、个人项目与毕业">
       <span class="span-band"></span>
