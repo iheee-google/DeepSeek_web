@@ -24,16 +24,13 @@ test.describe('柯里昂档案桌面端', () => {
     });
     expect(duplicateIds).toEqual([]);
 
-    const imageStatus = await page.locator('img:not(#readerImage)').evaluateAll((nodes) => Promise.all(
-      nodes.map((node) => new Promise((resolve) => {
-        const source = node.currentSrc || node.src;
-        if (!source) { resolve(false); return; }
-        const probe = new Image();
-        probe.onload = () => resolve(probe.naturalWidth > 0);
-        probe.onerror = () => resolve(false);
-        probe.src = source;
-      }))
-    ));
+    const imageStatus = await page.evaluate(async () => {
+      const sources = [...new Set([...document.images].map((node) => node.currentSrc || node.src).filter(Boolean))];
+      return Promise.all(sources.map(async (source) => {
+        const response = await fetch(source, { cache: 'no-store' });
+        return response.ok;
+      }));
+    });
     expect(imageStatus.every(Boolean)).toBe(true);
 
     const faithFilter = page.locator('[data-filter="faith"]');
@@ -45,8 +42,21 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('[data-filter="all"]').click();
     await expect(page.locator('#chapterCount')).toHaveText('10 chapters');
     await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(10);
+    await expect(page.locator('#ruleGrid .rule-card')).toHaveCount(3);
+    await expect(page.locator('#quoteIndex .quote-index-button')).toHaveCount(9);
+    await expect(page.locator('#characters [data-person]')).toHaveCount(44);
+    await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
+    await page.locator('#ruleGrid .rule-trigger').nth(1).click();
+    await expect(page.locator('#ruleGrid .rule-card').nth(1)).toHaveClass(/is-open/);
+    await page.locator('#quote-09').click();
+    await expect(page.locator('#quote-09')).toHaveClass(/is-active/);
+    const firstCharacterGroup = page.locator('#characterFilters [data-character-filter]:not([data-character-filter="all"])').first();
+    const firstCharacterGroupCount = await page.locator(`#characters [data-group="${await firstCharacterGroup.getAttribute('data-character-filter')}"]`).count();
+    await firstCharacterGroup.click();
+    await expect(page.locator('#characters [data-person]:not([hidden])')).toHaveCount(firstCharacterGroupCount);
+    await page.locator('#characterFilters [data-character-filter="all"]').click();
 
-    const firstChapter = page.locator('.chapter-card').first();
+    const firstChapter = page.locator('#chapterGrid .chapter-card').first();
     await firstChapter.click();
     const reader = page.locator('#reader');
     await expect(reader).toHaveClass(/is-open/);
