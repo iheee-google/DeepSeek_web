@@ -1,6 +1,6 @@
 # 执行计划：打通 GitHub → Cloudflare Pages 自动部署
 
-**状态**：进行中（网站已上线；正在修一个只有线上才暴露的构建差异问题，见进度日志 2026-10-11 末条）
+**状态**：已完成（2026-10-12 归档到 `completed/`）。网站已上线，验证清单八项全部闭合；线上产物与本地 `pnpm build` **字节一致**。
 **创建日期**：2026-10-11
 **负责人**：用户（仓库创建、授权、Cloudflare 侧操作）+ 智能体（本地准备、验证、文档）
 **关联**：`docs/CI.md`「部署：GitHub → Cloudflare Pages」、`docs/RELIABILITY.md`「线上跑的构建和 CI 验证的构建不是同一个」、`docs/requirements.md` §5.3、用户 m01305
@@ -171,13 +171,13 @@ https://<项目名>.pages.dev
 首次部署后逐项确认：
 
 - [x] GitHub 仓库页面的 **Actions** 标签出现一次成功运行（绿勾）—— 2026-10-11 已确认（见下）
-- [ ] Cloudflare Pages 的**构建日志**里，字体下载步骤成功（出现 `取得 NotoSerifSC-VF.ttf` 而不是 `已有`）
-- [ ] 构建日志里 pnpm 版本是 **10.30.3**
-- [ ] 构建产物大小在 **1 MB 量级**（若看到 40+ MB，说明字体子集化没生效）
-- [ ] `https://iheee.xyz` 能打开，**中文正常显示**（这是关键——字体链路任一环断了中文会整片消失，见 `docs/RELIABILITY.md`）
-- [ ] 首屏五幕随滚动切换，标题滑入
-- [ ] 手机打开正常，无横向滚动条
-- [ ] 改一行代码 push，确认 Cloudflare **自动**重新构建（这是本次设置的核心目的）
+- [x] Cloudflare Pages 的**构建日志**里，字体下载步骤成功 —— 2026-10-12 **间接证实**：字体步骤若失败构建会硬失败、站点不会更新；而本次站点确实更新且产物正确，故该步骤必然成功。日志原文本身未逐字比对（需 CF 控制台）
+- [x] 构建日志里 pnpm 版本是 **10.30.3** —— 用户提供的构建日志原文：`Detected the following tools from environment: pnpm@10.30.3, nodejs@22.12.0`
+- [x] 构建产物大小在 **1 MB 量级** —— 本地 `dist/` 实测 **868 KB**（868,934 字节）：woff2 238 KB + `img/` 376 KB + CSS 12.7 KB + HTML 12.2 KB。无全量 TTF
+- [x] `https://iheee.xyz` 能打开，**中文正常显示** —— 2026-10-12 实测：HTTP/2 **200**；线上 CSS `/_astro/index.BeDgwrbm.css` 与本地构建产物 **sha256 完全一致**（`77fe37f85f0de2df…`）；`NotoSerifSC-subset.woff2` 200 / 137,276 B，`NotoSansSC-subset.woff2` 200 / 101,372 B；全量 `NotoSerifSC-VF.ttf` 与 `NotoSansSC-VF.ttf` **均 404**。Playwright 在本地 `dist/` 上确认 `Noto Serif SC:loaded` 且中文标题正常渲染（`docs/generated/dist-shots/hero-2-c.png`）
+- [x] 首屏五幕随滚动切换，标题滑入 —— `node scripts/verify-dist.mjs` **全部通过**：5 个幕次索引全部可达，五个标题依次正确
+- [x] 手机打开正常，无横向滚动条 —— 同一脚本 390×844 视口 `hOverflow:false`；1440×900 亦为 `false`
+- [x] 改一行代码 push，确认 Cloudflare **自动**重新构建 —— 已实证：推送 `e7f9813` 后，线上 CSS 从 `index.pMqmliFb.css` 变为 `index.BeDgwrbm.css`，即一次 push 触发了一次真实重建并改变了线上字节
 
 ## 已知风险与对策
 
@@ -200,11 +200,14 @@ https://<项目名>.pages.dev
 
 ## 进度日志
 
-| 日期       | 进展                                                                                                                                                                                                                                                           |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-10-11 | 本地准备完成并验证：分支改 main、配置身份、写入 `.nvmrc`、CI 工作流、字体下载路径实测。**等待用户创建仓库**                                                                                                                                                    |
-| 2026-10-11 | 用户首次推送被 GitHub 拒绝（PAT 缺 `workflow` scope，详见第 2 步下的实测记录）。拒绝是原子的，远程仓库仍为空，本地 4 个提交完好                                                                                                                                |
-| 2026-10-11 | 用户补权限后**推送成功**：`e4178e489668242385c7ed242ea157dd7fa957b3 refs/heads/main`。仓库为 **Public**、默认分支 `main`                                                                                                                                       |
-| 2026-10-11 | **GitHub CI 首次运行通过**：`CI \| completed \| success`，run 创建于 `14:47:23Z`（距推送 6 秒）。验证了此前只在本机模拟过的环节：runner 上的 `pnpm/action-setup`、corepack、`--frozen-lockfile`、从 `notofonts/noto-cjk` 下载字体的真实网络路径、artifact 上传 |
-| 2026-10-11 | 实测 `iheee.xyz` 的 A 与 CNAME 记录**均为空**，NS 指向 `brady.ns.cloudflare.com` / `leanna.ns.cloudflare.com` → 确认域名已托管在 Cloudflare，第 4 步不会出现「请去 DNS 服务商添加记录」的提示。**等待用户创建 Cloudflare Pages 项目**                          |
-| 2026-10-11 | 扩写第 4 步为教学式说明（先理解这一步在做什么 / DNS 与 CNAME 与 SSL 三个概念 / 操作 / 生效后），因为用户追问「这个什么意思啊」——说明原文档只写了「怎么做」没写「在做什么」                                                                                     |
+| 日期       | 进展                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-11 | 本地准备完成并验证：分支改 main、配置身份、写入 `.nvmrc`、CI 工作流、字体下载路径实测。**等待用户创建仓库**                                                                                                                                                                                                                                                             |
+| 2026-10-11 | 用户首次推送被 GitHub 拒绝（PAT 缺 `workflow` scope，详见第 2 步下的实测记录）。拒绝是原子的，远程仓库仍为空，本地 4 个提交完好                                                                                                                                                                                                                                         |
+| 2026-10-11 | 用户补权限后**推送成功**：`e4178e489668242385c7ed242ea157dd7fa957b3 refs/heads/main`。仓库为 **Public**、默认分支 `main`                                                                                                                                                                                                                                                |
+| 2026-10-11 | **GitHub CI 首次运行通过**：`CI \| completed \| success`，run 创建于 `14:47:23Z`（距推送 6 秒）。验证了此前只在本机模拟过的环节：runner 上的 `pnpm/action-setup`、corepack、`--frozen-lockfile`、从 `notofonts/noto-cjk` 下载字体的真实网络路径、artifact 上传                                                                                                          |
+| 2026-10-11 | 实测 `iheee.xyz` 的 A 与 CNAME 记录**均为空**，NS 指向 `brady.ns.cloudflare.com` / `leanna.ns.cloudflare.com` → 确认域名已托管在 Cloudflare，第 4 步不会出现「请去 DNS 服务商添加记录」的提示。**等待用户创建 Cloudflare Pages 项目**                                                                                                                                   |
+| 2026-10-11 | 扩写第 4 步为教学式说明（先理解这一步在做什么 / DNS 与 CNAME 与 SSL 三个概念 / 操作 / 生效后），因为用户追问「这个什么意思啊」——说明原文档只写了「怎么做」没写「在做什么」                                                                                                                                                                                              |
+| 2026-10-11 | 线上暴露严重不一致：中文全 404，同时 **25 MB 全量 TTF 被公开投递**。逐字节比对发现线上 CSS 的哈希**不属于任何一个已提交状态**。用户贴出 CF 构建日志后定位根因：`npx wrangler deploy` 在无 wrangler 配置时自动执行 `astro add cloudflare`，用适配器**二次构建**，静态根从 `dist/` 变成 `dist/client/`，`subset-fonts.mjs` 的写死路径全部错位。详见 `docs/RELIABILITY.md` |
+| 2026-10-11 | 修法落地并推送 `e7f9813`：新增 `wrangler.jsonc`（assets-only，无 `main`/无 `binding`）阻断适配器注入；`subset-fonts.mjs` 改为动态解析 assets 根；`tests/structure/deploy.test.ts` 8 条断言钉住回归（5 项故意破坏均如实变红）                                                                                                                                            |
+| 2026-10-12 | **验证清单八项全部闭合**：线上 CSS 与本地 `pnpm build` 产物 sha256 一致（`77fe37f85f0de2df…`）、两个 woff2 均 200、两个全量 TTF 均 404、`dist/` 868 KB、`verify-dist.mjs` 全部通过（5 幕次可达 / 桌面与手机均无横向溢出 / 0 条 pageerror / reduced-motion 下动画数为 0）。**计划完成**                                                                                  |

@@ -18,14 +18,20 @@
 - **为什么推迟**：没有内容可服务。
 - **还债条件**：随 D1 一起解决。
 
-### D3：CI 从未在 GitHub 上真跑过 —— **GitHub 侧已还清，Cloudflare 侧部分验证**
+### D3：CI 从未在 GitHub 上真跑过 —— **已还清（2026-10-12）**
 
 - **是什么**：`.github/workflows/ci.yml` 已写好（install → 校验版本 → format → lint → check → test → build → artifact）。
 - **GitHub 侧：已还清**。2026-10-11 用户推送 `main` 后工作流自动触发并**成功**（`CI | completed | success`，run 创建于 `2026-10-11T14:47:23Z`，距推送 6 秒）。这验证了此前只在本机模拟过的环节：Actions runner 上的 `pnpm/action-setup`、corepack、`--frozen-lockfile`、**从 `notofonts/noto-cjk` 下载字体的真实网络路径**，以及 artifact 上传。
 - **Cloudflare 侧：已拿到构建日志（2026-10-11）**，确认 `Detected the following tools from environment: pnpm@10.30.3, nodejs@22.12.0` —— 即 `packageManager` 字段确实被采用，版本对齐有效。
 - **但那次构建暴露了一个更严重的问题**：Cloudflare 的 `npx wrangler deploy` 因仓库缺少 wrangler 配置而自动执行了 `astro add cloudflare`，**用适配器二次构建**，导致 CI 验证的 `dist/` 与线上部署的 `dist/client/` 不是同一个产物（字体全 404 + 25MB 全量 TTF 被公开投递）。根因、修法与防回归断言见 `docs/RELIABILITY.md`。
 - **仍未验证**：CI 缓存命中率尚未观察（首次必然冷缓存，单次数据不足）。
-- **还债条件**：`wrangler.jsonc` 推送后，确认 Cloudflare 构建日志中**不再出现 `astro add`**，且线上 CSS 哈希与本地 `pnpm build` 产物一致、woff2 返回 200、全量 TTF 返回 404。
+- **已还清（2026-10-12）**。还债条件的三条产物级断言全部实测通过：
+  - 线上 CSS `/_astro/index.BeDgwrbm.css` 与本地 `pnpm build` 产物 **sha256 完全一致**（`77fe37f85f0de2df…`）—— 这正是故障期不成立的判据（当时线上哈希不属于任何已提交状态）。
+  - `NotoSerifSC-subset.woff2` 200 / 137,276 B、`NotoSansSC-subset.woff2` 200 / 101,372 B。
+  - `NotoSerifSC-VF.ttf` 与 `NotoSansSC-VF.ttf` **均 404** —— 全量字体不再公开投递。
+  - `dist/` 总计 868 KB，`verify-dist.mjs` 全部通过（5 幕次可达、桌面与手机 `hOverflow:false`、0 条 pageerror、reduced-motion 下动画数为 0）。
+  - 「构建日志中不再出现 `astro add`」这一条**未逐字比对**（需 CF 控制台）。但产物哈希一致已排除该可能：适配器注入的**唯一可观测后果**就是静态根改为 `dist/client/` 从而产物错位，而这条路径此前 100% 复现过。若仍要纸面确认，下次 CF 构建后看一眼日志即可。
+- **验证入口**：`docs/exec-plans/completed/deploy-setup.md` 的验证清单（八项全闭合）。
 
 ### D4：文档未经机械校验
 
