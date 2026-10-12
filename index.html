@@ -1,0 +1,1376 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090908">
+  <meta name="description" content="柯里昂档案 教父三部曲全景笔记的动态阅读样例">
+  <title>柯里昂档案 — The Corleone Archive</title>
+  <script src="assets/vendor/lucide.min.js"></script>
+  <style>
+    :root {
+      --ink: #090908;
+      --ink-soft: #11110f;
+      --panel: #171714;
+      --panel-light: #211f1a;
+      --paper: #e8dfce;
+      --paper-muted: #a39a89;
+      --gold: #c89b54;
+      --gold-bright: #f0c778;
+      --rust: #a6442a;
+      --line: rgba(232, 223, 206, .16);
+      --line-strong: rgba(232, 223, 206, .28);
+      --serif: "Iowan Old Style", "Baskerville", "Songti SC", "STSong", serif;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+      --ease-out: cubic-bezier(.16, 1, .3, 1);
+      --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html { background: var(--ink); scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--paper);
+      background:
+        radial-gradient(circle at 80% 0%, rgba(154, 94, 38, .12), transparent 30rem),
+        var(--ink);
+      font-family: var(--sans);
+      overflow-x: hidden;
+      transition: background-color .8s var(--ease-in-out), color .8s var(--ease-in-out);
+    }
+    body.no-scroll { overflow: hidden; }
+    body.reading-mode { background: #0d0c0a; }
+    body.reading-mode .grain,
+    body.reading-mode .vignette,
+    body.reading-mode .cursor-glow { opacity: 0; }
+    body.reading-mode .hero-media { opacity: .28; }
+    body.reading-mode .note-content { max-width: 64rem; font-size: 1rem; }
+    body.reading-mode .site-header { background: rgba(9, 9, 8, .92); }
+    ::selection { color: var(--ink); background: var(--gold-bright); }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+
+    .grain,
+    .vignette,
+    .cursor-glow {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
+    .grain {
+      opacity: .075;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+      mix-blend-mode: soft-light;
+    }
+    .vignette { background: radial-gradient(ellipse at center, transparent 38%, rgba(0, 0, 0, .62) 100%); z-index: 40; }
+    .cursor-glow {
+      inset: auto;
+      width: 24rem;
+      height: 24rem;
+      border-radius: 999px;
+      background: radial-gradient(circle, rgba(200, 155, 84, .10), transparent 66%);
+      transform: translate(-50%, -50%);
+      mix-blend-mode: screen;
+      transition: opacity .4s ease;
+      z-index: 1;
+    }
+
+    .site-header {
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 4.8rem;
+      padding: 0 clamp(1.1rem, 4vw, 4.5rem);
+      border-bottom: 1px solid transparent;
+      background: linear-gradient(180deg, rgba(9, 9, 8, .88), rgba(9, 9, 8, .42), transparent);
+      transition: height .55s var(--ease-out), background .55s ease, border-color .55s ease, backdrop-filter .55s ease;
+    }
+    .site-header.is-scrolled {
+      height: 4.1rem;
+      border-bottom-color: var(--line);
+      background: rgba(9, 9, 8, .74);
+      backdrop-filter: blur(18px) saturate(120%);
+    }
+    .brand,
+    .header-actions,
+    .top-nav { display: flex; align-items: center; }
+    .brand { gap: .75rem; letter-spacing: .04em; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: 1px solid rgba(200, 155, 84, .7);
+      border-radius: 50%;
+      color: var(--gold-bright);
+      transition: transform .6s var(--ease-out), background .35s ease;
+    }
+    .brand:hover .brand-mark { transform: rotate(180deg) scale(1.08); background: rgba(200, 155, 84, .13); }
+    .brand-copy { line-height: 1.05; }
+    .brand-copy strong { display: block; font-size: .83rem; font-weight: 650; }
+    .brand-copy span { display: block; margin-top: .25rem; color: var(--paper-muted); font-size: .58rem; letter-spacing: .18em; text-transform: uppercase; }
+    .top-nav { gap: clamp(1rem, 2.5vw, 2.6rem); margin-left: auto; margin-right: clamp(1rem, 3vw, 3rem); }
+    .top-nav a {
+      position: relative;
+      padding: .5rem 0;
+      color: var(--paper-muted);
+      font-size: .66rem;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      transition: color .3s ease, transform .35s var(--ease-out);
+    }
+    .top-nav a::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      bottom: .12rem;
+      left: 0;
+      height: 1px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transform-origin: right;
+      transition: transform .45s var(--ease-out);
+    }
+    .top-nav a:hover, .top-nav a.is-active { color: var(--paper); transform: translateY(-2px); }
+    .top-nav a:hover::after, .top-nav a.is-active::after { transform: scaleX(1); transform-origin: left; }
+    .header-actions { gap: .55rem; }
+
+    .icon-button,
+    .button {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .55rem;
+      overflow: hidden;
+      border: 1px solid var(--line-strong);
+      color: var(--paper);
+      background: rgba(232, 223, 206, .045);
+      cursor: pointer;
+      transition: transform .35s var(--ease-out), background .35s ease, border-color .35s ease, color .35s ease, box-shadow .35s ease;
+    }
+    .icon-button { width: 2.45rem; height: 2.45rem; border-radius: 50%; }
+    .button { min-height: 2.75rem; padding: .7rem 1rem; border-radius: 999px; font-size: .72rem; letter-spacing: .08em; }
+    .icon-button:hover, .button:hover { transform: translateY(-2px) scale(1.025); border-color: rgba(240, 199, 120, .72); background: rgba(200, 155, 84, .13); box-shadow: 0 0 0 5px rgba(200, 155, 84, .05); }
+    .icon-button:active, .button:active { transform: translateY(1px) scale(.95); }
+    .button--solid { color: var(--ink); border-color: var(--gold-bright); background: var(--gold-bright); }
+    .button--solid:hover { color: var(--ink); background: #ffe0a1; }
+    .button .lucide, .icon-button .lucide { width: 1rem; height: 1rem; stroke-width: 1.7; }
+    .ripple { position: absolute; width: 1rem; height: 1rem; border-radius: 50%; background: rgba(255, 255, 255, .28); transform: translate(-50%, -50%) scale(0); animation: ripple .62s ease-out forwards; pointer-events: none; }
+
+    .progress-rail {
+      position: fixed;
+      top: 50%;
+      left: 1.3rem;
+      z-index: 25;
+      display: grid;
+      gap: .7rem;
+      justify-items: center;
+      transform: translateY(-50%);
+      color: var(--paper-muted);
+    }
+    .progress-rail::before {
+      content: "";
+      width: 1px;
+      height: 7.4rem;
+      background: linear-gradient(var(--gold), transparent);
+      transform: scaleY(var(--scroll-progress, 0));
+      transform-origin: top;
+      transition: transform .2s linear;
+    }
+    .progress-rail span { writing-mode: vertical-rl; font-size: .58rem; letter-spacing: .16em; }
+    .progress-rail strong { color: var(--gold-bright); font-size: .68rem; font-weight: 500; }
+
+    .hero {
+      position: relative;
+      display: grid;
+      align-items: end;
+      min-height: 100svh;
+      padding: 8.5rem clamp(1.5rem, 8vw, 9rem) 5rem;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -3;
+      background: radial-gradient(circle at 72% 40%, rgba(178, 113, 39, .22), transparent 25rem), linear-gradient(100deg, rgba(9, 9, 8, .98) 0%, rgba(9, 9, 8, .78) 39%, rgba(9, 9, 8, .18) 100%);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto 0 0;
+      height: 42%;
+      z-index: -1;
+      background: linear-gradient(transparent, var(--ink));
+    }
+    .hero-media {
+      position: absolute;
+      inset: 0 0 0 35%;
+      z-index: -2;
+      overflow: hidden;
+      mask-image: linear-gradient(90deg, transparent 0%, black 20%, black 100%);
+    }
+    .hero-media img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      filter: sepia(.28) contrast(1.08) brightness(.62);
+      transform: scale(1.08);
+      animation: heroImageIn 1.7s var(--ease-out) both, heroDrift 18s ease-in-out 1.7s infinite alternate;
+    }
+    .hero-scanline { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255, 255, 255, .018) 6px); mix-blend-mode: screen; }
+    .hero-content { max-width: 56rem; }
+    .eyebrow, .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      color: var(--gold-bright);
+      font-size: .63rem;
+      font-weight: 650;
+      letter-spacing: .2em;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+    .eyebrow::before, .section-kicker::before { content: ""; width: 2.4rem; height: 1px; background: currentColor; }
+    .hero h1 {
+      max-width: 10ch;
+      margin: 1.65rem 0 1.2rem;
+      color: var(--paper);
+      font-family: var(--serif);
+      font-size: clamp(4.2rem, 10.5vw, 10.8rem);
+      font-weight: 400;
+      letter-spacing: -.075em;
+      line-height: .82;
+      text-wrap: balance;
+      animation: riseIn .95s .16s var(--ease-out) both;
+    }
+    .hero h1 span { display: block; white-space: nowrap; }
+    .hero h1 span:last-child { font-size: .78em; }
+    .hero-lede {
+      max-width: 31rem;
+      margin: 0;
+      color: rgba(232, 223, 206, .7);
+      font-size: clamp(.95rem, 1.4vw, 1.15rem);
+      line-height: 1.9;
+      animation: riseIn .95s .32s var(--ease-out) both;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 2rem; animation: riseIn .95s .44s var(--ease-out) both; }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: 4.5rem; animation: riseIn .95s .58s var(--ease-out) both; }
+    .meta-chip { min-width: 9rem; padding: .8rem .95rem; border: 1px solid var(--line); background: rgba(9, 9, 8, .34); backdrop-filter: blur(10px); }
+    .meta-chip small { display: block; color: var(--paper-muted); font-size: .56rem; letter-spacing: .14em; text-transform: uppercase; }
+    .meta-chip strong { display: block; margin-top: .45rem; color: var(--paper); font-family: var(--serif); font-size: 1.35rem; font-weight: 400; }
+    .hero-index { position: absolute; right: clamp(1.5rem, 8vw, 9rem); bottom: 5rem; display: grid; justify-items: end; gap: .8rem; color: var(--paper-muted); text-align: right; animation: fadeIn 1.2s .9s ease both; }
+    .hero-index strong { color: var(--gold-bright); font-family: var(--serif); font-size: 4.4rem; font-weight: 400; line-height: .8; }
+    .hero-index span { max-width: 9rem; font-size: .62rem; line-height: 1.6; letter-spacing: .12em; text-transform: uppercase; }
+    .scroll-cue { position: absolute; right: 50%; bottom: 1.8rem; display: grid; justify-items: center; gap: .35rem; color: var(--paper-muted); font-size: .55rem; letter-spacing: .18em; text-transform: uppercase; transform: translateX(50%); animation: float 2.4s ease-in-out infinite; }
+    .scroll-cue .lucide { width: .9rem; height: .9rem; color: var(--gold); }
+
+    .section { position: relative; padding: clamp(6rem, 12vw, 11rem) clamp(1.5rem, 8vw, 9rem); }
+    .section-shell { width: min(100%, 80rem); margin: 0 auto; }
+    .section-header { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-bottom: 3rem; }
+    .section-title { max-width: 45rem; margin: 1.15rem 0 0; font-family: var(--serif); font-size: clamp(2.5rem, 5.5vw, 5.8rem); font-weight: 400; letter-spacing: -.06em; line-height: .91; }
+    .section-intro { max-width: 24rem; margin: 0; color: var(--paper-muted); font-size: .87rem; line-height: 1.9; }
+    .section-rule { height: 1px; margin: 1.6rem 0 2.2rem; background: linear-gradient(90deg, var(--gold), var(--line), transparent); transform-origin: left; }
+    [data-reveal] { opacity: 0; transform: translateY(2.4rem); transition: opacity .9s var(--ease-out), transform .9s var(--ease-out); }
+    [data-reveal="left"] { transform: translateX(-2.8rem); }
+    [data-reveal="right"] { transform: translateX(2.8rem); }
+    [data-reveal="scale"] { transform: scale(.92); }
+    [data-reveal].is-visible { opacity: 1; transform: none; }
+    [data-delay="1"] { transition-delay: .1s; }
+    [data-delay="2"] { transition-delay: .2s; }
+    [data-delay="3"] { transition-delay: .3s; }
+    [data-delay="4"] { transition-delay: .4s; }
+
+    .full-note-section { background: linear-gradient(180deg, #0d0d0b 0%, #11100d 100%); }
+    .note-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: -1rem 0 2.2rem; padding: .9rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .note-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; color: var(--paper-muted); font-size: .64rem; letter-spacing: .1em; text-transform: uppercase; }
+    .note-stats strong { color: var(--gold-bright); font-weight: 500; }
+    .note-layout { display: grid; grid-template-columns: minmax(12rem, .28fr) minmax(0, .72fr); gap: clamp(2rem, 6vw, 6rem); align-items: start; }
+    .note-sidebar { position: sticky; top: 6rem; min-width: 0; }
+    .note-toc-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: .85rem; border-bottom: 1px solid var(--line); color: var(--gold-bright); font-size: .6rem; letter-spacing: .16em; text-transform: uppercase; }
+    .note-toc-head .lucide { width: .95rem; height: .95rem; }
+    .note-toc { display: grid; gap: .12rem; max-height: calc(100vh - 9rem); overflow: auto; padding: .8rem 0; scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+    .note-toc a { position: relative; display: block; padding: .38rem .6rem; border-left: 1px solid transparent; color: var(--paper-muted); font-size: .68rem; line-height: 1.5; transition: color .3s ease, border-color .3s ease, transform .35s var(--ease-out), background .3s ease; }
+    .note-toc a[data-depth="3"] { padding-left: 1.25rem; font-size: .62rem; }
+    .note-toc a:hover, .note-toc a.is-active { border-left-color: var(--gold); color: var(--paper); background: rgba(200, 155, 84, .07); transform: translateX(.22rem); }
+    .note-content { min-width: 0; max-width: 58rem; color: rgba(232, 223, 206, .84); font-family: var(--serif); font-size: .98rem; line-height: 2.05; transition: max-width .8s var(--ease-out), font-size .8s ease; }
+    .note-content .note-chapter { padding: 2rem 0 4rem; border-bottom: 1px solid var(--line); scroll-margin-top: 6rem; }
+    .note-content .note-chapter:first-child { padding-top: 0; }
+    .note-content h1 { margin: 0 0 1.5rem; color: var(--paper); font-size: clamp(2.6rem, 5vw, 5.2rem); font-weight: 400; letter-spacing: -.07em; line-height: .95; }
+    .note-content h2 { margin: 0 0 1.6rem; padding-top: 1rem; color: var(--paper); font-size: clamp(2.1rem, 4vw, 4.2rem); font-weight: 400; letter-spacing: -.065em; line-height: .98; scroll-margin-top: 6rem; }
+    .note-content h3 { margin: 3rem 0 .8rem; color: var(--gold-bright); font-size: clamp(1.5rem, 2.2vw, 2.2rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.1; scroll-margin-top: 6rem; }
+    .note-content h4 { margin: 2.4rem 0 .7rem; padding-top: .8rem; border-top: 1px solid var(--line); color: var(--paper); font-size: 1.35rem; font-weight: 400; line-height: 1.25; scroll-margin-top: 6rem; }
+    .note-content h4.person-heading { cursor: pointer; transition: color .3s ease, transform .35s var(--ease-out); }
+    .note-content h4.person-heading:hover, .note-content h4.person-heading:focus-visible { color: var(--gold-bright); transform: translateX(.25rem); outline: 0; }
+    .note-content p { margin: 0 0 1.05rem; }
+    .note-content strong { color: var(--paper); font-weight: 600; }
+    .note-content em { color: var(--gold-bright); }
+    .note-content a { color: var(--gold-bright); text-decoration: underline; text-decoration-color: rgba(240, 199, 120, .35); text-underline-offset: .2em; transition: color .3s ease, text-decoration-color .3s ease; }
+    .note-content a:hover { color: var(--paper); text-decoration-color: var(--paper); }
+    .note-content ul, .note-content ol { margin: 1rem 0 1.5rem; padding-left: 1.4rem; }
+    .note-content li { margin: .45rem 0; padding-left: .25rem; }
+    .note-content li::marker { color: var(--gold); }
+    .note-content blockquote { margin: 1.6rem 0; padding: 1.1rem 1.2rem; border-left: 1px solid var(--gold); color: var(--paper); background: rgba(200, 155, 84, .055); font-size: 1.1em; }
+    .note-content hr { height: 1px; margin: 2.5rem 0; border: 0; background: linear-gradient(90deg, var(--gold), var(--line), transparent); }
+    .note-content table { display: block; width: 100%; margin: 1.8rem 0; overflow-x: auto; border-collapse: collapse; font-family: var(--sans); font-size: .7rem; line-height: 1.65; scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+    .note-content th, .note-content td { min-width: 8rem; padding: .75rem .8rem; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .note-content th { color: var(--gold-bright); background: rgba(200, 155, 84, .08); font-weight: 500; }
+    .note-content img { width: min(100%, 48rem); height: clamp(12rem, 32vw, 28rem); margin: 1.5rem auto 1.8rem; object-fit: cover; border: 1px solid var(--line); background: var(--panel); filter: sepia(.16) saturate(.84) contrast(1.06) brightness(.76); cursor: zoom-in; transition: transform .85s var(--ease-out), filter .6s ease, border-color .4s ease; }
+    .note-content img:hover { border-color: rgba(240, 199, 120, .68); filter: sepia(.04) saturate(1) contrast(1.04) brightness(.9); transform: scale(1.015); }
+    .note-content [data-note-reveal] { opacity: 1; transform: none; }
+    .js-ready .note-content [data-note-reveal] { opacity: 0; transform: translateY(1.3rem); transition: opacity .7s var(--ease-out), transform .7s var(--ease-out); }
+    .js-ready .note-content [data-note-reveal].is-visible { opacity: 1; transform: none; }
+    .note-loading { display: flex; align-items: center; gap: .65rem; min-height: 12rem; color: var(--gold-bright); font-family: var(--sans); font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; }
+    .note-loading .lucide { width: 1rem; height: 1rem; animation: spin 1.2s linear infinite; }
+    .note-nav { display: flex; align-items: center; justify-content: space-between; gap: .7rem; margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--line); font-family: var(--sans); }
+    .note-nav button { display: inline-flex; align-items: center; gap: .45rem; max-width: 48%; padding: .55rem .7rem; border: 1px solid var(--line); color: var(--paper-muted); background: transparent; cursor: pointer; font-size: .62rem; line-height: 1.35; text-align: left; transition: color .3s ease, border-color .3s ease, background .3s ease, transform .35s var(--ease-out); }
+    .note-nav button:last-child { text-align: right; }
+    .note-nav button:hover:not(:disabled) { border-color: var(--gold); color: var(--paper); background: rgba(200, 155, 84, .08); transform: translateY(-2px); }
+    .note-nav button:disabled { opacity: .28; cursor: not-allowed; }
+    .note-nav .lucide { width: .85rem; height: .85rem; flex: 0 0 auto; color: var(--gold-bright); }
+
+    .search-panel { position: fixed; inset: 0; z-index: 90; display: grid; place-items: start center; padding: 8rem 1.5rem 2rem; visibility: hidden; pointer-events: none; }
+    .search-panel.is-open { visibility: visible; pointer-events: auto; }
+    .search-backdrop { position: absolute; inset: 0; background: rgba(3, 3, 2, .78); opacity: 0; backdrop-filter: blur(0); transition: opacity .45s var(--ease-out), backdrop-filter .6s ease; }
+    .search-panel.is-open .search-backdrop { opacity: 1; backdrop-filter: blur(15px); }
+    .search-shell { position: relative; width: min(100%, 54rem); max-height: min(42rem, calc(100vh - 10rem)); overflow: auto; padding: clamp(1.4rem, 4vw, 2.8rem); border: 1px solid var(--line-strong); background: #171612; box-shadow: 0 2rem 5rem rgba(0, 0, 0, .48); opacity: 0; transform: translateY(-1.2rem) scale(.97); transition: opacity .5s var(--ease-out), transform .65s var(--ease-out); scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+    .search-panel.is-open .search-shell { opacity: 1; transform: none; }
+    .search-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .search-shell h2 { margin: 1rem 0 1.35rem; font-family: var(--serif); font-size: clamp(2rem, 4vw, 4rem); font-weight: 400; letter-spacing: -.06em; line-height: .95; }
+    .search-input-wrap { display: flex; align-items: center; gap: .75rem; padding: .9rem 1rem; border: 1px solid var(--line-strong); background: rgba(232, 223, 206, .04); transition: border-color .3s ease, background .3s ease, box-shadow .3s ease; }
+    .search-input-wrap:focus-within { border-color: var(--gold); background: rgba(200, 155, 84, .08); box-shadow: 0 0 0 4px rgba(200, 155, 84, .06); }
+    .search-input-wrap .lucide { width: 1rem; height: 1rem; color: var(--gold-bright); }
+    .search-input-wrap input { width: 100%; border: 0; outline: 0; color: var(--paper); background: transparent; font: inherit; font-size: .9rem; }
+    .search-input-wrap input::placeholder { color: var(--paper-muted); }
+    .search-meta { margin: .85rem 0; color: var(--paper-muted); font-family: var(--sans); font-size: .65rem; letter-spacing: .1em; }
+    .search-results { display: grid; gap: .5rem; }
+    .search-result { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .8rem; width: 100%; padding: .85rem; border: 1px solid var(--line); color: var(--paper); background: rgba(232, 223, 206, .025); text-align: left; cursor: pointer; transition: background .35s ease, border-color .35s ease, transform .35s var(--ease-out); }
+    .search-result:hover { border-color: var(--gold); background: rgba(200, 155, 84, .1); transform: translateX(.35rem); }
+    .search-result .lucide { width: .95rem; height: .95rem; color: var(--gold-bright); }
+    .search-result strong { display: block; font-family: var(--serif); font-size: 1.1rem; font-weight: 400; }
+    .search-result span { display: block; margin-top: .22rem; overflow: hidden; color: var(--paper-muted); font-family: var(--sans); font-size: .67rem; line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; }
+    .search-result small { color: var(--paper-muted); font-family: var(--sans); font-size: .57rem; letter-spacing: .1em; text-transform: uppercase; }
+    .search-hit { animation: searchHit 1.6s var(--ease-out) both; }
+
+    .chapter-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+    .filter-list { display: flex; flex-wrap: wrap; gap: .45rem; }
+    .filter-button { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem .75rem; border: 1px solid var(--line); border-radius: 999px; color: var(--paper-muted); background: transparent; cursor: pointer; font-size: .65rem; letter-spacing: .08em; transition: color .3s ease, background .3s ease, border-color .3s ease, transform .3s var(--ease-out); }
+    .filter-button:hover, .filter-button.is-active { color: var(--ink); border-color: var(--gold-bright); background: var(--gold-bright); transform: scale(1.04); }
+    .filter-button .lucide { width: .8rem; height: .8rem; }
+    .chapter-count { color: var(--paper-muted); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; }
+    .chapter-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .chapter-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 32rem;
+      overflow: hidden;
+      background: var(--panel);
+      cursor: pointer;
+      isolation: isolate;
+      transition: transform .65s var(--ease-out), background .4s ease, opacity .4s ease;
+    }
+    .chapter-card::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, transparent 18%, rgba(9, 9, 8, .3) 38%, rgba(9, 9, 8, .96) 100%); pointer-events: none; }
+    .chapter-card:hover { z-index: 2; transform: translateY(-.65rem) scale(1.012); background: var(--panel-light); box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, .34); }
+    .chapter-card img { position: absolute; inset: 0; width: 100%; height: 64%; object-fit: cover; filter: saturate(.76) contrast(1.08) brightness(.68); transition: transform 1.1s var(--ease-out), filter .75s ease; }
+    .chapter-card:hover img { transform: scale(1.075); filter: saturate(.98) contrast(1.08) brightness(.8); }
+    .chapter-number { position: absolute; top: 1.25rem; left: 1.25rem; z-index: 2; color: var(--gold-bright); font-family: var(--serif); font-size: 2.8rem; line-height: 1; }
+    .chapter-tag { position: absolute; top: 1.35rem; right: 1.25rem; z-index: 2; padding: .35rem .5rem; border: 1px solid rgba(232, 223, 206, .23); color: var(--paper); background: rgba(9, 9, 8, .28); font-size: .56rem; letter-spacing: .14em; backdrop-filter: blur(8px); }
+    .chapter-body { position: relative; z-index: 2; display: flex; flex: 1; flex-direction: column; justify-content: end; padding: 1.45rem; }
+    .chapter-body small { color: var(--gold-bright); font-size: .6rem; letter-spacing: .16em; }
+    .chapter-body h3 { max-width: 11ch; margin: .65rem 0 .75rem; font-family: var(--serif); font-size: clamp(1.8rem, 3vw, 2.8rem); font-weight: 400; letter-spacing: -.055em; line-height: .92; }
+    .chapter-body p { max-width: 27rem; margin: 0; color: rgba(232, 223, 206, .68); font-size: .78rem; line-height: 1.7; }
+    .chapter-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1.4rem; padding-top: .85rem; border-top: 1px solid var(--line); color: var(--paper-muted); font-size: .62rem; letter-spacing: .08em; }
+    .chapter-footer .lucide { width: .9rem; height: .9rem; color: var(--gold); transition: transform .5s var(--ease-out); }
+    .chapter-card:hover .chapter-footer .lucide { transform: translateX(.3rem) rotate(-8deg); }
+    .chapter-card.is-leaving { animation: cardLeave .36s var(--ease-in-out) forwards; pointer-events: none; }
+    .chapter-card.is-entering { animation: cardEnter .5s var(--ease-out) both; }
+
+    .timeline-section { overflow: hidden; background: #0d0d0b; }
+    .timeline-head { display: flex; align-items: end; justify-content: space-between; gap: 2rem; }
+    .timeline-caption { max-width: 20rem; color: var(--paper-muted); font-size: .75rem; line-height: 1.8; }
+    .timeline-wrap { position: relative; margin-top: 5.5rem; }
+    .timeline-line { position: absolute; top: 2rem; right: 0; left: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), var(--line), transparent); }
+    .timeline-items { display: grid; grid-template-columns: repeat(7, minmax(8rem, 1fr)); gap: 1.3rem; min-width: 58rem; }
+    .timeline-item { position: relative; padding-top: 4.4rem; }
+    .timeline-dot { position: absolute; top: 1.55rem; left: 0; width: .9rem; height: .9rem; border: 2px solid var(--gold); border-radius: 50%; background: var(--ink); transition: transform .4s var(--ease-out), background .4s ease, box-shadow .4s ease; }
+    .timeline-item:hover .timeline-dot { transform: scale(1.65); background: var(--gold-bright); box-shadow: 0 0 0 .4rem rgba(200, 155, 84, .12); }
+    .timeline-item small { color: var(--gold-bright); font-size: .62rem; letter-spacing: .12em; }
+    .timeline-item h3 { margin: .7rem 0 .6rem; font-family: var(--serif); font-size: 1.3rem; font-weight: 400; }
+    .timeline-item p { margin: 0; color: var(--paper-muted); font-size: .7rem; line-height: 1.7; }
+    .timeline-scroll { overflow-x: auto; padding-bottom: 1rem; scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+
+    .split-feature { display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: clamp(2rem, 7vw, 7rem); align-items: center; }
+    .feature-media { position: relative; min-height: 40rem; overflow: hidden; background: #16130f; }
+    .feature-media::after { content: ""; position: absolute; inset: 1rem; border: 1px solid rgba(232, 223, 206, .23); pointer-events: none; transition: inset .8s var(--ease-out), border-color .5s ease; }
+    .feature-media:hover::after { inset: 1.5rem; border-color: rgba(240, 199, 120, .62); }
+    .feature-media img { width: 100%; height: 100%; min-height: 40rem; object-fit: cover; filter: sepia(.25) saturate(.8) contrast(1.1) brightness(.72); transition: transform 1.2s var(--ease-out), filter .7s ease; }
+    .feature-media:hover img { transform: scale(1.06); filter: sepia(.08) saturate(1) contrast(1.06) brightness(.86); }
+    .feature-stamp { position: absolute; right: 1.8rem; bottom: 1.8rem; z-index: 1; display: grid; place-items: center; width: 5.2rem; height: 5.2rem; border: 1px solid rgba(240, 199, 120, .68); border-radius: 50%; color: var(--gold-bright); background: rgba(9, 9, 8, .64); font-family: var(--serif); font-size: 2rem; transform: rotate(-12deg); backdrop-filter: blur(8px); transition: transform .55s var(--ease-out); }
+    .feature-media:hover .feature-stamp { transform: rotate(0) scale(1.08); }
+    .feature-copy h2 { max-width: 9ch; margin: 1rem 0 1.35rem; font-family: var(--serif); font-size: clamp(3rem, 5.5vw, 6.2rem); font-weight: 400; letter-spacing: -.07em; line-height: .88; }
+    .feature-copy > p { max-width: 30rem; color: var(--paper-muted); font-size: .91rem; line-height: 2; }
+    .insight-list { display: grid; gap: .75rem; margin: 2.2rem 0; }
+    .insight { display: grid; grid-template-columns: 2.2rem 1fr; gap: .75rem; padding: .85rem 0; border-top: 1px solid var(--line); transition: transform .4s var(--ease-out), border-color .35s ease; }
+    .insight:last-child { border-bottom: 1px solid var(--line); }
+    .insight:hover { border-color: var(--gold); transform: translateX(.45rem); }
+    .insight-index { color: var(--gold-bright); font-family: var(--serif); font-size: 1.15rem; }
+    .insight strong { display: block; margin-bottom: .25rem; font-family: var(--serif); font-size: 1.12rem; font-weight: 400; }
+    .insight span { color: var(--paper-muted); font-size: .72rem; line-height: 1.7; }
+
+    .quote-section { padding-top: 7rem; padding-bottom: 7rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: radial-gradient(circle at 50% 50%, rgba(166, 68, 42, .16), transparent 35rem), #11110f; }
+    .quote-inner { display: grid; grid-template-columns: 1fr minmax(0, 4fr) 1fr; gap: 2rem; align-items: center; }
+    .quote-mark { color: var(--gold); font-family: Georgia, serif; font-size: 8rem; font-weight: 400; line-height: .5; opacity: .72; }
+    .quote-mark:last-child { align-self: end; transform: rotate(180deg); text-align: right; }
+    .quote-block { text-align: center; }
+    .quote-block blockquote { max-width: 46rem; margin: 0 auto; font-family: var(--serif); font-size: clamp(2rem, 4.5vw, 5rem); font-weight: 400; letter-spacing: -.06em; line-height: 1.04; transition: opacity .35s ease, transform .35s var(--ease-out); }
+    .quote-block blockquote.is-switching { opacity: 0; transform: translateY(.8rem); }
+    .quote-source { margin-top: 1.5rem; color: var(--paper-muted); font-size: .65rem; letter-spacing: .14em; text-transform: uppercase; }
+    .quote-controls { display: flex; justify-content: center; gap: .65rem; margin-top: 1.7rem; }
+
+    .characters-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .character-card { position: relative; min-height: 25rem; overflow: hidden; background: var(--panel); cursor: pointer; }
+    .character-card:focus-visible { outline: 1px solid var(--gold-bright); outline-offset: 4px; }
+    .character-card::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 25%, rgba(9, 9, 8, .9)); transition: background .5s ease; }
+    .character-card img { width: 100%; height: 100%; min-height: 25rem; object-fit: cover; filter: grayscale(.55) sepia(.22) brightness(.69); transition: transform .9s var(--ease-out), filter .7s ease; }
+    .character-card:hover img { transform: scale(1.09); filter: grayscale(.08) sepia(.12) brightness(.86); }
+    .character-card:hover::after { background: linear-gradient(180deg, transparent 8%, rgba(9, 9, 8, .82)); }
+    .character-body { position: absolute; right: 1rem; bottom: 1rem; left: 1rem; z-index: 1; }
+    .character-body small { color: var(--gold-bright); font-size: .58rem; letter-spacing: .16em; }
+    .character-body h3 { margin: .45rem 0 .2rem; font-family: var(--serif); font-size: 1.75rem; font-weight: 400; }
+    .character-body p { margin: 0; color: rgba(232, 223, 206, .68); font-size: .68rem; }
+    .character-index { position: absolute; top: 1rem; left: 1rem; z-index: 2; color: rgba(240, 199, 120, .9); font-family: var(--serif); font-size: 1.25rem; }
+
+    .motif-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .motif { position: relative; min-height: 16rem; padding: 1.6rem; background: var(--panel); overflow: hidden; transition: background .45s ease, transform .55s var(--ease-out); }
+    .motif::before { content: ""; position: absolute; right: -2rem; bottom: -3.3rem; width: 10rem; height: 10rem; border: 1px solid rgba(200, 155, 84, .24); border-radius: 50%; transition: transform .8s var(--ease-out), border-color .45s ease; }
+    .motif:hover { z-index: 2; background: var(--panel-light); transform: translateY(-.35rem); }
+    .motif:focus-visible { z-index: 2; outline: 1px solid var(--gold-bright); outline-offset: -4px; }
+    .motif:hover::before { transform: scale(1.25); border-color: var(--gold); }
+    .motif-icon { display: grid; place-items: center; width: 2.6rem; height: 2.6rem; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--gold-bright); transition: transform .55s var(--ease-out), background .4s ease; }
+    .motif:hover .motif-icon { transform: rotate(12deg) scale(1.1); background: rgba(200, 155, 84, .14); }
+    .motif-icon .lucide { width: 1.1rem; height: 1.1rem; stroke-width: 1.4; }
+    .motif h3 { margin: 2.5rem 0 .55rem; font-family: var(--serif); font-size: 1.8rem; font-weight: 400; }
+    .motif p { max-width: 25rem; margin: 0; color: var(--paper-muted); font-size: .74rem; line-height: 1.8; }
+
+    .finale { min-height: 78svh; display: grid; align-items: end; padding-top: 5rem; background: #0d0c0a; }
+    .finale-media { position: absolute; inset: 0; overflow: hidden; }
+    .finale-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(9, 9, 8, .95) 0%, rgba(9, 9, 8, .45) 55%, rgba(9, 9, 8, .7) 100%), linear-gradient(0deg, rgba(9, 9, 8, .95), transparent 55%); }
+    .finale-media img { width: 100%; height: 100%; object-fit: cover; object-position: center 35%; filter: sepia(.32) contrast(1.12) brightness(.55); transform: scale(1.04); transition: transform 1.4s var(--ease-out), filter .8s ease; }
+    .finale:hover .finale-media img { transform: scale(1.09); filter: sepia(.16) contrast(1.05) brightness(.68); }
+    .finale-content { position: relative; z-index: 1; }
+    .finale h2 { max-width: 9ch; margin: 1.2rem 0 1.5rem; font-family: var(--serif); font-size: clamp(3.5rem, 8vw, 9rem); font-weight: 400; letter-spacing: -.08em; line-height: .8; }
+    .finale p { max-width: 29rem; color: rgba(232, 223, 206, .7); font-size: .88rem; line-height: 1.9; }
+    .finale-bottom { display: flex; align-items: end; justify-content: space-between; gap: 2rem; margin-top: 5rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--paper-muted); font-size: .62rem; letter-spacing: .12em; text-transform: uppercase; }
+    .finale-bottom .lucide { width: .9rem; height: .9rem; color: var(--gold); vertical-align: middle; }
+
+    .site-footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.5rem clamp(1.5rem, 8vw, 9rem); border-top: 1px solid var(--line); color: var(--paper-muted); font-size: .62rem; letter-spacing: .1em; }
+    .site-footer a { transition: color .3s ease, transform .3s var(--ease-out); }
+    .site-footer a:hover { color: var(--gold-bright); transform: translateY(-2px); }
+
+    .reader {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: grid;
+      place-items: center;
+      padding: 1.5rem;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .reader.is-open { visibility: visible; pointer-events: auto; }
+    .reader-backdrop { position: absolute; inset: 0; background: rgba(3, 3, 2, .82); opacity: 0; backdrop-filter: blur(0); transition: opacity .5s var(--ease-out), backdrop-filter .7s ease; }
+    .reader.is-open .reader-backdrop { opacity: 1; backdrop-filter: blur(16px); }
+    .reader.is-closing .reader-backdrop { opacity: 0; }
+    .reader-panel { position: relative; display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(0, 1.2fr); width: min(100%, 64rem); max-height: min(46rem, calc(100vh - 3rem)); overflow: hidden; border: 1px solid var(--line-strong); background: #171612; box-shadow: 0 2rem 6rem rgba(0, 0, 0, .55); opacity: 0; transform: translateY(1.5rem) scale(.97); transition: opacity .55s var(--ease-out), transform .7s var(--ease-out); view-transition-name: reader-panel; }
+    .reader.is-open .reader-panel { opacity: 1; transform: none; }
+    .reader.is-closing .reader-panel { opacity: 0; transform: translateY(1rem) scale(.97); transition-duration: .32s; }
+    .reader.is-closing .reader-media img { opacity: 0; }
+    .reader-media {  position: relative; min-height: 30rem; overflow: hidden; background: #0e0e0c; }
+    .reader-media img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.23) contrast(1.1) brightness(.72); transition: transform 1s var(--ease-out); }
+    .reader-panel:hover .reader-media img { transform: scale(1.04); }
+    .reader-media::after { content: ""; position: absolute; inset: 1rem; border: 1px solid rgba(240, 199, 120, .35); pointer-events: none; }
+    .reader-content { overflow: auto; padding: clamp(1.5rem, 4vw, 3.2rem); scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+    .reader-content h2 { max-width: none; margin: .9rem 0 1rem; font-family: var(--serif); font-size: clamp(2.3rem, 5vw, 4.8rem); font-weight: 400; letter-spacing: -.07em; line-height: 1.1; }
+    .reader-content h2 span { display: block; }
+    .reader-content h2 small { display: block; margin-top: .45rem; color: var(--gold-bright); font-family: var(--sans); font-size: .28em; font-weight: 500; letter-spacing: .08em; line-height: 1.35; }
+    .reader-body { color: var(--paper-muted); font-size: .84rem; line-height: 1.95; }
+    .reader-body h1, .reader-body h2 { display: none; }
+    .reader-body h3, .reader-body h4 { margin: 1.8rem 0 .55rem; color: var(--gold-bright); font-family: var(--serif); font-size: 1.25rem; font-weight: 400; line-height: 1.2; }
+    .reader-body p { margin: 0 0 .9rem; }
+    .reader-body ul, .reader-body ol { margin: .8rem 0 1rem; padding-left: 1.2rem; }
+    .reader-body li { margin: .25rem 0; }
+    .reader-body blockquote { margin: 1rem 0; padding-left: .8rem; border-left: 1px solid var(--gold); color: var(--paper); }
+    .reader-body table { display: block; overflow-x: auto; font-size: .65rem; line-height: 1.55; }
+    .reader-body th, .reader-body td { padding: .45rem; border: 1px solid var(--line); }
+    .reader-body img { width: 100%; max-height: 18rem; margin: .9rem 0; object-fit: cover; filter: sepia(.12) saturate(.85) brightness(.75); }
+    .reader-quote { margin: 2rem 0; padding: 1.1rem 0 1.1rem 1rem; border-left: 1px solid var(--gold); color: var(--paper); font-family: var(--serif); font-size: 1.25rem; line-height: 1.35; }
+    .reader-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: .55rem; margin-top: 1.6rem; }
+    .reader-detail { padding: .75rem; border: 1px solid var(--line); }
+    .reader-detail small { display: block; color: var(--paper-muted); font-size: .55rem; letter-spacing: .13em; text-transform: uppercase; }
+    .reader-detail strong { display: block; margin-top: .3rem; font-size: .75rem; font-weight: 500; }
+    .reader-full-link { margin-top: 1.4rem; }
+    .reader-close { position: absolute; top: .9rem; right: .9rem; z-index: 2; }
+    .morph-clone { position: fixed; z-index: 120; object-fit: cover; pointer-events: none; filter: sepia(.23) contrast(1.1) brightness(.72); box-shadow: 0 2rem 5rem rgba(0, 0, 0, .5); }
+    .toast { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 150; display: flex; align-items: center; gap: .55rem; max-width: min(24rem, calc(100vw - 3rem)); padding: .8rem 1rem; border: 1px solid var(--line-strong); color: var(--paper); background: rgba(23, 22, 18, .92); box-shadow: 0 1rem 2rem rgba(0, 0, 0, .25); opacity: 0; transform: translateY(1rem) scale(.96); pointer-events: none; transition: opacity .4s var(--ease-out), transform .5s var(--ease-out); backdrop-filter: blur(14px); }
+    .toast.is-visible { opacity: 1; transform: none; }
+    .toast .lucide { width: 1rem; height: 1rem; color: var(--gold-bright); }
+
+    .back-to-top { position: fixed; right: 1.4rem; bottom: 1.4rem; z-index: 20; opacity: 0; transform: translateY(1rem) scale(.8); pointer-events: none; transition: opacity .45s var(--ease-out), transform .5s var(--ease-out); }
+    .back-to-top.is-visible { opacity: 1; transform: none; pointer-events: auto; }
+
+    @keyframes riseIn { from { opacity: 0; transform: translateY(2.2rem); } to { opacity: 1; transform: none; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes heroImageIn { from { opacity: 0; transform: scale(1.17); filter: sepia(.5) contrast(1.2) brightness(.25); } to { opacity: 1; transform: scale(1.08); filter: sepia(.28) contrast(1.08) brightness(.62); } }
+    @keyframes heroDrift { from { transform: scale(1.08) translate3d(0, 0, 0); } to { transform: scale(1.13) translate3d(-1.2%, -1%, 0); } }
+    @keyframes float { 0%, 100% { transform: translate(50%, 0); } 50% { transform: translate(50%, .5rem); } }
+    @keyframes ripple { to { transform: translate(-50%, -50%) scale(28); opacity: 0; } }
+    @keyframes cardLeave { to { opacity: 0; transform: translateY(1rem) scale(.95); filter: blur(7px); } }
+    @keyframes cardEnter { from { opacity: 0; transform: translateY(1rem) scale(.96); } to { opacity: 1; transform: none; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes searchHit { 0%, 100% { background: transparent; } 25%, 70% { background: rgba(200, 155, 84, .18); box-shadow: 0 0 0 8px rgba(200, 155, 84, .06); } }
+
+    @media (max-width: 900px) {
+      .top-nav { display: none; }
+      .progress-rail { display: none; }
+      .hero { padding-right: 1.5rem; padding-left: 1.5rem; }
+      .hero-media { inset: 0; mask-image: linear-gradient(90deg, transparent, black 30%, black); opacity: .65; }
+      .hero-index { right: 1.5rem; bottom: 5.5rem; }
+      .chapter-grid { grid-template-columns: 1fr; }
+      .chapter-card { min-height: 30rem; }
+      .split-feature { grid-template-columns: 1fr; }
+      .feature-media, .feature-media img { min-height: 31rem; }
+      .characters-grid { grid-template-columns: repeat(2, 1fr); }
+      .note-layout { grid-template-columns: 1fr; gap: 2rem; }
+      .note-sidebar { position: relative; top: auto; }
+      .note-toc { max-height: 14rem; }
+      .reader-panel { grid-template-columns: 1fr; max-height: calc(100vh - 2rem); }
+      .reader-media { min-height: 13rem; max-height: 27vh; }
+      .reader-media img { object-position: center 30%; }
+    }
+    @media (max-width: 620px) {
+      .site-header { padding: 0 1rem; }
+      .brand-copy span { display: none; }
+      .header-actions { gap: .35rem; }
+      .hero { min-height: 93svh; padding-top: 7rem; padding-bottom: 4rem; }
+      .hero h1 { max-width: 8ch; font-size: clamp(3.7rem, 18vw, 6rem); }
+      .hero-meta { margin-top: 2.8rem; }
+      .meta-chip { min-width: 7.2rem; }
+      .hero-index { display: none; }
+      .section { padding: 5.5rem 1.1rem; }
+      .section-header, .timeline-head { display: block; }
+      .note-toolbar { align-items: flex-start; flex-direction: column; }
+      .note-content { font-size: .93rem; }
+      .search-panel { padding: 5.8rem .6rem .6rem; }
+      .search-shell { max-height: calc(100vh - 6.4rem); padding: 1.2rem; }
+      .section-intro, .timeline-caption { margin-top: 1.3rem; }
+      .chapter-toolbar { align-items: flex-start; flex-direction: column; }
+      .chapter-card { min-height: 27rem; }
+      .quote-inner { grid-template-columns: 1fr; gap: 0; }
+      .quote-mark { display: none; }
+      .quote-block blockquote { font-size: 2.35rem; }
+      .characters-grid { grid-template-columns: 1fr 1fr; }
+      .character-card, .character-card img { min-height: 19rem; }
+      .character-body h3 { font-size: 1.35rem; }
+      .motif-layout { grid-template-columns: 1fr; }
+      .motif { min-height: 14rem; }
+      .finale { min-height: 72svh; }
+      .finale-bottom { align-items: flex-start; flex-direction: column; gap: .6rem; }
+      .site-footer { align-items: flex-start; flex-direction: column; padding: 1.4rem 1.1rem; }
+      .reader { padding: .6rem; }
+      .reader-content { padding: 1.4rem; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
+      .cursor-glow, .grain { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <header class="site-header" id="siteHeader">
+    <a class="brand" href="#top" aria-label="回到首页">
+      <span class="brand-mark"><i data-lucide="crown"></i></span>
+      <span class="brand-copy"><strong>柯里昂档案</strong><span>the corleone archive</span></span>
+    </a>
+    <nav class="top-nav" aria-label="主导航">
+      <a href="#chapters" data-nav="chapters">章节</a>
+      <a href="#full-note" data-nav="full-note">全文</a>
+      <a href="#timeline" data-nav="timeline">编年</a>
+      <a href="#characters" data-nav="characters">人物</a>
+      <a href="#motifs" data-nav="motifs">符号</a>
+    </nav>
+    <div class="header-actions">
+      <button class="icon-button" id="searchToggle" type="button" aria-label="搜索档案" title="搜索档案"><i data-lucide="search"></i></button>
+      <button class="icon-button" id="modeToggle" type="button" aria-label="切换阅读模式" title="切换阅读模式"><i data-lucide="scan-eye"></i></button>
+      <button class="icon-button" id="randomQuote" type="button" aria-label="换一条引文" title="换一条引文"><i data-lucide="shuffle"></i></button>
+    </div>
+  </header>
+
+  <div class="progress-rail" aria-hidden="true"><strong id="progressNumber">01</strong><span>archive scroll</span></div>
+
+  <main id="top">
+    <section class="hero" data-section="hero">
+      <div class="hero-media" aria-hidden="true">
+        <img src="assets/scenes/michael-alone.jpg" alt="麦克独自坐在阴影中">
+        <span class="hero-scanline"></span>
+      </div>
+      <div class="hero-content">
+        <span class="eyebrow">a family chronicle in three acts</span>
+        <h1><span>权力</span><span>是家庭的影子</span></h1>
+        <p class="hero-lede">一部关于庇护如何变成诅咒的长镜头<br>从西西里出发 在美国落幕</p>
+        <div class="hero-actions">
+          <a class="button button--solid" href="#chapters"><i data-lucide="play"></i>进入档案</a>
+          <a class="button" href="#timeline"><i data-lucide="move-down"></i>沿时间线阅读</a>
+        </div>
+        <div class="hero-meta">
+          <div class="meta-chip"><small>the trilogy</small><strong>3 部作品</strong></div>
+          <div class="meta-chip"><small>the bloodline</small><strong>96 年回声</strong></div>
+          <div class="meta-chip"><small>the verdict</small><strong>无人全身而退</strong></div>
+        </div>
+      </div>
+      <div class="hero-index"><strong>01</strong><span>从婚礼的日光<br>走进书房的暗处</span></div>
+      <a class="scroll-cue" href="#chapters" aria-label="向下阅读"><i data-lucide="chevrons-down"></i><span>scroll to enter</span></a>
+    </section>
+
+    <section class="section" id="chapters" data-section="chapters">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="left">
+          <div>
+            <span class="section-kicker">three movements</span>
+            <h2 class="section-title">一场家族史诗<br>也是三次加冕</h2>
+          </div>
+          <p class="section-intro">麦克从局外人走到王座中央 每一次靠近权力 都让他离家庭更远</p>
+        </div>
+        <div class="section-rule" data-reveal></div>
+        <div class="chapter-toolbar" data-reveal data-delay="1">
+          <div class="filter-list" role="group" aria-label="章节筛选">
+            <button class="filter-button is-active" type="button" data-filter="all"><i data-lucide="layers-3"></i>全部</button>
+            <button class="filter-button" type="button" data-filter="power"><i data-lucide="landmark"></i>权力</button>
+            <button class="filter-button" type="button" data-filter="family"><i data-lucide="users"></i>家族</button>
+            <button class="filter-button" type="button" data-filter="faith"><i data-lucide="cross"></i>信仰</button>
+          </div>
+          <span class="chapter-count" id="chapterCount">03 chapters</span>
+        </div>
+        <div class="chapter-grid" id="chapterGrid">
+          <article class="chapter-card" tabindex="0" data-chapter="chapter-03" data-category="power family" data-reveal data-delay="1">
+            <img src="assets/scenes/wedding.jpg" alt="柯里昂家族婚礼现场" loading="lazy">
+            <span class="chapter-number">01</span><span class="chapter-tag">1955</span>
+            <div class="chapter-body"><small>the coronation</small><h3>权力的加冕</h3><p>婚礼的阳光之外 书房正在交换另一种誓言</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
+          </article>
+          <article class="chapter-card" tabindex="0" data-chapter="chapter-04" data-category="power family" data-reveal data-delay="2">
+            <img src="assets/scenes/fredo-boathouse.jpg" alt="太浩湖船屋中的兄弟对质" loading="lazy">
+            <span class="chapter-number">02</span><span class="chapter-tag">1958 — 1960</span>
+            <div class="chapter-body"><small>the fracture</small><h3>宗族的瓦解</h3><p>当所有人都被保护 家庭反而成了最危险的房间</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
+          </article>
+          <article class="chapter-card" tabindex="0" data-chapter="chapter-05" data-category="faith power" data-reveal data-delay="3">
+            <img src="assets/scenes/mary-steps.jpg" alt="玛丽倒在巴勒莫歌剧院台阶上" loading="lazy">
+            <span class="chapter-number">03</span><span class="chapter-tag">1979 — 1997</span>
+            <div class="chapter-body"><small>the final cost</small><h3>终极的代价</h3><p>合法化没有洗去罪孽 只把账单推迟到最后一幕</p><div class="chapter-footer"><span>阅读章节</span><i data-lucide="arrow-up-right"></i></div></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section full-note-section" id="full-note" data-section="full-note">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="left">
+          <div><span class="section-kicker">the complete dossier</span><h2 class="section-title">把所有沉默<br>还给正文</h2></div>
+          <p class="section-intro">原始笔记十章完整展开<br>从观影指南读到最后一只橙子</p>
+        </div>
+        <div class="note-toolbar" data-reveal data-delay="1">
+          <div class="note-stats"><strong id="noteMeta">10 章 · 44 人物 · 77 张剧照</strong><span id="noteProgress">阅读进度 00%</span></div>
+          <button class="button" id="noteStart" type="button"><i data-lucide="book-open"></i>从正文开始</button>
+        </div>
+        <div class="note-layout">
+          <aside class="note-sidebar" data-reveal="left" data-delay="2">
+            <div class="note-toc-head"><span>archive index</span><i data-lucide="list-tree"></i></div>
+            <nav class="note-toc" id="noteToc" aria-label="全文目录"></nav>
+          </aside>
+          <article class="note-content" id="noteContent" aria-live="polite"><div class="note-loading"><i data-lucide="loader-circle"></i>正在展开完整档案</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section timeline-section" id="timeline" data-section="timeline">
+      <div class="section-shell">
+        <div class="timeline-head" data-reveal="right">
+          <div><span class="section-kicker">a century of consequence</span><h2 class="section-title">时间不会<br>替任何人宽恕</h2></div>
+          <p class="timeline-caption">拖动这条横向时间线<br>看一个名字如何从避难所变成囚笼</p>
+        </div>
+        <div class="timeline-wrap" data-reveal data-delay="1">
+          <div class="timeline-line"></div>
+          <div class="timeline-scroll">
+            <div class="timeline-items" id="timelineItems"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="thesis" data-section="thesis">
+      <div class="section-shell split-feature">
+        <div class="feature-media" data-reveal="left">
+          <img src="assets/scenes/baptism.jpg" alt="洗礼日的神圣仪式" loading="lazy">
+          <span class="feature-stamp">II</span>
+        </div>
+        <div class="feature-copy" data-reveal="right">
+          <span class="section-kicker">the central contradiction</span>
+          <h2>神圣誓言<br>与血色登基</h2>
+          <p>洗礼蒙太奇把两个空间缝在同一条时间线上 教堂内麦克弃绝撒旦 教堂外五大家族在鲜血里倒下</p>
+          <div class="insight-list">
+            <div class="insight"><span class="insight-index">01</span><div><strong>庇护</strong><span>最初用来抵御外部世界的堡垒 最后成为埋葬亲情的铁笼</span></div></div>
+            <div class="insight"><span class="insight-index">02</span><div><strong>合法</strong><span>洗白从来不是抹去罪孽 而是把暴力换成更体面的语言</span></div></div>
+            <div class="insight"><span class="insight-index">03</span><div><strong>孤独</strong><span>权柄越是集中 面目越被阴影吞没</span></div></div>
+          </div>
+          <a class="button" href="#motifs"><i data-lucide="scan-line"></i>查看视觉符号</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section quote-section" id="quotes" data-section="quotes">
+      <div class="section-shell quote-inner" data-reveal="scale">
+        <span class="quote-mark">“</span>
+        <div class="quote-block">
+          <blockquote id="quoteText">永远不要恨你的敌人 那会影响你的判断</blockquote>
+          <p class="quote-source" id="quoteSource">Michael Corleone · Part III</p>
+          <div class="quote-controls"><button class="button" id="nextQuote" type="button"><i data-lucide="refresh-cw"></i>换一条回声</button></div>
+        </div>
+        <span class="quote-mark">“</span>
+      </div>
+    </section>
+
+    <section class="section" id="characters" data-section="characters">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="left">
+          <div><span class="section-kicker">the bloodline</span><h2 class="section-title">每个人都在<br>替家族付账</h2></div>
+          <p class="section-intro">四张面孔 四种继承方式<br>没有人能只做旁观者</p>
+        </div>
+        <div class="characters-grid">
+          <article class="character-card" tabindex="0" role="button" data-person="person-01" data-reveal data-delay="1"><img src="assets/portraits/vito.jpg" alt="维托柯里昂肖像" loading="lazy"><span class="character-index">01</span><div class="character-body"><small>the founder</small><h3>维托</h3><p>人情政治与古典秩序</p></div></article>
+          <article class="character-card" tabindex="0" role="button" data-person="person-02" data-reveal data-delay="2"><img src="assets/portraits/michael.jpg" alt="麦克柯里昂肖像" loading="lazy"><span class="character-index">02</span><div class="character-body"><small>the successor</small><h3>麦克</h3><p>法理冷酷与资本异化</p></div></article>
+          <article class="character-card" tabindex="0" role="button" data-person="person-07" data-reveal data-delay="3"><img src="assets/portraits/vincent.jpg" alt="文森特柯里昂肖像" loading="lazy"><span class="character-index">03</span><div class="character-body"><small>the heir</small><h3>文森特</h3><p>血性继承与最后交接</p></div></article>
+          <article class="character-card" tabindex="0" role="button" data-person="person-08" data-reveal data-delay="4"><img src="assets/portraits/mary.jpg" alt="玛丽柯里昂肖像" loading="lazy"><span class="character-index">04</span><div class="character-body"><small>the cost</small><h3>玛丽</h3><p>无辜者承担终局</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="motifs" data-section="motifs">
+      <div class="section-shell">
+        <div class="section-header" data-reveal="right">
+          <div><span class="section-kicker">visual grammar</span><h2 class="section-title">物件先开口<br>人物随后沉默</h2></div>
+          <p class="section-intro">橙子 鱼 木门 奶油卷<br>每件物品都是一封无声的信</p>
+        </div>
+        <div class="motif-layout" id="motifGrid"></div>
+      </div>
+    </section>
+
+    <section class="section finale" id="finale" data-section="finale">
+      <div class="finale-media" aria-hidden="true"><img src="assets/scenes/michael-chair.jpg" alt="迟暮的麦克独坐在阴影中" loading="lazy"></div>
+      <div class="section-shell finale-content" data-reveal="left">
+        <span class="section-kicker">the last frame</span>
+        <h2>长寿<br>是无法遗忘的痛苦</h2>
+        <p>权力征服了一切 却把执剑者剥蚀得一无所有<br>档案到这里结束 余生还在继续</p>
+        <div class="finale-bottom"><span>the corleone archive · 1901 — 1997</span><span><i data-lucide="film"></i> an unfinished elegy</span></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>柯里昂档案 · personal film notes</span><a href="#top">回到开场 <i data-lucide="arrow-up"></i></a></footer>
+
+  <button class="icon-button back-to-top" id="backToTop" type="button" aria-label="回到顶部" title="回到顶部"><i data-lucide="arrow-up"></i></button>
+
+  <div class="reader" id="reader" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="readerTitle">
+    <div class="reader-backdrop" data-close-reader></div>
+    <div class="reader-panel" id="readerPanel">
+      <button class="icon-button reader-close" id="readerClose" type="button" aria-label="关闭章节"><i data-lucide="x"></i></button>
+      <div class="reader-media" id="readerMedia"><img id="readerImage" src="" alt=""></div>
+      <div class="reader-content">
+        <span class="section-kicker" id="readerKicker">chapter</span>
+        <h2 id="readerTitle"><span id="readerTitleMain">章节</span><small id="readerTitleAlias"></small></h2>
+        <div class="reader-body" id="readerBody"></div>
+        <blockquote class="reader-quote" id="readerQuote"></blockquote>
+        <div class="reader-details"><div class="reader-detail"><small>period</small><strong id="readerPeriod"></strong></div><div class="reader-detail"><small>motif</small><strong id="readerMotif"></strong></div></div>
+        <a class="button reader-full-link" id="readerFullLink" href="#full-note"><i data-lucide="book-open"></i>阅读全文</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="search-panel" id="searchPanel" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="searchTitle">
+    <div class="search-backdrop" data-close-search></div>
+    <div class="search-shell">
+      <div class="search-head"><span class="section-kicker">search the archive</span><button class="icon-button" id="searchClose" type="button" aria-label="关闭搜索"><i data-lucide="x"></i></button></div>
+      <h2 id="searchTitle">在正文里寻找一个名字</h2>
+      <label class="search-input-wrap"><i data-lucide="search"></i><input id="searchInput" type="search" placeholder="搜索人物 章节 物件或台词" autocomplete="off"></label>
+      <p class="search-meta" id="searchMeta">输入关键词开始检索</p>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><i data-lucide="check"></i><span id="toastText">已切换</span></div>
+
+  <script src="assets/data/archive.js"></script>
+  <script>
+    const archive = window.CORLEONE_ARCHIVE;
+    const chapterData = {
+      'chapter-03': {
+        kicker: 'chapter three · the coronation',
+        title: '权力的加冕',
+        period: '1945 — 1955',
+        motif: '洗礼蒙太奇',
+        image: 'assets/scenes/wedding.jpg',
+        body: '第一部是一场严密的权力禅让。婚礼把家族展示给主流社会 书房却在暗处兑现另一套秩序。麦克经历医院门口 餐馆枪声与西西里流亡 最终在洗礼日完成从局外人到掌舵者的蜕变。',
+        quote: '我会给他一个无法拒绝的条件',
+        fullTarget: 'chapter-03'
+      },
+      'chapter-04': {
+        kicker: 'chapter four · the fracture',
+        title: '宗族的瓦解',
+        period: '1901 — 1960',
+        motif: '太浩湖船屋',
+        image: 'assets/scenes/fredo-boathouse.jpg',
+        body: '第二部把青年维托的建构与麦克的瓦解并置。一个人在移民逆境里用人情建立堡垒 另一个人在资本帝国里用猜疑拆掉家庭。弗雷多的背叛不是一个人的错误 而是被忽视太久的裂缝。',
+        quote: '我是你哥哥 麦克 但所有人全都越过我',
+        fullTarget: 'chapter-04'
+      },
+      'chapter-05': {
+        kicker: 'chapter five · the final cost',
+        title: '终极的代价',
+        period: '1979 — 1997',
+        motif: '歌剧院台阶',
+        image: 'assets/scenes/mary-steps.jpg',
+        body: '老年麦克试图借助金融与教廷完成合法化 却发现旧日孽债不会因为换上西装就消失。歌剧院的子弹原本射向他 最终击中了玛丽。真正的惩罚不是死亡 而是活着记住这一切。',
+        quote: '西西里人祝你长命百岁 那意味着长寿 而长寿是无法遗忘的痛苦',
+        fullTarget: 'chapter-05'
+      }
+    };
+
+    function readerHtml(data) {
+      let html = data.html;
+      if (!html) {
+        const section = archive.sections.find((item) => item.id === data.fullTarget);
+        html = section?.html || `<p>${escapeHtml(data.body || '')}</p>`;
+      }
+      const fragment = document.createElement('div');
+      fragment.innerHTML = html;
+      fragment.querySelector('h2')?.remove();
+      fragment.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
+      return fragment.innerHTML;
+    }
+
+    const quotes = [
+      ['永远不要恨你的敌人 那会影响你的判断', 'Michael Corleone · Part III'],
+      ['一个不抽时间陪伴家人的男人 永远算不上真正的男人', 'Vito Corleone · Part I'],
+      ['当我以为我已经抽身了 他们又把我拽了回去', 'Michael Corleone · Part III'],
+      ['伟大的人并非生来伟大 而是在成长中造就伟大', 'Mario Puzo · The Godfather']
+    ];
+
+    const body = document.body;
+    body.classList.add('js-ready');
+    const pageMain = document.querySelector('main');
+    const siteFooter = document.querySelector('.site-footer');
+    const header = document.getElementById('siteHeader');
+    const cursorGlow = document.getElementById('cursorGlow');
+    const progressNumber = document.getElementById('progressNumber');
+    const backToTop = document.getElementById('backToTop');
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const reader = document.getElementById('reader');
+    const readerPanel = document.getElementById('readerPanel');
+    const readerContent = document.querySelector('.reader-content');
+    const readerMedia = document.getElementById('readerMedia');
+    const readerImage = document.getElementById('readerImage');
+    const readerFullLink = document.getElementById('readerFullLink');
+    const noteContent = document.getElementById('noteContent');
+    const noteToc = document.getElementById('noteToc');
+    const noteProgress = document.getElementById('noteProgress');
+    const searchPanel = document.getElementById('searchPanel');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const searchMeta = document.getElementById('searchMeta');
+    const characterData = new Map(archive.people.map((person) => [person.id, {
+      kicker: 'character · archive profile',
+      title: person.title,
+      period: person.actor || 'full dossier',
+      motif: '人物图鉴',
+      image: person.image || 'assets/portraits/michael.jpg',
+      body: person.text,
+      html: person.html,
+      quote: '完整小传已载入全文档案',
+      fullTarget: person.target || 'full-note',
+      personTitle: person.title
+    }]));
+    let activeCard = null;
+    let noteTocHeadings = [];
+    let toastTimer;
+    let quoteIndex = 0;
+    const filterTimers = new Map();
+    let searchLastFocus = null;
+
+    function hydrateIcons() {
+      if (window.lucide) {
+        window.lucide.createIcons({ attrs: { 'aria-hidden': 'true' } });
+      } else {
+        window.addEventListener('DOMContentLoaded', hydrateIcons, { once: true });
+      }
+    }
+    hydrateIcons();
+
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        entry.target.classList.toggle('is-visible', entry.isIntersecting);
+      });
+    }, { threshold: .12, rootMargin: '0px 0px -8% 0px' });
+    document.querySelectorAll('[data-reveal]').forEach((element) => revealObserver.observe(element));
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>\"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' }[character]));
+    }
+
+    function normalizeSearchText(value) {
+      return String(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+    }
+
+    function observeNoteBlocks() {
+      noteContent.querySelectorAll('h1, h2, h3, h4, p, li, blockquote, table, img').forEach((element) => {
+        if (element.closest('.note-loading')) return;
+        element.dataset.noteReveal = 'true';
+        revealObserver.observe(element);
+      });
+    }
+
+    function updateNoteTocActive() {
+      if (!noteTocHeadings.length) return;
+      const marker = window.scrollY + window.innerHeight * .45;
+      let current = noteTocHeadings[0];
+      noteTocHeadings.forEach((heading) => {
+        if (window.scrollY + heading.getBoundingClientRect().top <= marker) current = heading;
+      });
+      noteToc.querySelectorAll('a').forEach((link) => link.classList.toggle('is-active', link.hash === `#${current.id}`));
+    }
+
+    function buildNoteToc() {
+      const headings = [...noteContent.querySelectorAll('h2, h3')];
+      noteTocHeadings = headings;
+      noteToc.innerHTML = headings.map((heading) => `<a href="#${heading.id}" data-depth="${heading.tagName.slice(1)}">${escapeHtml(heading.textContent.trim())}</a>`).join('');
+      const noteHeadingText = headings.map((heading) => ({ heading, text: normalizeSearchText(heading.textContent) }));
+      noteContent.querySelectorAll('a[href^="#"]').forEach((link) => {
+        const label = normalizeSearchText(link.textContent);
+        const match = noteHeadingText.find((item) => item.text.includes(label) || label.includes(item.text));
+        if (match) link.href = `#${match.heading.id}`;
+      });
+      noteToc.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', (event) => {
+          event.preventDefault();
+          document.getElementById(link.hash.slice(1))?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'start' });
+        });
+      });
+    }
+
+    function bindArchivePeople() {
+      const headings = [...noteContent.querySelectorAll('#chapter-06 h4')];
+      headings.forEach((heading) => {
+        const headingKey = normalizeSearchText(heading.textContent);
+        const person = archive.people.find((item) => {
+          const personKey = normalizeSearchText(item.title);
+          return headingKey.startsWith(personKey.slice(0, 16)) || personKey.startsWith(headingKey.slice(0, 16));
+        });
+        if (!person) return;
+        person.target = heading.id;
+        const data = characterData.get(person.id);
+        if (data) data.fullTarget = heading.id;
+        heading.dataset.person = person.id;
+        heading.tabIndex = 0;
+        heading.setAttribute('role', 'button');
+        heading.classList.add('person-heading');
+        const open = () => morphPerson(heading);
+        heading.addEventListener('click', open);
+        heading.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+        });
+      });
+    }
+
+    function renderArchive() {
+      const chapters = archive.sections.filter((section) => section.id.startsWith('chapter-'));
+      noteContent.innerHTML = archive.sections.map((section) => {
+        const chapterIndex = chapters.findIndex((chapter) => chapter.id === section.id);
+        const previous = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
+        const next = chapterIndex >= 0 && chapterIndex < chapters.length - 1 ? chapters[chapterIndex + 1] : null;
+        const navigation = chapterIndex >= 0 ? `<nav class="note-nav" aria-label="章节导航"><button type="button" data-note-jump="${previous?.id || ''}" ${previous ? '' : 'disabled'}><i data-lucide="arrow-left"></i><span>${previous ? `上一章 · ${escapeHtml(previous.title)}` : '已是第一章'}</span></button><button type="button" data-note-jump="${next?.id || ''}" ${next ? '' : 'disabled'}><span>${next ? `下一章 · ${escapeHtml(next.title)}` : '已是最后一章'}</span><i data-lucide="arrow-right"></i></button></nav>` : '';
+        return `<section class="note-chapter" id="${section.id}" data-note-section="${section.id}">${section.html}${navigation}</section>`;
+      }).join('');
+      document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 · ${archive.meta.peopleCount} 人物 · ${archive.meta.imageCount} 张剧照`;
+      hydrateIcons();
+      bindArchivePeople();
+      noteContent.querySelectorAll('[data-note-jump]').forEach((button) => {
+        button.addEventListener('click', () => document.getElementById(button.dataset.noteJump)?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'start' }));
+      });
+      buildNoteToc();
+      observeNoteBlocks();
+    }
+
+    function renderTimeline() {
+      document.getElementById('timelineItems').innerHTML = archive.timeline.map((item) => `<article class="timeline-item"><span class="timeline-dot"></span><small>${escapeHtml(item.era)}</small><h3>${escapeHtml(item.event.split('：')[0])}</h3><p>${escapeHtml(item.work)}<br>${escapeHtml(item.event)}</p></article>`).join('');
+    }
+
+    function renderMotifs() {
+      const icons = ['circle-dot', 'fish', 'door-closed', 'cookie', 'landmark', 'church', 'eye', 'music-2', 'sun-dim', 'volume-2', 'cross', 'waves'];
+      document.getElementById('motifGrid').innerHTML = archive.motifs.map((motif, index) => `<article class="motif" tabindex="0" role="button" data-motif="${motif.id}" data-target="${motif.target}" data-reveal data-delay="${(index % 4) + 1}"><span class="motif-icon"><i data-lucide="${icons[index] || 'circle'}"></i></span><h3>${escapeHtml(motif.title)}</h3><p>${escapeHtml(motif.text.slice(0, 150))}</p></article>`).join('');
+      hydrateIcons();
+      document.querySelectorAll('#motifGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
+      document.querySelectorAll('#motifGrid .motif').forEach((card) => {
+        const open = () => {
+          const target = document.getElementById(card.dataset.target);
+          target?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'center' });
+          if (target) {
+            target.classList.add('search-hit');
+            setTimeout(() => target.classList.remove('search-hit'), 1700);
+          }
+        };
+        card.addEventListener('click', open);
+        card.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
+        });
+      });
+    }
+
+    function setBackgroundInert(isInert) {
+      pageMain.inert = isInert;
+      siteFooter.inert = isInert;
+      header.inert = isInert;
+    }
+
+    function updateNoteProgress() {
+      const rect = noteContent.getBoundingClientRect();
+      const distance = Math.max(1, rect.height - window.innerHeight * .45);
+      const progress = Math.min(100, Math.max(0, ((window.innerHeight * .55 - rect.top) / distance) * 100));
+      noteProgress.textContent = `阅读进度 ${String(Math.round(progress)).padStart(2, '0')}%`;
+    }
+
+    const trackedSections = [...document.querySelectorAll('[data-section]')];
+    function updateActiveSection() {
+      const marker = window.scrollY + window.innerHeight * .3;
+      let current = trackedSections[0];
+      trackedSections.forEach((section) => {
+        if (section.offsetTop <= marker) current = section;
+      });
+      document.querySelectorAll('[data-nav]').forEach((link) => link.classList.toggle('is-active', link.dataset.nav === current?.dataset.section));
+    }
+
+    function updateScrollState() {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+      document.documentElement.style.setProperty('--scroll-progress', progress.toFixed(3));
+      progressNumber.textContent = String(Math.min(99, Math.max(1, Math.round(progress * 100)))).padStart(2, '0');
+      header.classList.toggle('is-scrolled', window.scrollY > 30);
+      backToTop.classList.toggle('is-visible', window.scrollY > window.innerHeight * .8);
+      updateActiveSection();
+      updateNoteTocActive();
+      updateNoteProgress();
+    }
+    window.addEventListener('scroll', updateScrollState, { passive: true });
+    updateScrollState();
+
+    window.addEventListener('pointermove', (event) => {
+      cursorGlow.style.left = `${event.clientX}px`;
+      cursorGlow.style.top = `${event.clientY}px`;
+    }, { passive: true });
+
+    document.addEventListener('pointerdown', (event) => {
+      const target = event.target.closest('.button, .icon-button, .filter-button');
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      ripple.style.left = `${event.clientX - rect.left}px`;
+      ripple.style.top = `${event.clientY - rect.top}px`;
+      target.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+    });
+
+    function showToast(message) {
+      toastText.textContent = message;
+      toast.classList.add('is-visible');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('is-visible'), 2200);
+    }
+
+    const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    function focusableIn(element) {
+      return [...element.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+        .filter((item) => !item.disabled && !item.hidden && item.getClientRects().length > 0);
+    }
+
+    function morphImage(fromRect, toRect, imageSource, duration = 680) {
+      if (reduceMotionQuery.matches || !fromRect || !toRect) return null;
+      const clone = document.createElement('img');
+      clone.className = 'morph-clone';
+      clone.src = imageSource;
+      clone.alt = '';
+      Object.assign(clone.style, {
+        top: `${fromRect.top}px`,
+        left: `${fromRect.left}px`,
+        width: `${fromRect.width}px`,
+        height: `${fromRect.height}px`,
+        borderRadius: '0px'
+      });
+      document.body.appendChild(clone);
+      const animation = clone.animate([
+        { top: `${fromRect.top}px`, left: `${fromRect.left}px`, width: `${fromRect.width}px`, height: `${fromRect.height}px`, borderRadius: '0px' },
+        { top: `${toRect.top}px`, left: `${toRect.left}px`, width: `${toRect.width}px`, height: `${toRect.height}px`, borderRadius: '0px' }
+      ], { duration, easing: 'cubic-bezier(.16, 1, .3, 1)' });
+      const cleanup = () => clone.remove();
+      animation.finished.then(cleanup).catch(cleanup);
+      return animation;
+    }
+
+    function openReader(card, data) {
+      if (!data) return;
+      activeCard = card;
+      document.getElementById('readerKicker').textContent = data.kicker;
+
+      const titleParts = data.title.match(/^(.+?)\s*\((.+)\)$/);
+      document.getElementById('readerTitleMain').textContent = titleParts ? titleParts[1].trim() : data.title;
+      document.getElementById('readerTitleAlias').textContent = titleParts ? `(${titleParts[2].trim()})` : '';
+      document.getElementById('readerTitleAlias').hidden = !titleParts;
+      document.getElementById('readerBody').innerHTML = readerHtml(data);
+      document.getElementById('readerQuote').textContent = data.quote;
+      document.getElementById('readerPeriod').textContent = data.period;
+      document.getElementById('readerMotif').textContent = data.motif;
+      const sourceImage = card?.querySelector('img');
+      readerImage.src = data.image;
+      readerImage.alt = sourceImage?.alt || data.title;
+      readerFullLink.hidden = !data.fullTarget;
+      readerFullLink.dataset.target = data.fullTarget || '';
+      reader.classList.add('is-open');
+      reader.classList.remove('is-closing');
+      reader.setAttribute('aria-hidden', 'false');
+      body.classList.add('no-scroll');
+      setBackgroundInert(true);
+      readerContent.scrollTop = 0;
+
+      if (!reduceMotionQuery.matches) {
+        requestAnimationFrame(() => {
+          const sourceImage = card?.querySelector('img');
+          const source = sourceImage?.getBoundingClientRect();
+          const destination = readerMedia.getBoundingClientRect();
+          morphImage(source, destination, data.image);
+        });
+      }
+      setTimeout(() => document.getElementById('readerClose').focus(), 400);
+    }
+
+    function morphOpen(card) {
+      openReader(card, chapterData[card.dataset.chapter]);
+    }
+
+    function morphPerson(card) {
+      openReader(card, characterData.get(card.dataset.person));
+    }
+
+    function closeReader() {
+      if (!reader.classList.contains('is-open')) return;
+      const source = readerMedia.getBoundingClientRect();
+      const target = activeCard?.querySelector('img')?.getBoundingClientRect();
+      const reverseMorph = morphImage(source, target, readerImage.currentSrc || readerImage.src, 560);
+      reader.classList.add('is-closing');
+      reader.setAttribute('aria-hidden', 'true');
+      const closeDelay = reverseMorph ? 580 : 360;
+      setTimeout(() => {
+        reader.classList.remove('is-open', 'is-closing');
+        body.classList.remove('no-scroll');
+        setBackgroundInert(false);
+        if (activeCard) activeCard.focus();
+      }, closeDelay);
+    }
+
+    document.querySelectorAll('.chapter-card').forEach((card) => {
+      card.addEventListener('click', () => morphOpen(card));
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); morphOpen(card); }
+      });
+    });
+    document.querySelectorAll('.character-card').forEach((card) => {
+      card.addEventListener('click', () => morphPerson(card));
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); morphPerson(card); }
+      });
+    });
+    document.getElementById('readerClose').addEventListener('click', closeReader);
+    document.querySelector('[data-close-reader]').addEventListener('click', closeReader);
+    readerFullLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      const targetId = readerFullLink.dataset.target || 'full-note';
+      closeReader();
+      setTimeout(() => {
+        const target = document.getElementById(targetId) || noteContent.querySelector('h3, h4');
+        target?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'start' });
+      }, reduceMotionQuery.matches ? 0 : 620);
+    });
+
+    function searchExcerpt(item, value) {
+      const text = item.text || '';
+      const raw = String(value).trim();
+      const index = raw ? text.toLowerCase().indexOf(raw.toLowerCase()) : -1;
+      if (index < 0) return normalizeSearchText(item.title).includes(normalizeSearchText(raw)) ? `${item.title} · ${text.slice(0, 110)}` : text.slice(0, 130);
+      const start = Math.max(0, index - 46);
+      const end = Math.min(text.length, index + raw.length + 84);
+      return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`;
+    }
+
+    function renderSearchResults(value) {
+      const query = normalizeSearchText(value);
+      if (!query) {
+        searchMeta.textContent = '输入关键词开始检索';
+        searchResults.innerHTML = '';
+        return;
+      }
+      const score = (item) => {
+        const title = normalizeSearchText(item.title);
+        if (title === query) return 0;
+        if (title.includes(query)) return 1;
+        if (item.kind === 'passage' && normalizeSearchText(item.text).includes(query)) return 2;
+        return normalizeSearchText(item.text).includes(query) ? 3 : 4;
+      };
+      const matches = archive.search
+        .filter((item) => normalizeSearchText(`${item.title} ${item.text}`).includes(query))
+        .sort((a, b) => score(a) - score(b))
+        .slice(0, 9);
+      searchMeta.textContent = matches.length ? `找到 ${matches.length} 条档案记录` : '没有找到匹配记录';
+      searchResults.innerHTML = matches.map((item) => {
+        const index = archive.search.indexOf(item);
+        const kind = item.kind === 'person' ? '人物' : item.kind === 'motif' ? '符号' : item.kind === 'passage' ? '正文' : '章节';
+        const icon = item.kind === 'person' ? 'user-round' : item.kind === 'motif' ? 'scan-line' : item.kind === 'passage' ? 'file-text' : 'book-open';
+        return `<button class="search-result" type="button" data-search-index="${index}"><i data-lucide="${icon}"></i><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(searchExcerpt(item, value))}</span></div><small>${kind}</small></button>`;
+      }).join('');
+      hydrateIcons();
+      searchResults.querySelectorAll('[data-search-index]').forEach((result) => {
+        result.addEventListener('click', () => {
+          const item = archive.search[Number(result.dataset.searchIndex)];
+          closeSearch();
+          setTimeout(() => {
+            const target = document.getElementById(item.target || item.id);
+            target?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'center' });
+            if (target) {
+              target.classList.add('search-hit');
+              setTimeout(() => target.classList.remove('search-hit'), 1700);
+            }
+          }, reduceMotionQuery.matches ? 0 : 420);
+        });
+      });
+    }
+
+    function openSearch() {
+      searchLastFocus = document.activeElement;
+      searchPanel.classList.add('is-open');
+      searchPanel.setAttribute('aria-hidden', 'false');
+      body.classList.add('no-scroll');
+      setBackgroundInert(true);
+      setTimeout(() => searchInput.focus(), 350);
+    }
+
+    function closeSearch() {
+      if (!searchPanel.classList.contains('is-open')) return;
+      searchPanel.classList.remove('is-open');
+      searchPanel.setAttribute('aria-hidden', 'true');
+      body.classList.remove('no-scroll');
+      setBackgroundInert(false);
+      if (searchLastFocus) searchLastFocus.focus();
+    }
+
+    document.getElementById('searchToggle').addEventListener('click', openSearch);
+    document.getElementById('searchClose').addEventListener('click', closeSearch);
+    document.querySelector('[data-close-search]').addEventListener('click', closeSearch);
+    searchInput.addEventListener('input', () => renderSearchResults(searchInput.value));
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeReader();
+        closeSearch();
+      }
+      const modal = reader.classList.contains('is-open') ? reader : searchPanel.classList.contains('is-open') ? searchPanel : null;
+      if (event.key === 'Tab' && modal) {
+        const focusable = focusableIn(modal);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
+    });
+
+    const cards = [...document.querySelectorAll('.chapter-card')];
+    const chapterCount = document.getElementById('chapterCount');
+    document.querySelectorAll('[data-filter]').forEach((button) => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-filter]').forEach((item) => item.classList.remove('is-active'));
+        button.classList.add('is-active');
+        const filter = button.dataset.filter;
+        let visible = 0;
+        cards.forEach((card) => {
+          clearTimeout(filterTimers.get(card));
+          const shouldShow = filter === 'all' || card.dataset.category.includes(filter);
+          if (shouldShow) {
+            visible += 1;
+            card.hidden = false;
+            card.classList.remove('is-leaving');
+            card.classList.add('is-entering');
+            filterTimers.set(card, setTimeout(() => card.classList.remove('is-entering'), 520));
+          } else if (!card.hidden) {
+            card.classList.remove('is-entering');
+            card.classList.add('is-leaving');
+            filterTimers.set(card, setTimeout(() => { card.hidden = true; card.classList.remove('is-leaving'); }, 360));
+          }
+        });
+        chapterCount.textContent = `${String(visible).padStart(2, '0')} chapters`;
+      });
+    });
+
+    function cycleQuote() {
+      const text = document.getElementById('quoteText');
+      const source = document.getElementById('quoteSource');
+      text.classList.add('is-switching');
+      setTimeout(() => {
+        quoteIndex = (quoteIndex + 1) % quotes.length;
+        text.textContent = quotes[quoteIndex][0];
+        source.textContent = quotes[quoteIndex][1];
+        text.classList.remove('is-switching');
+      }, 300);
+    }
+    document.getElementById('nextQuote').addEventListener('click', cycleQuote);
+    document.getElementById('randomQuote').addEventListener('click', cycleQuote);
+
+    renderArchive();
+    renderTimeline();
+    renderMotifs();
+    document.getElementById('noteStart').addEventListener('click', () => noteContent.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'start' }));
+    updateScrollState();
+
+    document.getElementById('modeToggle').addEventListener('click', (event) => {
+      const reading = body.classList.toggle('reading-mode');
+      event.currentTarget.innerHTML = `<i data-lucide="${reading ? 'sun-medium' : 'scan-eye'}"></i>`;
+      event.currentTarget.setAttribute('aria-label', reading ? '退出阅读模式' : '切换阅读模式');
+      hydrateIcons();
+      showToast(reading ? '已进入无干扰阅读' : '已恢复电影模式');
+    });
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    if (window.matchMedia('(pointer: coarse)').matches) cursorGlow.style.display = 'none';
+  </script>
+</body>
+</html>
