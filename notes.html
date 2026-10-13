@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#e4e9df">
   <title>全文档案 / 柯里昂档案</title>
+  <link rel="stylesheet" href="assets/css/image-viewer.css">
   <style>
     :root {
       --paper: #1d3029;
@@ -72,6 +73,7 @@
     .note-content h3 { margin: 3rem 0 .8rem; color: var(--accent); font-size: clamp(1.45rem, 2.4vw, 2.35rem); font-weight: 400; letter-spacing: -.045em; line-height: 1.08; scroll-margin-top: 6.2rem; }
     .note-content h4 { margin: 2.2rem 0 .7rem; padding-top: .8rem; border-top: 1px solid var(--line); color: var(--paper); font-family: var(--sans); font-size: 1.15rem; font-weight: 700; line-height: 1.35; scroll-margin-top: 6.2rem; }
     .note-content p { margin: 0 0 1.1rem; }
+    .note-content [data-note-block] { scroll-margin-top: 6.2rem; }
     .note-content strong { color: var(--paper); }
     .note-content em { color: var(--accent); }
     .note-content a { color: var(--olive); text-decoration: underline; text-decoration-color: rgba(56, 88, 75, .35); text-underline-offset: .15em; }
@@ -79,6 +81,7 @@
     .note-content ul, .note-content ol { margin: 0 0 1.2rem; padding-left: 1.5rem; }
     .note-content li { margin: .55rem 0; }
     .note-content img { display: block; width: 100%; height: clamp(11rem, 34vw, 32rem); margin: 2rem 0; object-fit: contain; background: #d4ddd5; filter: sepia(.08) saturate(.86); }
+    .note-content img[src*="assets/posters/"] { width: min(100%, 28rem); height: auto; max-height: 46rem; margin: 2.4rem auto; background: #0a0907; filter: sepia(.04) saturate(.95); box-shadow: 0 1.5rem 3.5rem rgba(29, 48, 41, .18); }
     .note-content table { display: block; width: 100%; margin: 1.8rem 0; overflow-x: auto; border-collapse: collapse; font-family: var(--sans); font-size: .7rem; line-height: 1.65; scrollbar-color: var(--accent) transparent; scrollbar-width: thin; }
     .note-content th, .note-content td { min-width: 8rem; padding: .7rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
     .note-content th { color: var(--accent); background: rgba(56, 88, 75, .08); font-weight: 700; }
@@ -128,7 +131,7 @@
       <span class="brand-copy"><strong>柯里昂档案</strong><span>the corleone archive</span></span>
     </a>
     <nav class="notes-nav" aria-label="主导航">
-      <a href="index.html#chapters">章节</a>
+      <a href="index.html#rules">法则</a>
       <a class="is-active" href="#noteContent">全文</a>
       <a href="index.html#timeline">编年</a>
       <a href="index.html#characters">人物</a>
@@ -144,11 +147,11 @@
       </div>
       <div>
         <p>一份关于庇护如何变成诅咒的完整笔记。这里不删减摘要，只把原文交还给它自己的节奏。</p>
-        <div class="notes-stats"><span><strong id="notesChapterCount">10</strong>章节</span><span><strong id="notesPeopleCount">44</strong>人物</span><span><strong id="notesImageCount">77</strong>张剧照</span></div>
+        <div class="notes-stats"><span><strong id="notesChapterCount">10</strong>章节</span><span><strong id="notesPeopleCount">44</strong>人物</span><span><strong id="notesImageCount">80</strong>张影像</span></div>
       </div>
     </section>
     <div class="note-toolbar">
-      <div class="note-toolbar-meta"><strong id="noteMeta">10 章 / 44 人物 / 77 张剧照</strong><span id="noteProgress">正文 01 / 12</span></div>
+      <div class="note-toolbar-meta"><strong id="noteMeta">10 章 / 44 人物 / 80 张影像</strong><span id="noteProgress">正文 01 / 12</span></div>
       <a href="#noteContent"><i data-lucide="book-open"></i>从当前位置开始</a>
     </div>
     <div class="note-layout">
@@ -162,6 +165,7 @@
   <button class="back-top" type="button" aria-label="回到顶部" title="回到顶部"><i data-lucide="arrow-up"></i></button>
   <script src="assets/vendor/lucide.min.js"></script>
   <script src="assets/data/archive.js"></script>
+  <script src="assets/js/image-viewer.js"></script>
   <script>
     (() => {
       const archive = window.CORLEONE_ARCHIVE;
@@ -175,7 +179,7 @@
       document.getElementById('notesChapterCount').textContent = archive.meta.chapterCount;
       document.getElementById('notesPeopleCount').textContent = archive.meta.peopleCount;
       document.getElementById('notesImageCount').textContent = archive.meta.imageCount;
-      document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 / ${archive.meta.peopleCount} 人物 / ${archive.meta.imageCount} 张剧照`;
+      document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 / ${archive.meta.peopleCount} 人物 / ${archive.meta.imageCount} 张影像`;
       noteContent.innerHTML = archive.sections.map((section) => `<section class="note-chapter" id="${escapeHtml(section.id)}">${section.html}</section>`).join('');
       hydrateIcons();
 
@@ -222,8 +226,17 @@
         window.setTimeout(updateTocFromGeometry, reduceMotion ? 0 : 520);
       }));
 
+      function decodedHash() {
+        try {
+          return decodeURIComponent(window.location.hash.slice(1));
+        } catch {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+          return '';
+        }
+      }
+
       function jumpToHash() {
-        const id = decodeURIComponent(window.location.hash.slice(1));
+        const id = decodedHash();
         if (!id) return;
         window.setTimeout(() => {
           const target = document.getElementById(id);

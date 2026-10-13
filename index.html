@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#090908">
   <meta name="description" content="柯里昂档案 教父三部曲全景笔记的动态阅读样例">
   <title>柯里昂档案 — The Corleone Archive</title>
+  <link rel="stylesheet" href="assets/css/image-viewer.css">
   <script src="assets/vendor/lucide.min.js"></script>
   <style>
     :root {
@@ -208,22 +209,50 @@
     }
     .hero-media {
       position: absolute;
-      inset: 0 0 0 35%;
-      z-index: -2;
+      top: clamp(7.5rem, 11vh, 9.5rem);
+      right: clamp(1.5rem, 5vw, 5.5rem);
+      bottom: clamp(4.5rem, 8vh, 7rem);
+      left: 61%;
+      z-index: 0;
+      display: grid;
+      pointer-events: auto;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: center;
+      gap: clamp(.45rem, 1vw, 1rem);
+      overflow: visible;
+      mask-image: linear-gradient(90deg, transparent 0%, black 12%, black 100%);
+    }
+    .hero-poster {
+      position: relative;
+      aspect-ratio: 2 / 3;
+      margin: 0;
       overflow: hidden;
-      mask-image: linear-gradient(90deg, transparent 0%, black 20%, black 100%);
+      border: 1px solid rgba(240, 199, 120, .24);
+      background: #080806;
+      box-shadow: 0 2rem 4rem rgba(0, 0, 0, .28);
+      animation: posterIn 1.15s var(--ease-out) both;
+      transition: transform .8s var(--ease-out), filter .6s ease;
     }
-    .hero-media img {
+    .hero-poster:nth-child(1) { transform: translateY(4%); animation-delay: .12s; }
+    .hero-poster:nth-child(2) { transform: translateY(-3%); animation-delay: .24s; }
+    .hero-poster:nth-child(3) { transform: translateY(6%); animation-delay: .36s; }
+    .hero-poster img {
       width: 100%;
+      cursor: zoom-in;
       height: 100%;
-      object-fit: cover;
-      object-position: center;
-      filter: sepia(.28) contrast(1.08) brightness(.62);
-      transform: scale(1.08);
-      animation: heroImageIn 1.7s var(--ease-out) both, heroDrift 18s ease-in-out 1.7s infinite alternate;
+      object-fit: contain;
+      filter: sepia(.16) contrast(1.06) brightness(.72) saturate(.82);
+      animation: posterDrift 16s ease-in-out infinite alternate;
     }
-    .hero-scanline { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255, 255, 255, .018) 6px); mix-blend-mode: screen; }
-    .hero-content { max-width: 56rem; }
+    .hero-poster:nth-child(2) img { animation-delay: -5s; }
+    .hero-poster:nth-child(3) img { animation-delay: -10s; }
+    .hero-poster figcaption { position: absolute; right: .65rem; bottom: .55rem; color: rgba(240, 199, 120, .82); font-family: var(--serif); font-size: clamp(1.4rem, 2.5vw, 2.8rem); line-height: 1; text-shadow: 0 2px 14px #000; }
+    .hero:hover .hero-poster:nth-child(1) { transform: translateY(1%); }
+    .hero:hover .hero-poster:nth-child(2) { transform: translateY(0); }
+    .hero:hover .hero-poster:nth-child(3) { transform: translateY(3%); }
+    .hero-scanline { position: absolute; inset: -1rem; background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255, 255, 255, .018) 6px); mix-blend-mode: screen; pointer-events: none; }
+    .hero-content { position: relative; z-index: 1; max-width: 56rem; pointer-events: none; }
+    .hero-content a, .hero-content button { pointer-events: auto; }
     .eyebrow, .section-kicker {
       display: inline-flex;
       align-items: center;
@@ -486,15 +515,14 @@
     .reader-backdrop { position: absolute; inset: 0; background: rgba(3, 3, 2, .82); opacity: 0; backdrop-filter: blur(0); transition: opacity .5s var(--ease-out), backdrop-filter .7s ease; }
     .reader.is-open .reader-backdrop { opacity: 1; backdrop-filter: blur(16px); }
     .reader.is-closing .reader-backdrop { opacity: 0; }
-    .reader-panel { position: relative; display: grid; grid-template-columns: minmax(12rem, .8fr) minmax(0, 1.2fr); width: min(100%, 64rem); max-height: min(46rem, calc(100vh - 3rem)); overflow: hidden; border: 1px solid var(--line-strong); background: #171612; box-shadow: 0 2rem 6rem rgba(0, 0, 0, .55); opacity: 0; transform: translateY(1.5rem) scale(.97); transition: opacity .55s var(--ease-out), transform .7s var(--ease-out); view-transition-name: reader-panel; }
+    .reader-panel { position: relative; width: min(94vw, 88rem); height: min(90vh, 64rem); height: min(90dvh, 64rem); overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--line-strong); background: #171612; box-shadow: 0 2rem 6rem rgba(0, 0, 0, .55); opacity: 0; transform: translateY(1.5rem) scale(.97); transition: opacity .55s var(--ease-out), transform .7s var(--ease-out); scrollbar-color: var(--gold) transparent; scrollbar-width: thin; view-transition-name: reader-panel; }
+    .reader-panel:fullscreen, .reader.is-expanded .reader-panel { width: 100vw; height: 100vh; height: 100dvh; max-width: none; max-height: none; border: 0; }
+    .reader-actions { position: sticky; top: 0; z-index: 4; display: flex; justify-content: flex-end; gap: .5rem; padding: .9rem .9rem 0; margin-bottom: -3.35rem; pointer-events: none; background: linear-gradient(var(--panel-light), transparent); }
+    .reader-actions button { pointer-events: auto; background: rgba(244, 240, 231, .88); backdrop-filter: blur(10px); }
+    .reader-content { width: min(100%, 75rem); margin: 0 auto; padding: clamp(3.5rem, 6vw, 5rem) clamp(2rem, 5vw, 5.5rem) clamp(2rem, 5vw, 4rem); }
+    .reader-close, .reader-fullscreen { position: static; margin: 0; }
     .reader.is-open .reader-panel { opacity: 1; transform: none; }
     .reader.is-closing .reader-panel { opacity: 0; transform: translateY(1rem) scale(.97); transition-duration: .32s; }
-    .reader.is-closing .reader-media img { opacity: 0; }
-    .reader-media {  position: relative; min-height: 30rem; overflow: hidden; background: #0e0e0c; }
-    .reader-media img { width: 100%; height: 100%; object-fit: cover; filter: sepia(.23) contrast(1.1) brightness(.72); transition: transform 1s var(--ease-out); }
-    .reader-panel:hover .reader-media img { transform: scale(1.04); }
-    .reader-media::after { content: ""; position: absolute; inset: 1rem; border: 1px solid rgba(240, 199, 120, .35); pointer-events: none; }
-    .reader-content { overflow: auto; padding: clamp(1.5rem, 4vw, 3.2rem); scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
     .reader-content h2 { max-width: none; margin: .9rem 0 1rem; font-family: var(--serif); font-size: clamp(2.3rem, 5vw, 4.8rem); font-weight: 400; letter-spacing: -.07em; line-height: 1.1; }
     .reader-content h2 span { display: block; }
     .reader-content h2 small { display: block; margin-top: .45rem; color: var(--gold-bright); font-family: var(--sans); font-size: .28em; font-weight: 500; letter-spacing: .08em; line-height: 1.35; }
@@ -507,15 +535,13 @@
     .reader-body blockquote { margin: 1rem 0; padding-left: .8rem; border-left: 1px solid var(--gold); color: var(--paper); }
     .reader-body table { display: block; overflow-x: auto; font-size: .65rem; line-height: 1.55; }
     .reader-body th, .reader-body td { padding: .45rem; border: 1px solid var(--line); }
-    .reader-body img { width: 100%; max-height: 18rem; margin: .9rem 0; object-fit: cover; filter: sepia(.12) saturate(.85) brightness(.75); }
+    .reader-body img { width: 100%; height: auto; margin: 1.2rem 0; object-fit: contain; background: rgba(29, 48, 41, .08); filter: sepia(.08) saturate(.9) brightness(.9); }
     .reader-quote { margin: 2rem 0; padding: 1.1rem 0 1.1rem 1rem; border-left: 1px solid var(--gold); color: var(--paper); font-family: var(--serif); font-size: 1.25rem; line-height: 1.35; }
     .reader-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: .55rem; margin-top: 1.6rem; }
     .reader-detail { padding: .75rem; border: 1px solid var(--line); }
     .reader-detail small { display: block; color: var(--paper-muted); font-size: .55rem; letter-spacing: .13em; text-transform: uppercase; }
     .reader-detail strong { display: block; margin-top: .3rem; font-size: .75rem; font-weight: 500; }
     .reader-full-link { margin-top: 1.4rem; }
-    .reader-close { position: absolute; top: .9rem; right: .9rem; z-index: 2; }
-    .morph-clone { position: fixed; z-index: 120; object-fit: cover; pointer-events: none; filter: sepia(.23) contrast(1.1) brightness(.72); box-shadow: 0 2rem 5rem rgba(0, 0, 0, .5); }
     .toast { position: fixed; right: 1.5rem; bottom: 1.5rem; z-index: 150; display: flex; align-items: center; gap: .55rem; max-width: min(24rem, calc(100vw - 3rem)); padding: .8rem 1rem; border: 1px solid var(--line-strong); color: var(--paper); background: rgba(23, 22, 18, .92); box-shadow: 0 1rem 2rem rgba(0, 0, 0, .25); opacity: 0; transform: translateY(1rem) scale(.96); pointer-events: none; transition: opacity .4s var(--ease-out), transform .5s var(--ease-out); backdrop-filter: blur(14px); }
     .toast.is-visible { opacity: 1; transform: none; }
     .toast .lucide { width: 1rem; height: 1rem; color: var(--gold-bright); }
@@ -525,8 +551,8 @@
 
     @keyframes riseIn { from { opacity: 0; transform: translateY(2.2rem); } to { opacity: 1; transform: none; } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes heroImageIn { from { opacity: 0; transform: scale(1.17); filter: sepia(.5) contrast(1.2) brightness(.25); } to { opacity: 1; transform: scale(1.08); filter: sepia(.28) contrast(1.08) brightness(.62); } }
-    @keyframes heroDrift { from { transform: scale(1.08) translate3d(0, 0, 0); } to { transform: scale(1.13) translate3d(-1.2%, -1%, 0); } }
+    @keyframes posterIn { from { opacity: 0; translate: 0 2.5rem; scale: .94; } to { opacity: 1; translate: 0 0; scale: 1; } }
+    @keyframes posterDrift { from { transform: scale(1); } to { transform: scale(1.025); } }
     @keyframes float { 0%, 100% { transform: translate(50%, 0); } 50% { transform: translate(50%, .5rem); } }
     @keyframes ripple { to { transform: translate(-50%, -50%) scale(28); opacity: 0; } }
     @keyframes cardLeave { to { opacity: 0; transform: translateY(1rem) scale(.95); filter: blur(7px); } }
@@ -538,7 +564,7 @@
       .top-nav { display: none; }
       .progress-rail { display: none; }
       .hero { padding-right: 1.5rem; padding-left: 1.5rem; }
-      .hero-media { inset: 0; mask-image: linear-gradient(90deg, transparent, black 30%, black); opacity: .65; }
+      .hero-media { top: 6.5rem; right: 1rem; bottom: auto; left: 48%; height: 54vh; gap: .35rem; mask-image: linear-gradient(90deg, transparent, black 18%, black); opacity: .42; }
       .hero-index { right: 1.5rem; bottom: 5.5rem; }
       .chapter-grid { grid-template-columns: 1fr; }
       .chapter-card { min-height: 30rem; }
@@ -548,9 +574,7 @@
       .note-layout { grid-template-columns: 1fr; gap: 2rem; }
       .note-sidebar { position: relative; top: auto; }
       .note-toc { max-height: 14rem; }
-      .reader-panel { grid-template-columns: 1fr; max-height: calc(100vh - 2rem); }
-      .reader-media { min-height: 13rem; max-height: 27vh; }
-      .reader-media img { object-position: center 30%; }
+      .reader-panel { width: calc(100vw - 1.2rem); height: calc(100vh - 1.2rem); height: calc(100dvh - 1.2rem); }
     }
     @media (max-width: 620px) {
       .site-header { padding: 0 1rem; }
@@ -558,6 +582,8 @@
       .header-actions { gap: .35rem; }
       .hero { min-height: 93svh; padding-top: 7rem; padding-bottom: 4rem; }
       .hero h1 { max-width: 8ch; font-size: clamp(3.7rem, 18vw, 6rem); }
+      .hero-media { top: 5.6rem; right: -.8rem; left: 48%; height: 42vh; opacity: .3; }
+      .hero-poster figcaption { display: none; }
       .hero-meta { margin-top: 2.8rem; }
       .meta-chip { min-width: 7.2rem; }
       .hero-index { display: none; }
@@ -618,8 +644,8 @@
     .hero { color: var(--paper); }
     .hero::before { background: radial-gradient(circle at 72% 40%, rgba(163, 94, 61, .2), transparent 25rem), linear-gradient(100deg, rgba(231, 228, 220, .98) 0%, rgba(231, 228, 220, .88) 39%, rgba(231, 228, 220, .12) 100%); }
     .hero::after { background: linear-gradient(transparent, var(--ink)); }
-    .hero-media { opacity: .82; }
-    .hero-media img { filter: sepia(.28) contrast(1.04) brightness(.74) saturate(.8); }
+    .hero-media { opacity: .9; }
+    .hero-media img { filter: sepia(.18) contrast(1.04) brightness(.8) saturate(.86); }
     .hero-scanline { background: repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(29, 48, 41, .04) 6px); mix-blend-mode: multiply; }
     .eyebrow, .section-kicker { color: var(--gold); }
     .hero h1, .section-title { color: var(--paper); }
@@ -692,7 +718,8 @@
     .quote-index { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: 2.4rem; }
     .quote-index-button { display: flex; align-items: center; gap: .65rem; padding: .75rem .8rem; border: 1px solid var(--line); color: var(--paper-muted); background: rgba(244, 240, 231, .4); cursor: pointer; font-size: .64rem; text-align: left; transition: color .3s ease, border-color .3s ease, background .3s ease, transform .35s var(--ease-out); }
     .quote-index-button:hover, .quote-index-button.is-active { color: var(--paper); border-color: var(--gold); background: rgba(163, 94, 61, .1); transform: translateY(-2px); }
-    .quote-index-button span { color: var(--gold); font-family: var(--serif); font-size: 1rem; }
+    .quote-index-number { flex: 0 0 auto; color: var(--gold); font-family: var(--serif); font-size: 1rem; }
+    .quote-index-label { display: -webkit-box; overflow: hidden; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
     .characters-section { background: #e7e4dc; }
     .character-spotlight { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; }
     .character-roster { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; margin-top: 1.5rem; }
@@ -708,6 +735,9 @@
     .character-index { color: #f0c995; }
     .character-body p { color: rgba(244, 240, 231, .75); }
     .history-section { background: #dce4dc; }
+    .history-section .section-header { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(17rem, .85fr); align-items: end; }
+    .history-section .section-intro { max-width: 30rem; padding: 1.15rem 0 1.15rem 1.25rem; border-left: 1px solid var(--gold); background: linear-gradient(90deg, rgba(163, 94, 61, .07), transparent); }
+    .history-intro > span { display: block; margin-bottom: .65rem; color: var(--gold); font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; }
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
     .history-card { display: grid; grid-template-columns: .8fr 1.2fr; min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); }
     .history-card img { width: 100%; height: 100%; min-height: 25rem; object-fit: cover; filter: sepia(.18) saturate(.75) contrast(1.04) brightness(.9); transition: transform .9s var(--ease-out), filter .6s ease; }
@@ -734,8 +764,6 @@
     .search-result { color: var(--paper); background: rgba(29, 48, 41, .025); }
     .reader-body { color: var(--paper-muted); }
     .reader-content h2, .reader-body blockquote, .reader-quote { color: var(--paper); }
-    .reader-media { background: #bfc9c0; }
-    .reader-media::after { border-color: rgba(244, 240, 231, .42); }
     .toast { color: var(--paper); background: rgba(244, 240, 231, .94); box-shadow: 0 1rem 2rem rgba(29, 48, 41, .18); }
     @keyframes panelReveal { from { opacity: 0; transform: translateY(-.4rem); } to { opacity: 1; transform: none; } }
     .notes-portal { background: linear-gradient(135deg, #d7e0d8, #ece8dd 55%, #d8dfd8); }
@@ -770,7 +798,7 @@
       .timeline-focus .button { justify-self: start; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .rule-panel, .hero-media img, .quote-block blockquote, .character-card.is-entering { animation: none !important; }
+      .rule-panel, .hero-poster, .hero-poster img, .quote-block blockquote, .character-card.is-entering { animation: none !important; }
       .rule-panel { transition: none !important; }
       .character-card.is-leaving { opacity: 0; transform: none; transition: none !important; }
     }
@@ -787,7 +815,7 @@
       <span class="brand-copy"><strong>柯里昂档案</strong><span>the corleone archive</span></span>
     </a>
     <nav class="top-nav" aria-label="主导航">
-      <a href="#chapters" data-nav="chapters">章节</a>
+      <a href="#rules" data-nav="rules">法则</a>
       <a href="notes.html">全文</a>
       <a href="#timeline" data-nav="timeline">编年</a>
       <a href="#characters" data-nav="characters">人物</a>
@@ -803,8 +831,10 @@
 
   <main id="top">
     <section class="hero" data-section="hero">
-      <div class="hero-media" aria-hidden="true">
-        <img src="assets/scenes/michael-alone.jpg" alt="麦克独自坐在阴影中">
+      <div class="hero-media">
+        <figure class="hero-poster"><img src="assets/posters/godfather1.jpg" alt="《教父》电影海报"><figcaption>I</figcaption></figure>
+        <figure class="hero-poster"><img src="assets/posters/godfather2.jpg" alt="《教父2》电影海报"><figcaption>II</figcaption></figure>
+        <figure class="hero-poster"><img src="assets/posters/godfather3.jpg" alt="《教父3》电影海报"><figcaption>III</figcaption></figure>
         <span class="hero-scanline"></span>
       </div>
       <div class="hero-content">
@@ -812,7 +842,7 @@
         <h1><span>权力</span><span>是家庭的影子</span></h1>
         <p class="hero-lede">一部关于庇护如何变成诅咒的长镜头<br>从西西里出发 在美国落幕</p>
         <div class="hero-actions">
-          <a class="button button--solid" href="#chapters"><i data-lucide="play"></i>进入档案</a>
+          <a class="button button--solid" href="#rules"><i data-lucide="play"></i>进入档案</a>
           <a class="button" href="#timeline"><i data-lucide="move-down"></i>沿时间线阅读</a>
         </div>
         <div class="hero-meta">
@@ -822,30 +852,6 @@
         </div>
       </div>
       <div class="hero-index"><strong>01</strong><span>从婚礼的日光<br>走进书房的暗处</span></div>
-    </section>
-
-    <section class="section" id="chapters" data-section="chapters">
-      <div class="section-shell">
-        <div class="section-header" data-reveal="left">
-          <div>
-            <span class="section-kicker">archive map</span>
-            <h2 class="section-title">一份笔记<br>拆成十个入口</h2>
-          </div>
-          <p class="section-intro">先看结构 再决定从哪一页进入正文。三部电影只是入口，完整笔记才是档案的骨架</p>
-        </div>
-        <div class="section-rule" data-reveal></div>
-        <div class="chapter-toolbar" data-reveal data-delay="1">
-          <div class="filter-list" role="group" aria-label="章节筛选">
-            <button class="filter-button is-active" type="button" data-filter="all"><i data-lucide="layers-3"></i>全部</button>
-            <button class="filter-button" type="button" data-filter="power"><i data-lucide="landmark"></i>权力</button>
-            <button class="filter-button" type="button" data-filter="family"><i data-lucide="users"></i>家族</button>
-            <button class="filter-button" type="button" data-filter="faith"><i data-lucide="cross"></i>信仰</button>
-          </div>
-          <span class="chapter-count" id="chapterCount">10 chapters</span>
-        </div>
-        <div class="chapter-grid archive-map-grid" id="chapterGrid"></div>
-        <div class="archive-map-foot"><span>每一张卡片都保留对应原文</span><a href="notes.html">打开完整笔记 <i data-lucide="arrow-up-right"></i></a></div>
-      </div>
     </section>
 
     <section class="section rules-section" id="rules" data-section="rules">
@@ -864,7 +870,7 @@
           <div>
             <span class="section-kicker">the complete dossier</span>
             <h2>把所有沉默<br>还给正文</h2>
-            <div class="notes-portal-meta"><span><strong>10</strong>章节</span><span><strong>44</strong>人物</span><span><strong>77</strong>张剧照</span></div>
+            <div class="notes-portal-meta"><span><strong id="portalChapterCount">10</strong>章节</span><span><strong id="portalPeopleCount">44</strong>人物</span><span><strong id="portalImageCount">80</strong>张影像</span></div>
           </div>
           <div>
             <p>原始笔记不被压缩成摘要。进入全文档案，沿 Rail TOC 从观影指南读到最后一只橙子。</p>
@@ -886,26 +892,6 @@
             <div class="timeline-items" id="timelineItems"></div>
           </div>
           <div class="timeline-focus" id="timelineFocus" aria-live="polite"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="section" id="thesis" data-section="thesis">
-      <div class="section-shell split-feature">
-        <div class="feature-media" data-reveal="left">
-          <img src="assets/scenes/baptism.jpg" alt="洗礼日的神圣仪式" loading="lazy">
-          <span class="feature-stamp">II</span>
-        </div>
-        <div class="feature-copy" data-reveal="right">
-          <span class="section-kicker">the central contradiction</span>
-          <h2>神圣誓言<br>与血色登基</h2>
-          <p>洗礼蒙太奇把两个空间缝在同一条时间线上 教堂内麦克弃绝撒旦 教堂外五大家族在鲜血里倒下</p>
-          <div class="insight-list">
-            <div class="insight"><span class="insight-index">01</span><div><strong>庇护</strong><span>最初用来抵御外部世界的堡垒 最后成为埋葬亲情的铁笼</span></div></div>
-            <div class="insight"><span class="insight-index">02</span><div><strong>合法</strong><span>洗白从来不是抹去罪孽 而是把暴力换成更体面的语言</span></div></div>
-            <div class="insight"><span class="insight-index">03</span><div><strong>孤独</strong><span>权柄越是集中 面目越被阴影吞没</span></div></div>
-          </div>
-          <a class="button" href="#motifs"><i data-lucide="scan-line"></i>查看视觉符号</a>
         </div>
       </div>
     </section>
@@ -946,7 +932,7 @@
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
           <div><span class="section-kicker">fact / fiction</span><h2 class="section-title">电影借来的现实<br>与它重新编造的神话</h2></div>
-          <p class="section-intro">第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
+          <p class="section-intro history-intro"><span>chapter 09 / fact checking</span>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
         </div>
         <div class="history-grid" id="historyGrid"></div>
       </div>
@@ -963,7 +949,7 @@
     </section>
 
     <section class="section finale" id="finale" data-section="finale">
-      <div class="finale-media" aria-hidden="true"><img src="assets/scenes/michael-chair.jpg" alt="迟暮的麦克独坐在阴影中" loading="lazy"></div>
+      <div class="finale-media"><img src="assets/scenes/michael-chair.jpg" alt="迟暮的麦克独坐在阴影中" loading="lazy"></div>
       <div class="section-shell finale-content" data-reveal="left">
         <span class="section-kicker">the last frame</span>
         <h2>长寿<br>是无法遗忘的痛苦</h2>
@@ -980,8 +966,10 @@
   <div class="reader" id="reader" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="readerTitle">
     <div class="reader-backdrop" data-close-reader></div>
     <div class="reader-panel" id="readerPanel">
-      <button class="icon-button reader-close" id="readerClose" type="button" aria-label="关闭章节"><i data-lucide="x"></i></button>
-      <div class="reader-media" id="readerMedia"><img id="readerImage" src="" alt=""></div>
+      <div class="reader-actions" aria-label="档案窗口控制">
+        <button class="icon-button reader-fullscreen" id="readerFullscreen" type="button" aria-pressed="false" aria-label="进入全屏" title="进入全屏"><i data-lucide="maximize-2"></i></button>
+        <button class="icon-button reader-close" id="readerClose" type="button" aria-label="关闭章节" title="关闭"><i data-lucide="x"></i></button>
+      </div>
       <div class="reader-content">
         <span class="section-kicker" id="readerKicker">chapter</span>
         <h2 id="readerTitle"><span id="readerTitleMain">章节</span><small id="readerTitleAlias"></small></h2>
@@ -1007,24 +995,12 @@
   <div class="toast" id="toast" role="status" aria-live="polite"><i data-lucide="check"></i><span id="toastText">已切换</span></div>
 
   <script src="assets/data/archive.js"></script>
+  <script src="assets/js/image-viewer.js"></script>
   <script>
     const archive = window.CORLEONE_ARCHIVE;
-    function chapterReaderData(id) {
-      const chapter = archive.chapters.find((item) => item.id === id);
-      if (!chapter) return null;
-      const number = String(chapter.order).padStart(2, '0');
-      const quote = archive.quotes.find((item) => item.groupIndex === Math.min(chapter.order - 1, 2));
-      return {
-        kicker: `archive chapter / ${number}`,
-        title: chapter.title,
-        period: chapter.order <= 3 ? '三部曲档案入口' : `第 ${number} 章`,
-        motif: chapter.order <= 3 ? '家庭与权力' : '完整证据页',
-        image: chapter.cover,
-        html: chapter.html,
-        quote: quote?.translation || chapter.text.slice(0, 120),
-        fullTarget: chapter.id
-      };
-    }
+    document.getElementById('portalChapterCount').textContent = archive.meta.chapterCount;
+    document.getElementById('portalPeopleCount').textContent = archive.meta.peopleCount;
+    document.getElementById('portalImageCount').textContent = archive.meta.imageCount;
 
     function readerHtml(data) {
       let html = data.html;
@@ -1053,9 +1029,7 @@
     const toastText = document.getElementById('toastText');
     const reader = document.getElementById('reader');
     const readerPanel = document.getElementById('readerPanel');
-    const readerContent = document.querySelector('.reader-content');
-    const readerMedia = document.getElementById('readerMedia');
-    const readerImage = document.getElementById('readerImage');
+    const readerFullscreen = document.getElementById('readerFullscreen');
     const readerFullLink = document.getElementById('readerFullLink');
     const noteContent = document.getElementById('noteContent');
     const noteToc = document.getElementById('noteToc');
@@ -1080,6 +1054,8 @@
     let noteTocHeadings = [];
     let noteTocObserver;
     let toastTimer;
+    let readerCloseTimer;
+    let readerFocusTimer;
     let quoteIndex = 0;
     const filterTimers = new Map();
     let searchLastFocus = null;
@@ -1182,7 +1158,7 @@
         const navigation = chapterIndex >= 0 ? `<nav class="note-nav" aria-label="章节导航"><button type="button" data-note-jump="${previous?.id || ''}" ${previous ? '' : 'disabled'}><i data-lucide="arrow-left"></i><span>${previous ? `上一章 · ${escapeHtml(previous.title)}` : '已是第一章'}</span></button><button type="button" data-note-jump="${next?.id || ''}" ${next ? '' : 'disabled'}><span>${next ? `下一章 · ${escapeHtml(next.title)}` : '已是最后一章'}</span><i data-lucide="arrow-right"></i></button></nav>` : '';
         return `<section class="note-chapter" id="${section.id}" data-note-section="${section.id}">${section.html}${navigation}</section>`;
       }).join('');
-      document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 · ${archive.meta.peopleCount} 人物 · ${archive.meta.imageCount} 张剧照`;
+      document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 · ${archive.meta.peopleCount} 人物 · ${archive.meta.imageCount} 张影像`;
       hydrateIcons();
       bindArchivePeople();
       noteContent.querySelectorAll('[data-note-jump]').forEach((button) => {
@@ -1195,47 +1171,6 @@
     function titleParts(title) {
       const match = String(title).match(/^(.+?)\s*\((.+)\)$/);
       return { main: match ? match[1].trim() : String(title), alias: match ? match[2].trim() : '' };
-    }
-
-    function cleanChapterCardTitle(title) {
-      const normalized = String(title).replace(/^[一二三四五六七八九十]+、\s*/, '');
-      const filmTitle = normalized.match(/^《[^》]+》[:：]\s*([^（(]+)/);
-      return (filmTitle ? filmTitle[1] : normalized).replace(/（[^）]*）|\([^)]*\)/g, '').trim();
-    }
-
-    function chapterCategories(chapter) {
-      const text = `${chapter.title} ${chapter.text}`;
-      const categories = [];
-      if (/权力|资本|合法|制度|金融|政治|组织/.test(text)) categories.push('power');
-      if (/家族|家庭|婚礼|父|兄|母|女儿|亲人|人物/.test(text)) categories.push('family');
-      if (/信仰|教廷|教皇|洗礼|告解|宗教|圣/.test(text)) categories.push('faith');
-      return categories.length ? categories : ['family'];
-    }
-
-    function renderArchiveMap() {
-      const featured = archive.chapters.filter((chapter) => ['chapter-03', 'chapter-04', 'chapter-05'].includes(chapter.id));
-      const remaining = archive.chapters.filter((chapter) => !featured.includes(chapter));
-      const chapters = [...featured, ...remaining];
-      document.getElementById('chapterGrid').innerHTML = chapters.map((chapter, index) => {
-        const categories = chapterCategories(chapter);
-        const title = cleanChapterCardTitle(chapter.title);
-        const excerpt = chapter.text.replace(/\s+/g, ' ').slice(0, index < 3 ? 110 : 82);
-        return `<article class="chapter-card ${index < 3 ? 'chapter-card--feature' : 'chapter-card--compact'}" tabindex="0" data-chapter="${chapter.id}" data-category="${categories.join(' ')}" data-reveal data-delay="${(index % 4) + 1}"><img src="${escapeHtml(chapter.cover)}" alt="${escapeHtml(title)}" loading="lazy"><span class="chapter-number">${String(index + 1).padStart(2, '0')}</span><span class="chapter-tag">${String(chapter.order).padStart(2, '0')} / ${escapeHtml(categories[0])}</span><div class="chapter-body"><small>${escapeHtml(index < 3 ? 'film dossier' : 'source section')}</small><h3>${escapeHtml(title)}</h3><p>${escapeHtml(excerpt)}${chapter.text.length > excerpt.length ? '...' : ''}</p><div class="chapter-footer"><span>打开档案</span><i data-lucide="arrow-up-right"></i></div></div></article>`;
-      }).join('');
-      document.getElementById('chapterCount').textContent = `${chapters.length} chapters`;
-      hydrateIcons();
-      document.querySelectorAll('#chapterGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
-      bindChapterCards();
-    }
-
-    function bindChapterCards() {
-      document.querySelectorAll('#chapterGrid .chapter-card').forEach((card) => {
-        const open = () => morphOpen(card);
-        card.addEventListener('click', open);
-        card.addEventListener('keydown', (event) => {
-          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
-        });
-      });
     }
 
     function renderRules() {
@@ -1320,9 +1255,9 @@
       const focus = (item, card) => {
         document.querySelectorAll('.timeline-item').forEach((entry) => entry.classList.remove('is-active'));
         card.classList.add('is-active');
-        document.getElementById('timelineFocus').innerHTML = `<strong>${escapeHtml(item.era)}</strong><span>${escapeHtml(item.work)}</span><p>${escapeHtml(item.event)}</p><button class="button" type="button" data-timeline-chapter="${card.dataset.chapter}"><i data-lucide="arrow-up-right"></i>打开对应电影档案</button>`;
+        const chapterTarget = `${card.dataset.chapter}-heading`;
+        document.getElementById('timelineFocus').innerHTML = `<strong>${escapeHtml(item.era)}</strong><span>${escapeHtml(item.work)}</span><p>${escapeHtml(item.event)}</p><a class="button" href="notes.html#${encodeURIComponent(chapterTarget)}"><i data-lucide="arrow-up-right"></i>打开对应电影正文</a>`;
         hydrateIcons();
-        document.querySelector('[data-timeline-chapter]').addEventListener('click', () => document.querySelector(`#chapterGrid [data-chapter="${card.dataset.chapter}"]`)?.scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'center' }));
       };
       const items = [...document.querySelectorAll('.timeline-item')];
       items.forEach((card, index) => {
@@ -1334,7 +1269,7 @@
     }
 
     function renderQuotes() {
-      document.getElementById('quoteIndex').innerHTML = quotes.map((quote, index) => `<button type="button" id="${quote.id}" class="quote-index-button ${index === 0 ? 'is-active' : ''}" data-quote-index="${index}"><span>${String(index + 1).padStart(2, '0')}</span>${escapeHtml(quote.group)}</button>`).join('');
+      document.getElementById('quoteIndex').innerHTML = quotes.map((quote, index) => `<button type="button" id="${quote.id}" class="quote-index-button ${index === 0 ? 'is-active' : ''}" data-quote-index="${index}" title="${escapeHtml(quote.translation || quote.original)}"><span class="quote-index-number">${String(index + 1).padStart(2, '0')}</span><span class="quote-index-label">${escapeHtml(quote.translation || quote.original)}</span></button>`).join('');
       document.querySelectorAll('[data-quote-index]').forEach((button) => button.addEventListener('click', () => showQuote(Number(button.dataset.quoteIndex))));
       showQuote(0, false);
     }
@@ -1422,31 +1357,10 @@
         .filter((item) => !item.disabled && !item.hidden && item.getClientRects().length > 0);
     }
 
-    function morphImage(fromRect, toRect, imageSource, duration = 680) {
-      if (reduceMotionQuery.matches || !fromRect || !toRect) return null;
-      const clone = document.createElement('img');
-      clone.className = 'morph-clone';
-      clone.src = imageSource;
-      clone.alt = '';
-      Object.assign(clone.style, {
-        top: `${fromRect.top}px`,
-        left: `${fromRect.left}px`,
-        width: `${fromRect.width}px`,
-        height: `${fromRect.height}px`,
-        borderRadius: '0px'
-      });
-      document.body.appendChild(clone);
-      const animation = clone.animate([
-        { top: `${fromRect.top}px`, left: `${fromRect.left}px`, width: `${fromRect.width}px`, height: `${fromRect.height}px`, borderRadius: '0px' },
-        { top: `${toRect.top}px`, left: `${toRect.left}px`, width: `${toRect.width}px`, height: `${toRect.height}px`, borderRadius: '0px' }
-      ], { duration, easing: 'cubic-bezier(.16, 1, .3, 1)' });
-      const cleanup = () => clone.remove();
-      animation.finished.then(cleanup).catch(cleanup);
-      return animation;
-    }
-
     function openReader(card, data) {
       if (!data) return;
+      clearTimeout(readerCloseTimer);
+      clearTimeout(readerFocusTimer);
       activeCard = card;
       document.getElementById('readerKicker').textContent = data.kicker;
 
@@ -1458,32 +1372,17 @@
       document.getElementById('readerQuote').textContent = data.quote;
       document.getElementById('readerPeriod').textContent = data.period;
       document.getElementById('readerMotif').textContent = data.motif;
-      const sourceImage = card?.querySelector('img');
-      readerImage.src = data.image;
-      readerImage.alt = sourceImage?.alt || data.title;
       readerFullLink.hidden = !data.fullTarget;
       readerFullLink.dataset.target = data.fullTarget || '';
-    readerFullLink.href = data.fullTarget ? `notes.html#${encodeURIComponent(data.fullTarget)}` : 'notes.html';
+      readerFullLink.href = data.fullTarget ? `notes.html#${encodeURIComponent(data.fullTarget)}` : 'notes.html';
       reader.classList.add('is-open');
-      reader.classList.remove('is-closing');
+      reader.classList.remove('is-closing', 'is-expanded');
+      updateReaderFullscreen();
       reader.setAttribute('aria-hidden', 'false');
       body.classList.add('no-scroll');
       setBackgroundInert(true);
-      readerContent.scrollTop = 0;
-
-      if (!reduceMotionQuery.matches) {
-        requestAnimationFrame(() => {
-          const sourceImage = card?.querySelector('img');
-          const source = sourceImage?.getBoundingClientRect();
-          const destination = readerMedia.getBoundingClientRect();
-          morphImage(source, destination, data.image);
-        });
-      }
-      setTimeout(() => document.getElementById('readerClose').focus(), 400);
-    }
-
-    function morphOpen(card) {
-      openReader(card, chapterReaderData(card.dataset.chapter));
+      readerPanel.scrollTop = 0;
+      readerFocusTimer = setTimeout(() => document.getElementById('readerClose').focus(), reduceMotionQuery.matches ? 0 : 400);
     }
 
     function morphMotif(card) {
@@ -1505,20 +1404,53 @@
       openReader(card, characterData.get(card.dataset.person));
     }
 
+    function updateReaderFullscreen() {
+      if (!readerFullscreen) return;
+      const active = document.fullscreenElement === readerPanel || reader.classList.contains('is-expanded');
+      readerFullscreen.setAttribute('aria-pressed', String(active));
+      readerFullscreen.setAttribute('aria-label', active ? '退出全屏' : '进入全屏');
+      readerFullscreen.title = active ? '退出全屏' : '进入全屏';
+      readerFullscreen.innerHTML = `<i data-lucide="${active ? 'minimize-2' : 'maximize-2'}"></i>`;
+      hydrateIcons();
+    }
+
+    async function toggleReaderFullscreen() {
+      if (document.fullscreenElement === readerPanel) {
+        await document.exitFullscreen?.();
+        return;
+      }
+      if (reader.classList.contains('is-expanded')) {
+        reader.classList.remove('is-expanded');
+        updateReaderFullscreen();
+        return;
+      }
+      try {
+        if (readerPanel.requestFullscreen) await readerPanel.requestFullscreen();
+        else throw new Error('Fullscreen API unavailable');
+      } catch {
+        reader.classList.add('is-expanded');
+        updateReaderFullscreen();
+      }
+    }
+
+    document.addEventListener('fullscreenchange', updateReaderFullscreen);
+    readerFullscreen?.addEventListener('click', toggleReaderFullscreen);
+
     function closeReader() {
-      if (!reader.classList.contains('is-open')) return;
-      const source = readerMedia.getBoundingClientRect();
-      const target = activeCard?.querySelector('img')?.getBoundingClientRect();
-      const reverseMorph = morphImage(source, target, readerImage.currentSrc || readerImage.src, 560);
+      if (!reader.classList.contains('is-open') || reader.classList.contains('is-closing')) return;
+      clearTimeout(readerFocusTimer);
+      if (document.fullscreenElement === readerPanel) void document.exitFullscreen?.();
+      reader.classList.remove('is-expanded');
+      updateReaderFullscreen();
+      const returnFocus = activeCard;
       reader.classList.add('is-closing');
       reader.setAttribute('aria-hidden', 'true');
-      const closeDelay = reverseMorph ? 580 : 360;
-      setTimeout(() => {
+      readerCloseTimer = setTimeout(() => {
         reader.classList.remove('is-open', 'is-closing');
         body.classList.remove('no-scroll');
         setBackgroundInert(false);
-        if (activeCard) activeCard.focus();
-      }, closeDelay);
+        if (returnFocus?.isConnected) returnFocus.focus();
+      }, reduceMotionQuery.matches ? 0 : 360);
     }
 
     document.getElementById('readerClose').addEventListener('click', closeReader);
@@ -1589,13 +1521,12 @@
         result.addEventListener('click', () => {
           const item = archive.search[Number(result.dataset.searchIndex)];
           closeSearch();
-          if (item.kind === 'passage') {
+          if (item.kind === 'passage' || item.kind === 'chapter') {
             window.location.href = `notes.html#${encodeURIComponent(item.target || item.id)}`;
             return;
           }
           setTimeout(() => {
             let target = document.getElementById(item.target || item.id);
-            if (item.kind === 'chapter') target = document.querySelector(`#chapterGrid [data-chapter="${item.id}"]`) || target;
             if (item.kind === 'person') target = document.querySelector(`#characters [data-person="${item.id}"]`) || target;
             if (item.kind === 'motif') target = document.querySelector(`#motifGrid [data-motif="${item.id}"]`) || target;
             if (item.kind === 'rule') {
@@ -1643,6 +1574,7 @@
     searchInput.addEventListener('input', () => renderSearchResults(searchInput.value));
 
     document.addEventListener('keydown', (event) => {
+      if (window.CorleoneImageViewer?.isOpen()) return;
       if (event.key === 'Escape') {
         closeReader();
         closeSearch();
@@ -1658,39 +1590,12 @@
       }
     });
 
-    const chapterCount = document.getElementById('chapterCount');
-    document.querySelectorAll('#chapters [data-filter]').forEach((button) => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('#chapters [data-filter]').forEach((item) => item.classList.remove('is-active'));
-        button.classList.add('is-active');
-        const filter = button.dataset.filter;
-        let visible = 0;
-        document.querySelectorAll('#chapterGrid .chapter-card').forEach((card) => {
-          clearTimeout(filterTimers.get(card));
-          const shouldShow = filter === 'all' || card.dataset.category.includes(filter);
-          if (shouldShow) {
-            visible += 1;
-            card.hidden = false;
-            card.classList.remove('is-leaving');
-            card.classList.add('is-entering');
-            filterTimers.set(card, setTimeout(() => card.classList.remove('is-entering'), 520));
-          } else if (!card.hidden) {
-            card.classList.remove('is-entering');
-            card.classList.add('is-leaving');
-            filterTimers.set(card, setTimeout(() => { card.hidden = true; card.classList.remove('is-leaving'); }, 360));
-          }
-        });
-        chapterCount.textContent = `${String(visible).padStart(2, '0')} chapters`;
-      });
-    });
-
     function cycleQuote() {
       showQuote(quoteIndex + 1);
     }
     document.getElementById('nextQuote').addEventListener('click', cycleQuote);
     document.getElementById('randomQuote').addEventListener('click', cycleQuote);
 
-    renderArchiveMap();
     renderRules();
     renderTimeline();
     renderQuotes();

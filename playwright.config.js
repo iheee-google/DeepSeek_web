@@ -14,7 +14,7 @@ module.exports = defineConfig({
     video: 'retain-on-failure'
   },
   webServer: {
-    command: 'python3 -m http.server 4173 --bind 127.0.0.1',
+    command: 'npm run preview',
     url: 'http://127.0.0.1:4173/index.html',
     reuseExistingServer: true,
     timeout: 10_000

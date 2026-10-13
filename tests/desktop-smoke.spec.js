@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { resolvePublicPath } = require('../scripts/serve-preview.cjs');
 
 function collectDiagnostics(page) {
   const consoleErrors = [];
@@ -21,6 +22,16 @@ async function expectDiagnosticsClean(diagnostics) {
 }
 
 test.describe('柯里昂档案桌面端', () => {
+  test('预览服务只允许公开页面与资源', async () => {
+    expect(resolvePublicPath('/index.html')).toMatch(/index\.html$/);
+    expect(resolvePublicPath('/notes.html')).toMatch(/notes\.html$/);
+    expect(resolvePublicPath('/assets/data/archive.js')).toMatch(/archive\.js$/);
+    expect(resolvePublicPath('/.git/HEAD')).toBeNull();
+    expect(resolvePublicPath('/content/godfather-trilogy-notes-v4.md')).toBeNull();
+    expect(resolvePublicPath('/scripts/build-content.cjs')).toBeNull();
+    expect(resolvePublicPath('/%2e%2e/package.json')).toBeNull();
+  });
+
   test('加载资源并完成核心交互', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/', { waitUntil: 'networkidle' });
@@ -40,17 +51,37 @@ test.describe('柯里昂档案桌面端', () => {
     });
     expect(imageStatus.every(Boolean)).toBe(true);
 
-    const faithFilter = page.locator('[data-filter="faith"]');
-    const faithCount = await page.locator('.chapter-card[data-category~="faith"]').count();
-    await faithFilter.click();
-    await expect(page.locator('#chapterCount')).toHaveText(`${String(faithCount).padStart(2, '0')} chapters`);
-    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(faithCount);
-    await page.locator('[data-filter="all"]').click();
-    await expect(page.locator('#chapterCount')).toHaveText('10 chapters');
-    await expect(page.locator('.chapter-card:not([hidden])')).toHaveCount(10);
+    await expect(page.locator('#chapters')).toHaveCount(0);
+    await expect(page.locator('#chapterGrid')).toHaveCount(0);
+    await expect(page.locator('.hero-poster')).toHaveCount(3);
+    await expect(page.locator('.hero-poster img').first()).toHaveAttribute('src', /assets\/posters\/godfather/);
+    expect(await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => image.getAttribute('src')))).toEqual([
+      'assets/posters/godfather1.jpg',
+      'assets/posters/godfather2.jpg',
+      'assets/posters/godfather3.jpg'
+    ]);
+    await expect(page.locator('.hero-media img[src*="michael-alone"]')).toHaveCount(0);
+    await expect(page.locator('#portalImageCount')).toHaveText('80');
+
+    const poster = page.locator('.hero-poster img').first();
+    await poster.click({ force: true });
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await expect(page.locator('#imageViewerDimensions')).toContainText('×');
+    await page.locator('[data-viewer-action="actual"]').click();
+    expect(await page.locator('.image-viewer-image').evaluate((image) => Math.abs(image.getBoundingClientRect().width / image.getBoundingClientRect().height - image.naturalWidth / image.naturalHeight) < .01)).toBe(true);
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await expect(page.locator('[data-viewer-action="fullscreen"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
 
     await expect(page.locator('#ruleGrid .rule-card')).toHaveCount(3);
     await expect(page.locator('#quoteIndex .quote-index-button')).toHaveCount(9);
+    const quoteLabels = await page.locator('#quoteIndex .quote-index-label').allTextContents();
+    expect(new Set(quoteLabels).size).toBe(9);
+    expect(quoteLabels).toEqual(await page.evaluate(() => window.CORLEONE_ARCHIVE.quotes.map((quote) => quote.translation || quote.original)));
+    await expect(page.locator('#thesis')).toHaveCount(0);
+    await expect(page.locator('#motifGrid [data-motif="motif-02"]')).toContainText('洗礼');
     await expect(page.locator('#characters [data-person]')).toHaveCount(44);
     await expect(page.locator('#timelineItems .timeline-item')).toHaveCount(14);
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
@@ -75,27 +106,62 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#characters [data-person]:not([hidden])')).toHaveCount(secondCharacterGroupCount);
     await page.locator('#characterFilters [data-character-filter="all"]').click();
 
-    const firstChapter = page.locator('#chapterGrid .chapter-card').first();
-    await firstChapter.click();
+    const personCard = page.locator('#characters [data-person]').first();
+    const secondPersonCard = page.locator('#characters [data-person]').nth(1);
+    const personTarget = await page.evaluate(() => window.CORLEONE_ARCHIVE.people[0].target);
+    await personCard.click();
     const reader = page.locator('#reader');
     await expect(reader).toHaveClass(/is-open/);
     await expect(reader).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#readerTitle')).toContainText('权力的加冕');
     await expect(page.locator('#readerBody p').first()).toBeVisible();
-    await expect(page.locator('#readerBody')).toContainText('婚礼');
+    await expect(page.locator('#reader .reader-media')).toHaveCount(0);
+    await expect(page.locator('#readerBody img').first()).toBeVisible();
+    await expect(page.locator('#readerFullscreen')).toBeVisible();
+    expect(await page.locator('#readerPanel').evaluate((panel) => panel.getBoundingClientRect().width / window.innerWidth)).toBeGreaterThan(.85);
+    expect(await page.locator('#readerBody img').first().evaluate((image) => {
+      const rect = image.getBoundingClientRect();
+      return getComputedStyle(image).objectFit === 'contain' && Math.abs(rect.width / rect.height - image.naturalWidth / image.naturalHeight) < .03;
+    })).toBe(true);
+    expect(await page.locator('#readerPanel').evaluate((panel) => panel.scrollHeight > panel.clientHeight)).toBe(true);
+    await page.locator('#readerPanel').evaluate((panel) => { panel.scrollTop = panel.scrollHeight; });
+    await expect.poll(() => page.locator('#readerPanel').evaluate((panel) => panel.scrollTop)).toBeGreaterThan(0);
     await expect(page.locator('#readerClose')).toBeFocused();
+    const readerImages = page.locator('#readerBody img');
+    const readerImageCount = await readerImages.count();
+    expect(readerImageCount).toBeGreaterThan(0);
+    for (let index = 0; index < readerImageCount; index += 1) {
+      await page.keyboard.press('Tab');
+      await expect(readerImages.nth(index)).toBeFocused();
+    }
     await page.keyboard.press('Tab');
     await expect(page.locator('#readerFullLink')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#readerFullscreen')).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.locator('#readerClose')).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(reader).not.toHaveClass(/is-open/, { timeout: 2_000 });
-    await expect(firstChapter).toBeFocused();
+    await expect(personCard).toBeFocused();
 
-    const personCard = page.locator('#characters [data-person]').first();
-    const personTarget = await page.evaluate(() => window.CORLEONE_ARCHIVE.people[0].target);
+    await personCard.click();
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(180);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(210);
+    await secondPersonCard.click();
+    await page.waitForTimeout(240);
+    await expect(reader).toHaveClass(/is-open/);
+    await expect(reader).toHaveAttribute('aria-hidden', 'false');
+    await page.keyboard.press('Escape');
+    await expect(reader).not.toHaveClass(/is-open/, { timeout: 2_000 });
+
     await personCard.click();
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
+    await page.locator('#readerFullscreen').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await expect(page.locator('#readerFullscreen')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#readerFullscreen').click();
+    await expect(page.locator('#readerFullscreen')).toHaveAttribute('aria-pressed', 'false');
     await expect(page.locator('#readerFullLink')).toHaveAttribute('href', `notes.html#${personTarget}`);
     await page.keyboard.press('Escape');
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/, { timeout: 2_000 });
@@ -119,6 +185,17 @@ test.describe('柯里昂档案桌面端', () => {
 
   test('首页搜索会激活模块并把正文结果送入全文页', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    const chapterData = await page.evaluate(() => {
+      const chapter = window.CORLEONE_ARCHIVE.chapters[2];
+      return { target: `${chapter.id}-heading`, title: chapter.title, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'chapter' && item.id === chapter.id) };
+    });
+    await page.locator('#searchToggle').click();
+    await page.locator('#searchInput').fill(chapterData.title);
+    await page.locator(`[data-search-index="${chapterData.index}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`notes\\.html#${chapterData.target}$`));
+    await expect(page.locator(`#${chapterData.target}`)).toHaveClass(/search-hit/);
     await page.goto('/', { waitUntil: 'networkidle' });
 
     const ruleData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.rules[1].id, title: window.CORLEONE_ARCHIVE.rules[1].title, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'rule' && item.id === window.CORLEONE_ARCHIVE.rules[1].id) }));
@@ -165,11 +242,14 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#searchPanel')).toHaveAttribute('aria-hidden', 'true');
 
+    const passageTarget = await page.evaluate(() => window.CORLEONE_ARCHIVE.search.find((item) => item.kind === 'passage' && item.text.includes('托马西诺庇护'))?.target);
+    expect(passageTarget).toBeTruthy();
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill('托马西诺庇护');
     await page.locator('.search-result').first().click();
-    await expect(page).toHaveURL(/notes\.html#chapter-03-block-031$/);
-    await expect(page.locator('#chapter-03-block-031')).toHaveClass(/search-hit/);
+    await expect(page).toHaveURL(new RegExp(`notes\\.html#${passageTarget}$`));
+    await expect(page.locator(`#${passageTarget}`)).toHaveClass(/search-hit/);
+    await expect.poll(() => page.locator(`#${passageTarget}`).evaluate((node) => node.getBoundingClientRect().top >= document.querySelector('.notes-header').getBoundingClientRect().bottom)).toBe(true);
     await expectDiagnosticsClean(diagnostics);
   });
 
@@ -182,6 +262,21 @@ test.describe('柯里昂档案桌面端', () => {
     expect(await page.locator('#noteToc a').count()).toBeGreaterThan(44);
     await expect(page.locator('#noteContent')).toContainText('《教父》三部曲全景笔记');
     await expect(page.locator('#noteContent')).toContainText('视听语言与电影符号系统');
+    await expect(page.locator('#notesImageCount')).toHaveText('80');
+    expect(await page.locator('#chapter-03 img[src*="assets/posters/"]').first().getAttribute('src')).toBe('assets/posters/godfather1.jpg');
+    expect(await page.locator('#chapter-04 img[src*="assets/posters/"]').first().getAttribute('src')).toBe('assets/posters/godfather2.jpg');
+    expect(await page.locator('#chapter-05 img[src*="assets/posters/"]').first().getAttribute('src')).toBe('assets/posters/godfather3.jpg');
+    await expect(page.locator('#noteContent img[data-image-viewer-ready="true"]')).toHaveCount(await page.locator('#noteContent img').count());
+    const noteImage = page.locator('#noteContent img').first();
+    await noteImage.click({ force: true });
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    const directoryTargets = await page.locator('#directory a[href^="#"]').evaluateAll((links) => links.map((link) => link.hash.slice(1)));
+    expect(directoryTargets).toHaveLength(10);
+    expect(await page.evaluate((targets) => targets.every((target) => document.querySelectorAll(`#${CSS.escape(target)}`).length === 1), directoryTargets)).toBe(true);
 
     const sourceTargets = await page.evaluate(() => window.CORLEONE_ARCHIVE.search
       .filter((item) => ['chapter', 'person', 'passage'].includes(item.kind))
@@ -214,7 +309,8 @@ test.describe('柯里昂档案桌面端', () => {
     await page.goto(`/notes.html#${personTarget}`, { waitUntil: 'networkidle' });
     await expect.poll(() => page.locator(`#${personTarget}`).evaluate((node) => {
       const rect = node.getBoundingClientRect();
-      return rect.top >= 0 && rect.top <= window.innerHeight;
+      const headerBottom = document.querySelector('.notes-header').getBoundingClientRect().bottom;
+      return rect.top >= headerBottom && rect.top <= window.innerHeight;
     })).toBe(true);
     await expect(page.locator('#noteToc a.is-active')).toHaveAttribute('href', /^#chapter-06-/);
 
@@ -253,6 +349,8 @@ test.describe('柯里昂档案桌面端', () => {
       return Promise.all(nodes.map(decode));
     });
     expect(imageStatus.every(Boolean)).toBe(true);
+    await page.goto('/notes.html#%E0%A4%A', { waitUntil: 'networkidle' });
+    await expect(page).toHaveURL(/notes\.html$/);
     await expect(page.locator('#modeToggle')).toHaveCount(0);
     await expectDiagnosticsClean(diagnostics);
   });

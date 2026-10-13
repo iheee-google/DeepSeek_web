@@ -8,7 +8,7 @@ const outputPath = path.join(root, 'assets', 'data', 'archive.js');
 const source = fs.readFileSync(sourcePath, 'utf8').replace(/\r\n/g, '\n');
 
 function toAssetPath(markdown) {
-  return markdown.replace(/\]\((scenes|portraits)\/([^\)]+)\)/g, ']($1/$2)');
+  return markdown.replace(/\]\((scenes|portraits|posters)\/([^\)]+)\)/g, ']($1/$2)');
 }
 
 function cleanTitle(title) {
@@ -30,7 +30,7 @@ function plainText(html) {
 }
 
 function imagePath(markdown) {
-  const match = markdown.match(/!\[[^\]]*\]\((scenes|portraits)\/([^\)]+)\)/);
+  const match = markdown.match(/!\[[^\]]*\]\((scenes|portraits|posters)\/([^\)]+)\)/);
   return match ? `assets/${match[1]}/${match[2]}` : '';
 }
 
@@ -67,7 +67,7 @@ function makeMarkdownRenderer(prefix) {
   md.renderer.rules.image = (tokens, index, options, env, self) => {
     const token = tokens[index];
     const sourceUrl = token.attrGet('src') || '';
-    if (sourceUrl.startsWith('scenes/') || sourceUrl.startsWith('portraits/')) {
+    if (sourceUrl.startsWith('scenes/') || sourceUrl.startsWith('portraits/') || sourceUrl.startsWith('posters/')) {
       token.attrSet('src', `assets/${sourceUrl}`);
     }
     token.attrSet('loading', 'lazy');
@@ -191,18 +191,6 @@ function firstImage(html, fallback = '') {
 }
 
 const rawSections = topLevelSections(source);
-const sectionFallbacks = [
-  'assets/scenes/wedding.jpg',
-  'assets/scenes/office-vito.jpg',
-  'assets/scenes/wedding.jpg',
-  'assets/scenes/fredo-boathouse.jpg',
-  'assets/scenes/mary-steps.jpg',
-  'assets/scenes/michael-alone.jpg',
-  'assets/scenes/five-families.jpg',
-  'assets/scenes/tahoe-office.jpg',
-  'assets/scenes/michael-part3.jpg',
-  'assets/scenes/oranges.jpg'
-];
 let chapterNumber = 0;
 const sections = rawSections.map((section) => {
   const isPrelude = section.title === '序章';
@@ -215,7 +203,7 @@ const sections = rawSections.map((section) => {
     originalTitle: section.title,
     html,
     text: plainText(html),
-    cover: firstImage(html, sectionFallbacks[chapterNumber - 1] || 'assets/scenes/michael-alone.jpg'),
+    cover: firstImage(html),
     blocks: extractSearchBlocks(html),
     headings: extractHeadingList(section.markdown, id),
     order: isDirectory ? 0 : chapterNumber
@@ -284,6 +272,13 @@ const motifs = motifBlocks.map((block, index) => {
 
 const people = parsePeople(source);
 const chapters = sections.filter((section) => section.id.startsWith('chapter-'));
+if (directory) {
+  let directoryIndex = 0;
+  directory.html = directory.html.replace(/<a\s+href="#[^"]+">/g, (anchor) => {
+    const chapter = chapters[directoryIndex++];
+    return chapter ? `<a href="#${chapter.id}-heading">` : anchor;
+  });
+}
 const characterSection = sections.find((section) => section.originalTitle.startsWith('六、'));
 const motifChapter = sections.find((section) => section.originalTitle.startsWith('十、'));
 const normalizeKey = (value) => String(value).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
