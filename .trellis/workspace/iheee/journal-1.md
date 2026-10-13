@@ -23,3 +23,8 @@
 - This redesign is desktop-focused. Existing 390px checks remain regression coverage only and are not mobile acceptance.
 - The desktop timeline keeps dot/connector geometry aligned, supports mouse drag scrolling without hijacking node clicks, and exposes full rule content through the shared panel.
 - Final desktop validation passed all 6 Playwright tests; the latest task hardening commit is `183413a`. This task does not claim complete mobile acceptance.
+
+## History evidence bands redesign
+
+- The history module now uses two vertically stacked, natural-height evidence bands. The four historical facts and three interpretation boundaries remain compiler-rendered in full; no history images or source-note changes were introduced.
+- Desktop screenshot review confirms the compact section header, controlled body width, stable IDs, chapter 09 link, and no adjacent short-card blank column. Mobile behavior was not treated as a design deliverable.

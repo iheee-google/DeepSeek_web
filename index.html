@@ -843,15 +843,30 @@
     .notes-portal-meta { margin-top: clamp(2rem, 6vw, 4.5rem); }
     .notes-portal-card .button { margin-top: auto; }
 
-    .history-grid { align-items: start; gap: clamp(1rem, 2.2vw, 1.6rem); }
-    .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); }
-    .history-card:hover { border-color: var(--gold); box-shadow: 0 .9rem 2rem rgba(29, 48, 41, .08); }
-    .history-card-body { min-height: 0; display: flex; flex-direction: column; padding: clamp(1.2rem, 2.5vw, 2rem); }
-    .history-card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
+    .history-section .section-header { grid-template-columns: minmax(0, 1.1fr) minmax(18rem, .55fr); gap: clamp(2rem, 7vw, 7rem); align-items: end; margin-bottom: clamp(2.4rem, 5vw, 4.5rem); }
+    .history-section .section-title { max-width: 42rem; font-size: clamp(2.4rem, 4.2vw, 4.6rem); line-height: .96; }
+    .history-section .section-title > span { white-space: normal; }
+    .history-section .section-intro { max-width: 25rem; padding: .4rem 0 .4rem 1.2rem; }
+    .history-intro > a { margin-bottom: .8rem; }
+    .history-intro > p { margin: 0; color: var(--paper-muted); font-family: var(--serif); font-size: .84rem; line-height: 1.8; }
+    .history-grid { display: flex; flex-direction: column; gap: clamp(1.25rem, 2.8vw, 2.4rem); }
+    .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); transition: border-color .35s ease, background .35s ease, box-shadow .45s var(--ease-out); }
+    .history-card:hover, .history-card:focus-within { border-color: var(--gold); background: rgba(251, 248, 241, .72); box-shadow: 0 .9rem 2rem rgba(29, 48, 41, .08); }
+    .history-card-body { display: grid; grid-template-columns: minmax(12rem, .25fr) minmax(0, .75fr); column-gap: clamp(1.5rem, 4vw, 4rem); min-height: 0; padding: clamp(1.5rem, 3vw, 2.8rem); }
+    .history-card-meta { grid-column: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
     .history-card-meta span:first-child { color: var(--gold); font-family: var(--serif); font-size: 1.7rem; }
     .history-card-meta span:last-child { color: var(--paper-muted); font-size: .55rem; letter-spacing: .15em; }
-    .history-card-body h3 { margin: 1.15rem 0 .9rem; }
-    .history-card-copy { flex: 1; color: var(--paper-muted); }
+    .history-card-body h3 { grid-column: 1; margin: 1.15rem 0 0; max-width: 12ch; color: var(--paper); font-family: var(--serif); font-size: clamp(1.5rem, 2.1vw, 2.15rem); font-weight: 400; line-height: 1.08; }
+    .history-card-copy { grid-column: 2; grid-row: 1 / span 2; align-self: start; max-width: 52rem; padding-left: clamp(1.5rem, 3vw, 3rem); border-left: 1px solid var(--line); color: var(--paper-muted); }
+    .history-card-copy p { margin: 0 0 1rem; }
+    .history-card-copy ul, .history-card-copy ol { margin: 0; padding-left: 1.25rem; }
+    .history-card-copy li + li { margin-top: .85rem; }
+
+    @media (max-width: 900px) {
+      .history-card-body { grid-template-columns: 1fr; row-gap: 1.2rem; }
+      .history-card-meta, .history-card-body h3, .history-card-copy { grid-column: 1; grid-row: auto; }
+      .history-card-copy { padding: 1.2rem 0 0; border-top: 1px solid var(--line); border-left: 0; }
+    }
 
     .timeline-scroll { overflow-x: auto; padding: .15rem 0 1.1rem; cursor: grab; scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
     .timeline-scroll.is-dragging { cursor: grabbing; user-select: none; }
@@ -1017,7 +1032,7 @@
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
           <div><span class="section-kicker">fact / fiction</span><h2 class="section-title"><span>电影借来的现实</span><br><span>与它重新编造的神话</span></h2></div>
-          <p class="section-intro history-intro"><a href="notes.html#chapter-09-heading">chapter 09 / fact checking</a>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
+          <div class="section-intro history-intro"><a href="notes.html#chapter-09-heading">chapter 09 / fact checking</a><p>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p></div>
         </div>
         <div class="history-grid" id="historyGrid"></div>
       </div>

@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "历史模块必须使用生成数据、稳定 ID、语义结构和自然高度，不得复制正文或添加图片。"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "遵循现有 Playwright、reduced-motion、桌面截图和 npm test 验收规则。"}

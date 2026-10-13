@@ -132,6 +132,22 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await expect(page.locator('#historyGrid img')).toHaveCount(0);
+    await expect(page.locator('.history-intro a')).toHaveAttribute('href', 'notes.html#chapter-09-heading');
+    const historyContracts = await page.evaluate(() => window.CORLEONE_ARCHIVE.history.map((item) => {
+      const template = document.createElement('template');
+      template.innerHTML = item.html;
+      return { id: item.id, text: template.content.textContent };
+    }));
+    const normalizeHistoryText = (text) => text.replace(/\s+/g, ' ').replace(/\s+([，。；：、！？])/g, '$1').trim();
+    for (const history of historyContracts) {
+      await expect.poll(() => page.locator(`#${history.id} .history-card-copy`).innerText().then(normalizeHistoryText)).toBe(normalizeHistoryText(history.text));
+    }
+    const historyRects = await page.locator('#historyGrid > .history-card').evaluateAll((cards) => cards.map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom, width: rect.width };
+    }));
+    expect(historyRects[1].top).toBeGreaterThanOrEqual(historyRects[0].bottom);
+    expect(historyRects.every((rect) => rect.width > 900)).toBe(true);
     await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(1);
     await expect(page.locator('#ruleGrid [role="tab"]')).toHaveCount(3);
     await expect(page.locator('#rule-panel')).toBeVisible();
@@ -279,6 +295,8 @@ test.describe('柯里昂档案桌面端', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/', { waitUntil: 'networkidle' });
     await expect.poll(() => page.locator('#rule-panel').evaluate((panel) => getComputedStyle(panel).transitionDuration)).toBe('0s');
+    await expect(page.locator('#historyGrid .history-card-copy').first()).toBeVisible();
+    await expect.poll(() => page.locator('#historyGrid .history-card').first().evaluate((card) => getComputedStyle(card).transitionDuration)).toBe('0s');
     await page.locator('#ruleGrid .rule-card').nth(1).click();
     await expect(page.locator('#rule-panel')).not.toHaveClass(/is-switching/);
 

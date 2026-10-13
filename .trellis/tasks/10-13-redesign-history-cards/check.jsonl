@@ -1,0 +1,2 @@
+{"file": "tests/desktop-smoke.spec.js", "reason": "回归范围：完整历史正文、垂直证据带、无图片、链接、motion 和页面诊断。"}
+{"file": "docs/design-v2.md", "reason": "确认产品设计文档与新的全宽证据带结构一致。"}
