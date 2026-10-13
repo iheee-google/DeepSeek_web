@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"生产构建必须遵循现有内容生成、预览安全边界、JavaScript 检查、Playwright 和 git diff 验收规则。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"发布目录只能消费稳定的页面入口、生成数据和 assets，不能绕过现有生成器或复制原文。"}

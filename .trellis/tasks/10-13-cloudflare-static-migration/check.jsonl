@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"检查发布边界、安全响应头、构建验证和现有浏览器回归是否符合项目质量基线。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"检查生成数据、稳定入口、资源路径和动态页面行为未因生产打包改变。"}

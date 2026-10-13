@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build:content": "node scripts/build-content.cjs",
+    "build": "node scripts/build-deploy.cjs",
+    "verify:deploy": "node scripts/verify-deploy.cjs",
     "preview": "node scripts/serve-preview.cjs",
     "test": "playwright test",
     "test:headed": "playwright test --headed",

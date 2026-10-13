@@ -30,3 +30,8 @@
 - Desktop screenshot review confirms the compact section header, controlled body width, stable IDs, chapter 09 link, and no adjacent short-card blank column. Mobile behavior was not treated as a design deliverable.
 - Advisor hardening removed the legacy history-card translate hover, wrapped the left metadata/title into a compact aside, and added opacity, overflow, chapter-link, and history-search assertions. Final desktop screenshots cover the header plus both evidence bands.
 - Final motion hardening restored opacity/transform transitions alongside the card visual transition. Six Playwright tests verify both history rows reveal on entry, the first row reveals again after leaving and returning, remain uncropped, and keep compact left-rail geometry.
+
+## Cloudflare static migration
+
+- Cloudflare Workers Builds currently uses `pnpm run build`, `npx wrangler deploy`, and root `/`; this task prepares the native archive site for the replacement build command `npm run build` without remote push or production deployment.
+- The local production bundle now builds `dist/` from the content generator and publishes only `index.html`, `notes.html`, `assets/`, and `_headers`. Wrangler assets-only dry-run read 98 files with no bindings; six Playwright regressions and deploy-boundary checks passed.
