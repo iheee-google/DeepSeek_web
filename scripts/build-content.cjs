@@ -237,7 +237,6 @@ const history = (historySection ? headingBlocks(historySection.markdown, 3) : []
     title: cleanTitle(block.title),
     html,
     text: plainText(html),
-    cover: ['assets/scenes/five-families.jpg', 'assets/scenes/havana-cake.jpg'][index] || 'assets/scenes/michael-alone.jpg',
     blocks: extractSearchBlocks(html)
   };
 });

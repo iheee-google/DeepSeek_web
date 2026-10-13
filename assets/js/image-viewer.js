@@ -3,6 +3,7 @@
     dialog: null,
     panel: null,
     stage: null,
+    canvas: null,
     image: null,
     title: null,
     dimensions: null,
@@ -10,7 +11,6 @@
     trigger: null,
     closeTimer: null,
     closeSequence: 0,
-    mode: 'fit',
     scale: 1
   };
 
@@ -48,7 +48,6 @@
           </div>
           <div class="image-viewer-actions">
             <button class="image-viewer-button" type="button" data-viewer-action="fit" title="适应窗口">${icon('scan')}<span>适应窗口</span></button>
-            <button class="image-viewer-button" type="button" data-viewer-action="actual" title="原始尺寸">${icon('square-dashed-mouse-pointer')}<span>原始尺寸</span></button>
             <button class="image-viewer-button" type="button" data-viewer-action="zoom-out" title="缩小">${icon('zoom-out')}<span>缩小</span></button>
             <button class="image-viewer-button" type="button" data-viewer-action="zoom-in" title="放大">${icon('zoom-in')}<span>放大</span></button>
             <button class="image-viewer-button" type="button" data-viewer-action="fullscreen" aria-pressed="false" title="进入全屏">${icon('maximize-2')}<span>全屏</span></button>
@@ -56,7 +55,9 @@
           </div>
         </div>
         <div class="image-viewer-stage" tabindex="0" aria-label="图片查看区域">
-          <img class="image-viewer-image" alt="">
+          <div class="image-viewer-canvas">
+            <img class="image-viewer-image" alt="">
+          </div>
           <span class="image-viewer-status" aria-live="polite">100%</span>
         </div>
       </div>`;
@@ -64,6 +65,7 @@
     state.dialog = dialog;
     state.panel = dialog.querySelector('.image-viewer-shell');
     state.stage = dialog.querySelector('.image-viewer-stage');
+    state.canvas = dialog.querySelector('.image-viewer-canvas');
     state.image = dialog.querySelector('.image-viewer-image');
     state.title = dialog.querySelector('#imageViewerTitle');
     state.dimensions = dialog.querySelector('#imageViewerDimensions');
@@ -76,32 +78,35 @@
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) closeViewer();
     });
-    dialog.addEventListener('load', () => applyImageMode(), true);
     state.image.addEventListener('load', () => {
       state.dimensions.textContent = `${state.image.naturalWidth} × ${state.image.naturalHeight}`;
-      applyImageMode();
+      syncImageLayout();
     });
     state.image.addEventListener('error', () => {
       state.dimensions.textContent = '影像加载失败';
       state.status.textContent = '无法加载';
-    });
-    state.stage.addEventListener('dblclick', () => setMode(state.mode === 'fit' ? 'actual' : 'fit'));
-    state.image.addEventListener('click', (event) => {
-      event.stopPropagation();
-      setMode(state.mode === 'fit' ? 'actual' : 'fit');
     });
     dialog.querySelectorAll('[data-viewer-action]').forEach((button) => {
       button.addEventListener('click', () => {
         const action = button.dataset.viewerAction;
         if (action === 'close') closeViewer();
         if (action === 'fit') setMode('fit');
-        if (action === 'actual') setMode('actual');
         if (action === 'zoom-in') zoomBy(1.25);
         if (action === 'zoom-out') zoomBy(.8);
         if (action === 'fullscreen') toggleFullscreen();
       });
     });
-    document.addEventListener('fullscreenchange', updateFullscreenButton);
+    document.addEventListener('fullscreenchange', () => {
+      updateFullscreenButton();
+      if (!state.dialog?.open || !state.image.naturalWidth) return;
+      const anchor = captureAnchor();
+      requestAnimationFrame(() => syncImageLayout(anchor));
+    });
+    window.addEventListener('resize', () => {
+      if (!state.dialog?.open || !state.image.naturalWidth) return;
+      const anchor = captureAnchor();
+      requestAnimationFrame(() => syncImageLayout(anchor));
+    });
     hydrateIcons();
     return dialog;
   }
@@ -110,41 +115,93 @@
     return image.currentSrc || image.getAttribute('src') || image.getAttribute('data-src') || '';
   }
 
-  function setMode(mode) {
-    if (!state.image) return;
-    state.mode = mode;
-    if (mode === 'fit') {
-      state.scale = 1;
-      state.stage.classList.remove('is-actual', 'is-scaled');
-      state.image.style.removeProperty('width');
-      state.image.style.removeProperty('height');
-      state.status.textContent = '适应窗口';
-    } else {
-      state.scale = 1;
-      state.stage.classList.add('is-actual');
-      applyImageMode();
-    }
-    state.stage.scrollTo({ top: 0, left: 0, behavior: reduceMotion.matches ? 'auto' : 'smooth' });
+  function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
   }
 
-  function applyImageMode() {
-    if (!state.image || state.mode === 'fit' || !state.image.naturalWidth) return;
-    const width = Math.round(state.image.naturalWidth * state.scale);
-    const height = Math.round(state.image.naturalHeight * state.scale);
-    state.stage.classList.toggle('is-scaled', state.scale !== 1);
-    state.image.style.width = `${width}px`;
-    state.image.style.height = `${height}px`;
+  function stageContentSize() {
+    const styles = getComputedStyle(state.stage);
+    return {
+      width: Math.max(1, state.stage.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight)),
+      height: Math.max(1, state.stage.clientHeight - parseFloat(styles.paddingTop) - parseFloat(styles.paddingBottom))
+    };
+  }
+
+  function fitSize() {
+    const available = stageContentSize();
+    const ratio = Math.min(1, available.width / state.image.naturalWidth, available.height / state.image.naturalHeight);
+    return {
+      width: state.image.naturalWidth * ratio,
+      height: state.image.naturalHeight * ratio,
+      available
+    };
+  }
+
+  function captureAnchor() {
+    if (!state.image?.naturalWidth || !state.image.getBoundingClientRect().width) return null;
+    const stageRect = state.stage.getBoundingClientRect();
+    const imageRect = state.image.getBoundingClientRect();
+    const imageLeft = imageRect.left - stageRect.left + state.stage.scrollLeft;
+    const imageTop = imageRect.top - stageRect.top + state.stage.scrollTop;
+    const centerX = state.stage.scrollLeft + state.stage.clientWidth / 2;
+    const centerY = state.stage.scrollTop + state.stage.clientHeight / 2;
+    return {
+      x: clamp((centerX - imageLeft) / imageRect.width, 0, 1),
+      y: clamp((centerY - imageTop) / imageRect.height, 0, 1)
+    };
+  }
+
+  function scrollToAnchor(anchor) {
+    const stageRect = state.stage.getBoundingClientRect();
+    const imageRect = state.image.getBoundingClientRect();
+    const imageLeft = imageRect.left - stageRect.left + state.stage.scrollLeft;
+    const imageTop = imageRect.top - stageRect.top + state.stage.scrollTop;
+    const desiredLeft = imageLeft + anchor.x * imageRect.width - state.stage.clientWidth / 2;
+    const desiredTop = imageTop + anchor.y * imageRect.height - state.stage.clientHeight / 2;
+    state.stage.scrollLeft = clamp(desiredLeft, 0, state.stage.scrollWidth - state.stage.clientWidth);
+    state.stage.scrollTop = clamp(desiredTop, 0, state.stage.scrollHeight - state.stage.clientHeight);
+  }
+
+  function syncImageLayout(anchor = null) {
+    if (!state.image?.naturalWidth || !state.canvas) return;
+    const fit = fitSize();
+    const width = Math.round(fit.width * state.scale);
+    const height = Math.round(fit.height * state.scale);
+    const isZoomed = state.scale > 1 && (width > fit.available.width + 1 || height > fit.available.height + 1);
+    state.stage.classList.toggle('is-zoomed', isZoomed);
+    state.canvas.style.width = `${isZoomed ? width + fit.available.width : fit.available.width}px`;
+    state.canvas.style.height = `${isZoomed ? height + fit.available.height : fit.available.height}px`;
+    if (state.scale === 1) {
+      state.image.style.removeProperty('width');
+      state.image.style.removeProperty('height');
+    } else {
+      state.image.style.width = `${width}px`;
+      state.image.style.height = `${height}px`;
+    }
     state.status.textContent = `${Math.round(state.scale * 100)}%`;
+    if (isZoomed && anchor) scrollToAnchor(anchor);
+    else if (isZoomed) {
+      state.stage.scrollLeft = (state.stage.scrollWidth - state.stage.clientWidth) / 2;
+      state.stage.scrollTop = (state.stage.scrollHeight - state.stage.clientHeight) / 2;
+    } else {
+      state.stage.scrollLeft = 0;
+      state.stage.scrollTop = 0;
+    }
+  }
+
+  function setMode(mode) {
+    if (!state.image?.naturalWidth) return;
+    if (mode === 'fit') {
+      state.scale = 1;
+      syncImageLayout();
+    }
   }
 
   function zoomBy(factor) {
-    if (!state.image) return;
-    if (state.mode === 'fit') {
-      state.mode = 'actual';
-      state.stage.classList.add('is-actual');
-    }
-    state.scale = Math.min(4, Math.max(.25, state.scale * factor));
-    applyImageMode();
+    if (!state.image?.naturalWidth) return;
+    const anchor = captureAnchor();
+    state.scale = clamp(state.scale * factor, 1, 4);
+    syncImageLayout(anchor);
   }
 
   function updateFullscreenButton() {
@@ -166,6 +223,7 @@
     if (state.panel.classList.contains('is-simulated-fullscreen')) {
       state.panel.classList.remove('is-simulated-fullscreen');
       updateFullscreenButton();
+      requestAnimationFrame(() => syncImageLayout(captureAnchor()));
       return;
     }
     try {
@@ -174,6 +232,7 @@
     } catch {
       state.panel.classList.add('is-simulated-fullscreen');
       updateFullscreenButton();
+      requestAnimationFrame(() => syncImageLayout(captureAnchor()));
     }
   }
 
@@ -193,9 +252,10 @@
     state.status.textContent = '适应窗口';
     state.image.src = source;
     state.image.alt = imageLabel(image);
-    state.mode = 'fit';
     state.scale = 1;
-    state.stage.classList.remove('is-actual', 'is-scaled');
+    state.stage.classList.remove('is-zoomed');
+    state.canvas.style.removeProperty('width');
+    state.canvas.style.removeProperty('height');
     state.image.style.removeProperty('width');
     state.image.style.removeProperty('height');
     state.stage.scrollTop = 0;
@@ -204,7 +264,10 @@
     updateFullscreenButton();
     if (!state.dialog.open) state.dialog.showModal();
     document.body.classList.add('image-viewer-open');
-    requestAnimationFrame(() => state.stage.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      syncImageLayout();
+      state.stage.focus({ preventScroll: true });
+    });
   }
 
   function closeViewer() {

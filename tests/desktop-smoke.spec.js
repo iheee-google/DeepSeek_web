@@ -35,7 +35,7 @@ test.describe('柯里昂档案桌面端', () => {
   test('加载资源并完成核心交互', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/', { waitUntil: 'networkidle' });
-    await expect(page).toHaveTitle(/柯里昂档案/);
+    await expect(page).toHaveTitle(/教父/);
     await expect(page.locator('.hero h1')).toBeVisible();
     await expect(page.locator('svg.lucide').first()).toBeVisible();
 
@@ -67,8 +67,9 @@ test.describe('柯里昂档案桌面端', () => {
     await poster.click({ force: true });
     await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
     await expect(page.locator('#imageViewerDimensions')).toContainText('×');
-    await page.locator('[data-viewer-action="actual"]').click();
-    expect(await page.locator('.image-viewer-image').evaluate((image) => Math.abs(image.getBoundingClientRect().width / image.getBoundingClientRect().height - image.naturalWidth / image.naturalHeight) < .01)).toBe(true);
+    await expect(page.locator('[data-viewer-action="actual"]')).toHaveCount(0);
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    await expect(page.locator('#imageViewerDimensions')).toContainText('×');
     await page.locator('[data-viewer-action="fullscreen"]').click();
     await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
     await expect(page.locator('[data-viewer-action="fullscreen"]')).toHaveAttribute('aria-pressed', 'true');
@@ -94,10 +95,12 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#timelineItems .timeline-item')).toHaveCount(14);
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
-    await page.locator('#ruleGrid .rule-trigger').nth(1).click();
-    await expect(page.locator('#ruleGrid .rule-card').nth(1)).toHaveClass(/is-open/);
-    await page.locator('#ruleGrid .rule-trigger').nth(1).click();
+    await expect(page.locator('#historyGrid img')).toHaveCount(0);
+    await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(3);
+    await page.locator('#ruleGrid .rule-trigger strong').nth(1).click();
     await expect(page.locator('#ruleGrid .rule-card').nth(1)).not.toHaveClass(/is-open/);
+    await page.locator('#ruleGrid .rule-card').nth(1).click();
+    await expect(page.locator('#ruleGrid .rule-card').nth(1)).toHaveClass(/is-open/);
 
     await page.locator('#quote-09').click();
     await expect(page.locator('#quote-09')).toHaveClass(/is-active/);
@@ -261,43 +264,63 @@ test.describe('柯里昂档案桌面端', () => {
     await expectDiagnosticsClean(diagnostics);
   });
 
-  test('图片查看器原始尺寸可滚动触达全部边缘', async ({ browser }) => {
+  test('图片查看器缩放保持焦点并可触达四边', async ({ browser }) => {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     const diagnostics = collectDiagnostics(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/', { waitUntil: 'networkidle' });
     await page.locator('.hero-poster img').first().click();
-    await page.locator('[data-viewer-action="actual"]').click();
-    const actual = await page.locator('.image-viewer-stage').evaluate((stage) => {
+    await expect(page.locator('[data-viewer-action="actual"]')).toHaveCount(0);
+    const fitWidth = await page.locator('.image-viewer-image').evaluate((image) => image.getBoundingClientRect().width);
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    const zoomed = await page.locator('.image-viewer-stage').evaluate((stage) => {
       const image = stage.querySelector('.image-viewer-image');
       const imageRect = image.getBoundingClientRect();
-      return { width: imageRect.width, height: imageRect.height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, scrollWidth: stage.scrollWidth, scrollHeight: stage.scrollHeight, clientWidth: stage.clientWidth, clientHeight: stage.clientHeight };
-    });
-    expect(actual.width).toBe(actual.naturalWidth);
-    expect(actual.height).toBe(actual.naturalHeight);
-    expect(actual.scrollWidth).toBeGreaterThan(actual.clientWidth);
-    expect(actual.scrollHeight).toBeGreaterThan(actual.clientHeight);
-    expect(await page.locator('.image-viewer-stage').evaluate((stage) => {
-      const image = stage.querySelector('.image-viewer-image');
-      const viewport = stage.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
       const style = getComputedStyle(stage);
       const padding = { left: parseFloat(style.paddingLeft), right: parseFloat(style.paddingRight), top: parseFloat(style.paddingTop), bottom: parseFloat(style.paddingBottom) };
+      const center = { x: stageRect.left + stage.clientWidth / 2, y: stageRect.top + stage.clientHeight / 2 };
       stage.scrollLeft = 0;
       stage.scrollTop = 0;
       const start = image.getBoundingClientRect();
       stage.scrollLeft = stage.scrollWidth - stage.clientWidth;
       stage.scrollTop = stage.scrollHeight - stage.clientHeight;
       const end = image.getBoundingClientRect();
-      return start.left >= viewport.left + padding.left - 1 && start.top >= viewport.top + padding.top - 1 && end.right <= viewport.right - padding.right + 1 && end.bottom <= viewport.bottom - padding.bottom + 1;
-    })).toBe(true);
-    await page.locator('[data-viewer-action="zoom-in"]').click();
-    await page.locator('[data-viewer-action="zoom-in"]').click();
-    await page.locator('[data-viewer-action="zoom-in"]').click();
-    const doubled = await page.locator('.image-viewer-image').evaluate((image) => ({ width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight }));
-    expect(doubled.width / doubled.naturalWidth).toBeGreaterThan(1.9);
-    expect(doubled.width / doubled.naturalWidth).toBeLessThan(2.01);
-    expect(doubled.height / doubled.naturalHeight).toBeGreaterThan(1.9);
-    expect(doubled.height / doubled.naturalHeight).toBeLessThan(2.01);
+      return {
+        width: imageRect.width,
+        centered: Math.abs(imageRect.left + imageRect.width / 2 - center.x) < 3 && Math.abs(imageRect.top + imageRect.height / 2 - center.y) < 3,
+        scrollable: stage.scrollWidth > stage.clientWidth && stage.scrollHeight > stage.clientHeight,
+        edgesReachable: start.left >= stageRect.left + padding.left - 1 && start.top >= stageRect.top + padding.top - 1 && end.right <= stageRect.right - padding.right + 1 && end.bottom <= stageRect.bottom - padding.bottom + 1
+      };
+    });
+    expect(zoomed.width / fitWidth).toBeGreaterThan(1.9);
+    expect(zoomed.width / fitWidth).toBeLessThan(2.01);
+    expect(zoomed.centered).toBe(true);
+    expect(zoomed.scrollable).toBe(true);
+    expect(zoomed.edgesReachable).toBe(true);
+    const anchorBefore = await page.locator('.image-viewer-stage').evaluate((stage) => {
+      const image = stage.querySelector('.image-viewer-image');
+      const imageRect = image.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const imageLeft = imageRect.left - stageRect.left + stage.scrollLeft;
+      const imageTop = imageRect.top - stageRect.top + stage.scrollTop;
+      return { x: (stage.scrollLeft + stage.clientWidth / 2 - imageLeft) / imageRect.width, y: (stage.scrollTop + stage.clientHeight / 2 - imageTop) / imageRect.height };
+    });
+    await page.locator('[data-viewer-action="zoom-out"]').click();
+    const anchorAfter = await page.locator('.image-viewer-stage').evaluate((stage) => {
+      const image = stage.querySelector('.image-viewer-image');
+      const imageRect = image.getBoundingClientRect();
+      const stageRect = stage.getBoundingClientRect();
+      const imageLeft = imageRect.left - stageRect.left + stage.scrollLeft;
+      const imageTop = imageRect.top - stageRect.top + stage.scrollTop;
+      return { x: (stage.scrollLeft + stage.clientWidth / 2 - imageLeft) / imageRect.width, y: (stage.scrollTop + stage.clientHeight / 2 - imageTop) / imageRect.height };
+    });
+    expect(Math.abs(anchorAfter.x - anchorBefore.x)).toBeLessThan(.03);
+    expect(Math.abs(anchorAfter.y - anchorBefore.y)).toBeLessThan(.03);
+    await page.locator('[data-viewer-action="fit"]').click();
+    await expect(page.locator('#imageViewerDimensions')).toContainText('×');
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
     await expectDiagnosticsClean(diagnostics);
@@ -377,7 +400,7 @@ test.describe('柯里昂档案桌面端', () => {
   test('全文页保留原文并维护跨章节目录定位', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/notes.html', { waitUntil: 'networkidle' });
-    await expect(page).toHaveTitle(/全文档案/);
+    await expect(page).toHaveTitle(/全文 \/ 教父/);
     await expect(page.locator('#noteContent .note-chapter')).toHaveCount(12);
     await expect(page.locator('#noteContent h4')).toHaveCount(44);
     expect(await page.locator('#noteToc a').count()).toBeGreaterThan(44);

@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090908">
-  <meta name="description" content="柯里昂档案 教父三部曲全景笔记的动态阅读样例">
-  <title>柯里昂档案 — The Corleone Archive</title>
+  <meta name="description" content="教父三部曲全景笔记与电影档案">
+  <title>教父 — The Godfather</title>
   <link rel="stylesheet" href="assets/css/image-viewer.css">
   <script src="assets/vendor/lucide.min.js"></script>
   <style>
@@ -683,10 +683,10 @@
     .archive-map-foot a { display: inline-flex; align-items: center; gap: .45rem; color: var(--rust); transition: transform .35s var(--ease-out), color .3s ease; }
     .archive-map-foot a:hover { color: var(--gold); transform: translateX(.3rem); }
     .rules-section { background: #d5ded6; }
-    .rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
-    .rule-card { background: rgba(244, 240, 231, .66); transition: background .4s ease, transform .5s var(--ease-out); }
+    .rule-grid { display: grid; grid-template-columns: repeat(3, 1fr); align-items: stretch; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+    .rule-card { background: rgba(244, 240, 231, .66); cursor: pointer; transition: background .4s ease, transform .5s var(--ease-out); }
     .rule-card:hover, .rule-card.is-open { background: var(--panel-light); }
-    .rule-trigger { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .8rem; width: 100%; min-height: 10rem; padding: 1.3rem; border: 0; color: var(--paper); background: transparent; cursor: pointer; text-align: left; }
+    .rule-trigger { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .8rem; width: 100%; min-height: 7rem; padding: 1.3rem; border: 0; color: var(--paper); background: transparent; cursor: pointer; text-align: left; }
     .rule-trigger:hover { transform: translateY(-2px); }
     .rule-trigger .lucide { width: 1.1rem; height: 1.1rem; color: var(--gold); transition: transform .45s var(--ease-out); }
     .rule-card.is-open .rule-trigger .lucide { transform: rotate(45deg); }
@@ -744,10 +744,9 @@
     .history-intro > a { display: block; margin-bottom: .65rem; color: var(--gold); font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none; }
     .history-intro > a:hover { color: var(--gold-bright); text-decoration: underline; text-underline-offset: .25rem; }
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
-    .history-card { display: grid; grid-template-columns: .8fr 1.2fr; min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); }
-    .history-card img { width: 100%; height: 100%; min-height: 25rem; object-fit: cover; filter: sepia(.18) saturate(.75) contrast(1.04) brightness(.9); transition: transform .9s var(--ease-out), filter .6s ease; }
-    .history-card:hover img { transform: scale(1.06); filter: sepia(.08) saturate(.95) contrast(1.04) brightness(1); }
-    .history-card-body { padding: 1.4rem; }
+    .history-card { min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); transition: transform .5s var(--ease-out), background .4s ease; }
+    .history-card:hover { background: rgba(244, 240, 231, .92); transform: translateY(-.25rem); }
+    .history-card-body { min-height: 25rem; padding: 1.6rem; }
     .history-card-body > span { color: var(--gold); font-family: var(--serif); font-size: 1.3rem; }
     .history-card-body h3 { margin: .8rem 0 1.1rem; color: var(--paper); font-family: var(--serif); font-size: clamp(1.4rem, 2.2vw, 2rem); font-weight: 400; line-height: 1.05; }
     .history-card-body > div { color: var(--paper-muted); font-family: var(--serif); font-size: .82rem; line-height: 1.8; }
@@ -800,8 +799,7 @@
       .archive-map-foot, .character-toolbar { align-items: flex-start; flex-direction: column; }
       .notes-portal-card { grid-template-columns: 1fr; }
       .quote-index { grid-template-columns: 1fr 1fr; }
-      .history-card { grid-template-columns: .75fr 1.25fr; min-height: 18rem; }
-      .history-card img { min-height: 18rem; }
+      .history-card, .history-card-body { min-height: 0; }
       .timeline-focus { grid-template-columns: 1fr; }
       .timeline-focus p { grid-column: auto; }
       .timeline-focus .button { justify-self: start; }
@@ -821,7 +819,7 @@
   <header class="site-header" id="siteHeader">
     <a class="brand" href="#top" aria-label="回到首页">
       <span class="brand-mark"><i data-lucide="crown"></i></span>
-      <span class="brand-copy"><strong>柯里昂档案</strong><span>the corleone archive</span></span>
+      <span class="brand-copy"><strong>教父</strong><span>the godfather</span></span>
     </a>
     <nav class="top-nav" aria-label="主导航">
       <a href="#rules" data-nav="rules">法则</a>
@@ -968,7 +966,7 @@
     </section>
   </main>
 
-  <footer class="site-footer"><span>柯里昂档案 · personal film notes</span><a href="#top">回到开场 <i data-lucide="arrow-up"></i></a></footer>
+  <footer class="site-footer"><span>教父 · personal film notes</span><a href="#top">回到开场 <i data-lucide="arrow-up"></i></a></footer>
 
   <button class="icon-button back-to-top" id="backToTop" type="button" aria-label="回到顶部" title="回到顶部"><i data-lucide="arrow-up"></i></button>
 
@@ -1184,17 +1182,21 @@
 
     function renderRules() {
       const icons = ['shield-check', 'eye', 'scale'];
-      document.getElementById('ruleGrid').innerHTML = archive.rules.map((rule, index) => `<article class="rule-card ${index === 0 ? 'is-open' : ''}" id="${rule.id}" data-reveal data-delay="${index + 1}"><button class="rule-trigger" type="button" aria-expanded="${index === 0 ? 'true' : 'false'}"><span class="rule-number">${String(index + 1).padStart(2, '0')}</span><span><small>${escapeHtml(rule.group)}</small><strong>${escapeHtml(rule.title)}</strong></span><i data-lucide="${icons[index] || 'scale'}"></i></button><div class="rule-panel ${index === 0 ? '' : 'is-collapsed'}">${rule.html}</div></article>`).join('');
+      document.getElementById('ruleGrid').innerHTML = archive.rules.map((rule, index) => `<article class="rule-card is-open" id="${rule.id}" data-reveal data-delay="${index + 1}"><button class="rule-trigger" type="button" aria-expanded="true" aria-controls="${rule.id}-panel"><span class="rule-number">${String(index + 1).padStart(2, '0')}</span><span><small>${escapeHtml(rule.group)}</small><strong>${escapeHtml(rule.title)}</strong></span><i data-lucide="${icons[index] || 'scale'}"></i></button><div class="rule-panel" id="${rule.id}-panel">${rule.html}</div></article>`).join('');
       hydrateIcons();
       document.querySelectorAll('#ruleGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
       document.querySelectorAll('.rule-trigger').forEach((trigger) => {
-        trigger.addEventListener('click', () => {
+        const toggle = () => {
           const panel = trigger.nextElementSibling;
           const expanded = trigger.getAttribute('aria-expanded') === 'true';
           const open = !expanded;
           trigger.setAttribute('aria-expanded', String(open));
           panel.classList.toggle('is-collapsed', !open);
           trigger.closest('.rule-card').classList.toggle('is-open', open);
+        };
+        trigger.addEventListener('click', toggle);
+        trigger.closest('.rule-card').addEventListener('click', (event) => {
+          if (!event.target.closest('.rule-trigger, .rule-panel')) toggle();
         });
       });
     }
@@ -1254,7 +1256,7 @@
     }
 
     function renderHistory() {
-      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy"><div class="history-card-body"><span>${String(index + 1).padStart(2, '0')}</span><h3>${escapeHtml(item.title)}</h3><div>${item.html}</div></div></article>`).join('');
+      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><div class="history-card-body"><span>${String(index + 1).padStart(2, '0')} / FACT CHECKING</span><h3>${escapeHtml(item.title)}</h3><div>${item.html}</div></div></article>`).join('');
       document.querySelectorAll('#historyGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
     }
 
