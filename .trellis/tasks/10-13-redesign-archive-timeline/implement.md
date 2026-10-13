@@ -7,7 +7,7 @@
 3. Replace the three-column rules rendering in `index.html` with three accessible selectors and one shared full-content panel; centralize selection so clicks, keyboard input, and search use the same function.
 4. Rebuild `#notes-portal` as a compact archive gateway with clear title, metadata, description, and CTA hierarchy; preserve existing IDs, routes, and counters.
 5. Rebuild `#historyGrid` as image-free evidence cards with natural height, explicit labels, and responsive single-column fallback; verify no history image nodes are emitted.
-6. Rebuild the timeline markup/CSS/interaction as one horizontal track containing its own connector and all 14 nodes; separate short node labels from the full `#timelineFocus` event text and implement first/last keyboard navigation.
+6. Rebuild the timeline markup/CSS/interaction as one horizontal track containing its own connector and all 14 nodes; separate short node labels from the full `#timelineFocus` event text, implement first/last keyboard navigation, and add desktop mouse dragging with window-level release cleanup.
 7. Add normal-motion enter/active/exit transitions and `prefers-reduced-motion` behavior for rule switching, portal interactions, history reveal, and timeline selection without reintroducing a window scroll listener.
 8. Update `tests/desktop-smoke.spec.js` for the new contracts:
    - one active rule selector and complete panel content
@@ -32,7 +32,7 @@
 | Rules | Three selectors exist; exactly one is active; each selection exposes the matching full HTML; arrow/Home/End and search select the same rule |
 | Portal | Title, summary, metadata and CTA have stable desktop layout anchors; no unexpected fixed-height gap or horizontal overflow at the desktop target viewport |
 | History | Exactly two cards; zero images; text starts below labels; cards have natural independent desktop heights |
-| Timeline | 14 nodes in one track; connector begins/ends at node centers; no second row; first and last nodes activate and focus panel updates |
+| Timeline | 14 nodes in one track; connector begins/ends at node centers; no second row; first and last nodes activate and focus panel updates; drag release outside the track leaves no stale scrolling state |
 | Motion | Active/exit classes appear in normal mode; reduced motion removes or shortens transitions without hiding content |
 | Regression | No console/page errors or failed responses; existing image viewer, dialogs, search routes, IDs and notes page remain valid. Existing narrow-viewport smoke coverage is not mobile acceptance |
 

@@ -120,24 +120,38 @@ test.describe('柯里昂档案桌面端', () => {
     await page.mouse.move(timelineBox.x + 80, timelineBox.y + 80);
     await page.mouse.up();
     await expect.poll(() => timelineScroller.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+    await page.mouse.move(timelineBox.x + 300, timelineBox.y + 80);
+    await page.mouse.down();
+    await page.mouse.move(timelineBox.x + 80, timelineBox.y - 40);
+    await page.mouse.up();
+    const releasedScrollLeft = await timelineScroller.evaluate((node) => node.scrollLeft);
+    await page.mouse.move(timelineBox.x + 80, timelineBox.y + 80);
+    await page.waitForTimeout(120);
+    await expect(timelineScroller).toHaveJSProperty('scrollLeft', releasedScrollLeft);
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await expect(page.locator('#historyGrid img')).toHaveCount(0);
     await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(1);
     await expect(page.locator('#ruleGrid [role="tab"]')).toHaveCount(3);
     await expect(page.locator('#rule-panel')).toBeVisible();
-    const ruleContracts = await page.evaluate(() => window.CORLEONE_ARCHIVE.rules.map((rule) => ({ id: rule.id, text: rule.text })));
+    const ruleContracts = await page.evaluate(() => window.CORLEONE_ARCHIVE.rules.map((rule) => {
+      const template = document.createElement('template');
+      template.innerHTML = rule.html;
+      return { id: rule.id, text: template.content.textContent };
+    }));
     const normalizeRuleText = (text) => text.replace(/\s+/g, ' ').replace(/\s+([，。；：、！？])/g, '$1').trim();
     for (const rule of ruleContracts) {
       await page.locator(`#${rule.id}`).click();
       await expect(page.locator(`#${rule.id}`)).toHaveAttribute('aria-selected', 'true');
-      const expectedText = normalizeRuleText(rule.text);
-      await expect.poll(() => page.locator('#rule-panel').innerText().then(normalizeRuleText)).toContain(expectedText.slice(0, 80));
+      await expect.poll(() => page.locator('#rule-panel .rule-panel-content').innerText().then(normalizeRuleText)).toBe(normalizeRuleText(rule.text));
     }
     await page.evaluate((ids) => ids.forEach((id) => document.getElementById(id).click()), ruleContracts.map((rule) => rule.id));
     const lastRule = ruleContracts.at(-1);
     await expect(page.locator(`#${lastRule.id}`)).toHaveAttribute('aria-selected', 'true');
+    await expect(page.locator('#ruleGrid [role="tab"][aria-selected="true"]')).toHaveCount(1);
+    await expect(page.locator('#ruleGrid [role="tab"][tabindex="0"]')).toHaveCount(1);
     await expect.poll(() => page.locator('#rule-panel').getAttribute('data-rule-id')).toBe(lastRule.id);
+    await expect.poll(() => page.locator('#rule-panel .rule-panel-content').innerText().then(normalizeRuleText)).toBe(normalizeRuleText(lastRule.text));
     const secondRule = page.locator('#ruleGrid .rule-card').nth(1);
     const firstRule = page.locator('#ruleGrid .rule-card').first();
     const firstRuleId = await firstRule.getAttribute('id');

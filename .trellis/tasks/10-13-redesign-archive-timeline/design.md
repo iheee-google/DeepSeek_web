@@ -48,7 +48,7 @@
 - 节点只显示序号、时代、作品和短摘要，不重复渲染完整 `event`；完整事件放在下方 focus panel。
 - 生成器增加由事件文本派生的短 `label`，只作为导航摘要；`event` 原文仍是唯一完整描述。
 - 点击节点、键盘 Enter/Space、首页搜索结果都调用统一的 `selectTimeline(id)`，更新 active 状态和 `#timelineFocus`。
-- 首尾节点都可聚焦、可点击、可滚动到可视区域；当前节点状态与动画不依赖 window scroll listener。
+- 首尾节点都可聚焦、可点击、可滚动到可视区域；桌面端支持鼠标拖拽轨道，窗口级 pointer 清理保证轨道外释放或失焦不会残留滚动状态；当前节点状态与动画不依赖 window scroll listener。
 
 ## Data Flow
 

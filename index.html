@@ -1416,23 +1416,44 @@
       const scroller = document.querySelector('.timeline-scroll');
       let dragStartX = 0;
       let dragStartScrollLeft = 0;
+      let dragPointerId = null;
       let dragMoved = false;
       let suppressNextClick = false;
       if (scroller) {
-        scroller.addEventListener('pointerdown', (event) => {
-          if (event.pointerType !== 'mouse' || event.button !== 0) return;
-          dragStartX = event.clientX;
-          dragStartScrollLeft = scroller.scrollLeft;
-          dragMoved = false;
-          suppressNextClick = false;
-          scroller.classList.add('is-dragging');
-        });
-        scroller.addEventListener('pointermove', (event) => {
+        const stopDragging = (event = null) => {
           if (!scroller.classList.contains('is-dragging')) return;
+          if (event?.pointerId != null && event.pointerId !== dragPointerId) return;
+          scroller.classList.remove('is-dragging');
+          suppressNextClick = dragMoved;
+          dragMoved = false;
+          dragPointerId = null;
+          window.removeEventListener('pointermove', handlePointerMove);
+          window.removeEventListener('pointerup', stopDragging);
+          window.removeEventListener('pointercancel', stopDragging);
+        };
+        const handlePointerMove = (event) => {
+          if (!scroller.classList.contains('is-dragging') || event.pointerId !== dragPointerId) return;
+          if (!(event.buttons & 1)) {
+            stopDragging(event);
+            return;
+          }
           const delta = event.clientX - dragStartX;
           if (Math.abs(delta) > 3) dragMoved = true;
           scroller.scrollLeft = dragStartScrollLeft - delta;
           event.preventDefault();
+        };
+        scroller.addEventListener('pointerdown', (event) => {
+          if (event.pointerType !== 'mouse' || event.button !== 0) return;
+          stopDragging();
+          dragStartX = event.clientX;
+          dragStartScrollLeft = scroller.scrollLeft;
+          dragPointerId = event.pointerId;
+          dragMoved = false;
+          suppressNextClick = false;
+          scroller.classList.add('is-dragging');
+          window.addEventListener('pointermove', handlePointerMove, { passive: false });
+          window.addEventListener('pointerup', stopDragging);
+          window.addEventListener('pointercancel', stopDragging);
         });
         scroller.addEventListener('click', (event) => {
           if (!suppressNextClick) return;
@@ -1440,14 +1461,7 @@
           event.stopPropagation();
           suppressNextClick = false;
         }, true);
-        const stopDragging = () => {
-          if (!scroller.classList.contains('is-dragging')) return;
-          scroller.classList.remove('is-dragging');
-          suppressNextClick = dragMoved;
-          dragMoved = false;
-        };
-        scroller.addEventListener('pointerup', stopDragging);
-        scroller.addEventListener('pointercancel', stopDragging);
+        window.addEventListener('blur', () => stopDragging());
       }
       items.forEach((card, index) => {
         card.addEventListener('click', () => selectTimeline(card.id));
