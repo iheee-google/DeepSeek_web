@@ -97,10 +97,17 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await expect(page.locator('#historyGrid img')).toHaveCount(0);
     await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(3);
+    const secondRule = page.locator('#ruleGrid .rule-card').nth(1);
+    const firstRule = page.locator('#ruleGrid .rule-card').first();
+    const beforeSecondHeight = await secondRule.evaluate((card) => card.getBoundingClientRect().height);
+    const firstHeight = await firstRule.evaluate((card) => card.getBoundingClientRect().height);
     await page.locator('#ruleGrid .rule-trigger strong').nth(1).click();
-    await expect(page.locator('#ruleGrid .rule-card').nth(1)).not.toHaveClass(/is-open/);
-    await page.locator('#ruleGrid .rule-card').nth(1).click();
-    await expect(page.locator('#ruleGrid .rule-card').nth(1)).toHaveClass(/is-open/);
+    await expect(secondRule).not.toHaveClass(/is-open/);
+    await expect.poll(() => secondRule.evaluate((card) => card.getBoundingClientRect().height)).toBeLessThan(beforeSecondHeight - 20);
+    expect(await firstRule.evaluate((card) => card.getBoundingClientRect().height)).toBeCloseTo(firstHeight, 0);
+    await secondRule.click();
+    await expect(secondRule).toHaveClass(/is-open/);
+    await expect(secondRule.locator('.rule-panel')).toBeVisible();
 
     await page.locator('#quote-09').click();
     await expect(page.locator('#quote-09')).toHaveClass(/is-active/);
