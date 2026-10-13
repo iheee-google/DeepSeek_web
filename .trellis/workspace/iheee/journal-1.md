@@ -22,3 +22,4 @@
 - The notes portal and fact-checking cards use natural-height desktop layouts; fact-checking cards intentionally render no images.
 - This redesign is desktop-focused. Existing 390px checks remain regression coverage only and are not mobile acceptance.
 - The desktop timeline keeps dot/connector geometry aligned, supports mouse drag scrolling without hijacking node clicks, and exposes full rule content through the shared panel.
+- Final desktop validation passed all 6 Playwright tests; the latest task hardening commit is `183413a`. This task does not claim complete mobile acceptance.
