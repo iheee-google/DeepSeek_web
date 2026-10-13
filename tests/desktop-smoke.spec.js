@@ -183,6 +183,76 @@ test.describe('柯里昂档案桌面端', () => {
     await expectDiagnosticsClean(diagnostics);
   });
 
+  test('图片查看器覆盖海报、动态图片与嵌套档案弹窗', async ({ page }) => {
+    const diagnostics = collectDiagnostics(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/', { waitUntil: 'networkidle' });
+
+    await page.evaluate(() => {
+      const image = document.createElement('img');
+      image.id = 'dynamicViewerImage';
+      image.alt = '动态测试影像';
+      image.src = 'assets/posters/godfather1.jpg';
+      document.body.append(image);
+    });
+    await expect(page.locator('#dynamicViewerImage')).toHaveAttribute('data-image-viewer-ready', 'true');
+    await page.locator('#dynamicViewerImage').click();
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+
+    const posterSources = await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => image.src));
+    for (let index = 0; index < posterSources.length; index += 1) {
+      const poster = page.locator('.hero-poster img').nth(index);
+      await poster.click();
+      await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+      await expect(page.locator('.image-viewer-image')).toHaveAttribute('src', posterSources[index]);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    }
+
+    const personCard = page.locator('#characters [data-person]').first();
+    await personCard.click();
+    const reader = page.locator('#reader');
+    const readerImage = page.locator('#readerBody img').first();
+    await readerImage.click();
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expect(reader).toHaveClass(/is-open/);
+    await expect(readerImage).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(reader).not.toHaveClass(/is-open/);
+
+    await personCard.click();
+    await page.locator('#readerFullscreen').click();
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('readerPanel');
+    const fullscreenReaderImage = page.locator('#readerBody img').first();
+    await fullscreenReaderImage.click();
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expect(reader).toHaveClass(/is-open/);
+    await expect.poll(() => page.evaluate(() => document.fullscreenElement?.id)).toBe('readerPanel');
+    await expect(fullscreenReaderImage).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(reader).not.toHaveClass(/is-open/);
+
+    await page.locator('.hero-poster img').first().click();
+    const viewerPanel = page.locator('.image-viewer-shell');
+    await viewerPanel.evaluate((panel) => { panel.requestFullscreen = () => Promise.reject(new Error('test fallback')); });
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect(viewerPanel).toHaveClass(/is-simulated-fullscreen/);
+    await expect(page.locator('[data-viewer-action="fullscreen"]')).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect(viewerPanel).not.toHaveClass(/is-simulated-fullscreen/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expectDiagnosticsClean(diagnostics);
+  });
+
   test('首页搜索会激活模块并把正文结果送入全文页', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/', { waitUntil: 'networkidle' });

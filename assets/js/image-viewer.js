@@ -201,13 +201,16 @@
 
   function closeViewer() {
     if (!state.dialog?.open) return;
-    if (document.fullscreenElement === state.panel) void document.exitFullscreen?.();
+    const exitPromise = document.fullscreenElement === state.panel ? document.exitFullscreen?.() : null;
     state.panel.classList.remove('is-simulated-fullscreen');
     state.dialog.close();
     document.body.classList.remove('image-viewer-open');
     const trigger = state.trigger;
     state.trigger = null;
-    if (trigger?.isConnected) window.setTimeout(() => trigger.focus({ preventScroll: true }), reduceMotion.matches ? 0 : 40);
+    if (!trigger?.isConnected) return;
+    const restoreFocus = () => window.setTimeout(() => trigger.focus({ preventScroll: true }), reduceMotion.matches ? 0 : 40);
+    if (exitPromise?.finally) exitPromise.finally(restoreFocus);
+    else restoreFocus();
   }
 
   function isViewerImage(image) {
@@ -215,7 +218,10 @@
   }
 
   function decorateImages(root = document) {
-    root.querySelectorAll?.('img').forEach((image) => {
+    const images = [];
+    if (root.matches?.('img')) images.push(root);
+    root.querySelectorAll?.('img').forEach((image) => images.push(image));
+    images.forEach((image) => {
       if (!isViewerImage(image) || image.dataset.imageViewerReady) return;
       image.dataset.imageViewerReady = 'true';
       if (image.closest('a, button')) return;
