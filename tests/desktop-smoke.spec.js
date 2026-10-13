@@ -150,12 +150,32 @@ test.describe('柯里昂档案桌面端', () => {
     expect(historyRects.every((rect) => rect.width > 900)).toBe(true);
     const historyGeometry = await page.locator('#historyGrid > .history-card').evaluateAll((cards) => cards.map((card) => {
       const aside = card.querySelector('.history-card-aside').getBoundingClientRect();
+      const meta = card.querySelector('.history-card-meta').getBoundingClientRect();
+      const title = card.querySelector('h3').getBoundingClientRect();
       const copy = card.querySelector('.history-card-copy');
-      return { asideHeight: aside.height, cardHeight: card.getBoundingClientRect().height, copyOverflow: copy.scrollHeight > copy.clientHeight + 1 };
+      const lastContent = copy.lastElementChild.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      return { asideHeight: aside.height, cardHeight: cardRect.height, titleGap: title.top - meta.bottom, copyOverflow: copy.scrollHeight > copy.clientHeight + 1, contentBottomInsideCard: lastContent.bottom <= cardRect.bottom + 1 };
     }));
-    expect(historyGeometry.every(({ asideHeight, cardHeight, copyOverflow }) => asideHeight < cardHeight && !copyOverflow)).toBe(true);
-    await page.locator('#history').scrollIntoViewIfNeeded();
-    await expect.poll(() => page.locator('#historyGrid > .history-card').first().evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(1);
+    expect(historyGeometry.every(({ asideHeight, cardHeight, titleGap, copyOverflow, contentBottomInsideCard }) => asideHeight < cardHeight && titleGap >= 0 && titleGap < 36 && !copyOverflow && contentBottomInsideCard)).toBe(true);
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    await page.waitForTimeout(450);
+    await expect.poll(() => page.locator('#historyGrid > .history-card').first().evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(0);
+    const firstHistoryCard = page.locator('#historyGrid > .history-card').first();
+    await firstHistoryCard.scrollIntoViewIfNeeded();
+    await expect.poll(() => firstHistoryCard.evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(1);
+    const historyTransition = await firstHistoryCard.evaluate((card) => ({ duration: getComputedStyle(card).transitionDuration, properties: getComputedStyle(card).transitionProperty }));
+    expect(historyTransition.duration).not.toBe('0s');
+    expect(historyTransition.properties).toContain('opacity');
+    for (const card of await page.locator('#historyGrid > .history-card').all()) {
+      await card.scrollIntoViewIfNeeded();
+      await expect.poll(() => card.evaluate((node) => Number(getComputedStyle(node).opacity))).toBe(1);
+    }
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'auto' }));
+    await page.waitForTimeout(450);
+    await expect.poll(() => firstHistoryCard.evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(0);
+    await firstHistoryCard.scrollIntoViewIfNeeded();
+    await expect.poll(() => firstHistoryCard.evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(1);
     await page.locator('.history-intro a').click();
     await expect(page).toHaveURL(/notes\.html#chapter-09-heading$/);
     await expect(page.locator('#chapter-09-heading')).toBeVisible();

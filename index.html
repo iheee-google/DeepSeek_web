@@ -850,7 +850,7 @@
     .history-intro > a { margin-bottom: .8rem; }
     .history-intro > p { margin: 0; color: var(--paper-muted); font-family: var(--serif); font-size: .84rem; line-height: 1.8; }
     .history-grid { display: flex; flex-direction: column; gap: clamp(1.25rem, 2.8vw, 2.4rem); }
-    .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); transition: border-color .35s ease, background .35s ease, box-shadow .45s var(--ease-out); }
+    .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); transition: opacity .9s var(--ease-out), transform .9s var(--ease-out), border-color .35s ease, background .35s ease, box-shadow .45s var(--ease-out); }
     .history-card:hover, .history-card:focus-within { border-color: var(--gold); background: rgba(251, 248, 241, .72); box-shadow: 0 .9rem 2rem rgba(29, 48, 41, .08); }
     .history-card-body { display: grid; grid-template-columns: minmax(12rem, .25fr) minmax(0, .75fr); column-gap: clamp(1.5rem, 4vw, 4rem); min-height: 0; padding: clamp(1.5rem, 3vw, 2.8rem); }
     .history-card-aside { grid-column: 1; align-self: start; }
