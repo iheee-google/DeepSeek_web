@@ -14,7 +14,7 @@
    - keyboard rule switching and search activation
    - portal layout anchors and no history images
    - one timeline track, 14 nodes, connector span, first/last activation
-   - label/event separation, diagnostics, reduced-motion, and targeted 390px overflow
+   - label/event separation, diagnostics, reduced-motion, and desktop connector geometry
 9. Run the desktop visual review at 1440×900, focusing on the four supplied screenshots; adjust only verified desktop layout defects. Do not expand into mobile design.
 10. Run the full checks:
     - `npm run build:content`
@@ -30,8 +30,8 @@
 | Area | Observable check |
 |---|---|
 | Rules | Three selectors exist; exactly one is active; each selection exposes the matching full HTML; arrow/Home/End and search select the same rule |
-| Portal | Title, summary, metadata and CTA have stable layout anchors; no unexpected fixed-height gap or horizontal overflow at target viewports |
-| History | Exactly two cards; zero images; text starts below labels; cards have natural independent heights; mobile becomes one column |
+| Portal | Title, summary, metadata and CTA have stable desktop layout anchors; no unexpected fixed-height gap or horizontal overflow at the desktop target viewport |
+| History | Exactly two cards; zero images; text starts below labels; cards have natural independent desktop heights |
 | Timeline | 14 nodes in one track; connector begins/ends at node centers; no second row; first and last nodes activate and focus panel updates |
 | Motion | Active/exit classes appear in normal mode; reduced motion removes or shortens transitions without hiding content |
 | Regression | No console/page errors or failed responses; existing image viewer, dialogs, search routes, IDs and notes page remain valid. Existing narrow-viewport smoke coverage is not mobile acceptance |
@@ -42,7 +42,7 @@
 - Do not copy reference-site code, add a framework, or add image assets for visual fill.
 - Do not hand-edit `assets/data/archive.js`; regenerate it from Markdown.
 - Do not use a two-row CSS grid for the timeline connector.
-- Do not treat 390px targeted checks as complete mobile acceptance.
+- Do not turn the existing 390px smoke check into mobile design or acceptance for this task.
 - Do not declare completion until screenshots and geometry assertions both pass.
 
 ## Rollback Points

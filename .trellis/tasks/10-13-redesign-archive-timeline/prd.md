@@ -31,7 +31,7 @@
 - 保留原生 HTML/CSS/JavaScript、Lucide 图标、家庭—权力浅色档案视觉，不引入 React、TypeScript、新 UI 框架或新运行时依赖。
 - 保留现有搜索、稳定 ID、弹窗、全文链接和 `prefers-reduced-motion` 约束。
 - 参考 Transitions.dev 的 card resize / panel reveal、Rare UI 的 Step Player / Rail TOC、shadcn/ui 的 Tabs / Accordion 状态边界，只提炼交互模式，不复制代码或引入其运行时。
-- 普通模式的状态变化要有进入、激活、退出反馈；窄屏检查仍属于定向验证，不等于完整移动端验收。
+- 普通模式的状态变化要有进入、激活、退出反馈；本任务只验收桌面端，既有窄屏检查不扩展为移动端设计。
 
 ## Confirmed UX Decision
 
