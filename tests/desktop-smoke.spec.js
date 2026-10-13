@@ -93,21 +93,45 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#motifGrid [data-motif="motif-02"]')).toContainText('洗礼');
     await expect(page.locator('#characters [data-person]')).toHaveCount(44);
     await expect(page.locator('#timelineItems .timeline-item')).toHaveCount(14);
+    await expect(page.locator('.timeline-track')).toHaveCount(1);
+    await expect(page.locator('.timeline-track .timeline-line')).toHaveCount(1);
+    expect(await page.locator('.timeline-items .timeline-item').evaluateAll((items) => new Set(items.map((item) => item.offsetTop)).size)).toBe(1);
+    const timelineGeometry = await page.evaluate(() => {
+      const line = document.querySelector('.timeline-line').getBoundingClientRect();
+      const dots = [...document.querySelectorAll('.timeline-item .timeline-dot')];
+      const first = dots[0].getBoundingClientRect();
+      const last = dots.at(-1).getBoundingClientRect();
+      return { start: Math.abs(line.left - (first.left + first.width / 2)), end: Math.abs(line.right - (last.left + last.width / 2)) };
+    });
+    expect(timelineGeometry.start).toBeLessThan(2);
+    expect(timelineGeometry.end).toBeLessThan(2);
+    const timelineLabels = await page.evaluate(() => window.CORLEONE_ARCHIVE.timeline.map((item) => ({ label: item.label, event: item.event })));
+    expect(timelineLabels.some(({ label, event }) => label !== event)).toBe(true);
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await expect(page.locator('#historyGrid img')).toHaveCount(0);
-    await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(3);
+    await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(1);
+    await expect(page.locator('#ruleGrid [role="tab"]')).toHaveCount(3);
+    await expect(page.locator('#rule-panel')).toBeVisible();
     const secondRule = page.locator('#ruleGrid .rule-card').nth(1);
     const firstRule = page.locator('#ruleGrid .rule-card').first();
-    const beforeSecondHeight = await secondRule.evaluate((card) => card.getBoundingClientRect().height);
-    const firstHeight = await firstRule.evaluate((card) => card.getBoundingClientRect().height);
-    await page.locator('#ruleGrid .rule-trigger strong').nth(1).click();
-    await expect(secondRule).not.toHaveClass(/is-open/);
-    await expect.poll(() => secondRule.evaluate((card) => card.getBoundingClientRect().height)).toBeLessThan(beforeSecondHeight - 20);
-    expect(await firstRule.evaluate((card) => card.getBoundingClientRect().height)).toBeCloseTo(firstHeight, 0);
+    const firstRuleId = await firstRule.getAttribute('id');
+    const secondRuleId = await secondRule.getAttribute('id');
     await secondRule.click();
     await expect(secondRule).toHaveClass(/is-open/);
-    await expect(secondRule.locator('.rule-panel')).toBeVisible();
+    await expect(firstRule).not.toHaveClass(/is-open/);
+    await expect(page.locator('#rule-panel')).toContainText((await page.evaluate((id) => window.CORLEONE_ARCHIVE.rules.find((rule) => rule.id === id).title, secondRuleId)));
+    await secondRule.press('ArrowLeft');
+    await expect(firstRule).toHaveClass(/is-open/);
+    await expect(firstRule).toBeFocused();
+    await secondRule.press('End');
+    await expect(page.locator('#ruleGrid .rule-card').last()).toBeFocused();
+    await page.locator('#ruleGrid .rule-card').last().press('Home');
+    await expect(firstRule).toBeFocused();
+    await expect(page.locator('#timelineItems .timeline-item').first()).toHaveAttribute('aria-pressed', 'true');
+    await page.locator('#timelineItems .timeline-item').last().click();
+    await expect(page.locator('#timelineItems .timeline-item').last()).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#timelineItems .timeline-item').first()).toHaveAttribute('aria-pressed', 'false');
 
     await page.locator('#quote-09').click();
     await expect(page.locator('#quote-09')).toHaveClass(/is-active/);
@@ -205,6 +229,9 @@ test.describe('柯里昂档案桌面端', () => {
     const diagnostics = collectDiagnostics(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/', { waitUntil: 'networkidle' });
+    await expect.poll(() => page.locator('#rule-panel').evaluate((panel) => getComputedStyle(panel).transitionDuration)).toBe('0s');
+    await page.locator('#ruleGrid .rule-card').nth(1).click();
+    await expect(page.locator('#rule-panel')).not.toHaveClass(/is-switching/);
 
     await page.evaluate(() => {
       const image = document.createElement('img');

@@ -157,14 +157,26 @@ function parsePeople(markdown) {
   return people;
 }
 
+function timelineLabel(event) {
+  const normalized = String(event).replace(/\s+/g, ' ').trim();
+  const delimiter = normalized.indexOf('：');
+  const candidate = delimiter > 0 ? normalized.slice(0, delimiter).trim() : '';
+  if (candidate && candidate.length < normalized.length && candidate.length <= 24) return candidate;
+  return normalized.length > 24 ? `${normalized.slice(0, 24)}…` : normalized;
+}
+
 function parseTimeline(section) {
   const rows = [...section.markdown.matchAll(/^\|\s*\*\*([^|]+)\*\*\s*\|\s*([^|]+)\|\s*([^|]+)\|$/gm)];
-  return rows.map((row, index) => ({
-    id: `timeline-${String(index + 1).padStart(2, '0')}`,
-    era: row[1].trim().replace(/[—–]/g, '-'),
-    work: row[2].trim().replace(/[—–]/g, '-'),
-    event: row[3].trim().replace(/[—–]/g, '-')
-  }));
+  return rows.map((row, index) => {
+    const event = row[3].trim().replace(/[—–]/g, '-');
+    return {
+      id: `timeline-${String(index + 1).padStart(2, '0')}`,
+      era: row[1].trim().replace(/[—–]/g, '-'),
+      work: row[2].trim().replace(/[—–]/g, '-'),
+      event,
+      label: timelineLabel(event)
+    };
+  });
 }
 
 function parseQuotes(section) {

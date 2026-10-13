@@ -811,6 +811,79 @@
       .rule-panel { transition: none !important; }
       .character-card.is-leaving { opacity: 0; transform: none; transition: none !important; }
     }
+
+    /* archive modules: shared rule panel, evidence cards, continuous timeline */
+    .rule-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .rule-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+    .rule-card.rule-tab { display: grid; grid-template-columns: auto 1fr auto; align-items: start; gap: .8rem; min-height: 8.6rem; padding: 1.2rem 1.25rem; border: 1px solid var(--line); color: var(--paper); background: rgba(244, 240, 231, .58); cursor: pointer; text-align: left; transition: transform .45s var(--ease-out), background .35s ease, border-color .35s ease, box-shadow .45s var(--ease-out); }
+    .rule-card.rule-tab:hover, .rule-card.rule-tab:focus-visible { z-index: 1; border-color: var(--gold); background: var(--panel-light); transform: translateY(-.2rem); box-shadow: 0 .9rem 1.8rem rgba(29, 48, 41, .1); }
+    .rule-card.rule-tab.is-open { border-color: var(--gold); background: var(--panel-light); box-shadow: inset 0 2px 0 var(--gold); }
+    .rule-tab-copy { display: grid; gap: .5rem; }
+    .rule-tab-copy small { color: var(--paper-muted); font-size: .58rem; letter-spacing: .12em; text-transform: uppercase; }
+    .rule-tab-copy strong { color: var(--paper); font-family: var(--serif); font-size: clamp(1.25rem, 2vw, 1.75rem); font-weight: 400; line-height: 1.08; }
+    .rule-tab .lucide { width: 1.1rem; height: 1.1rem; color: var(--gold); transition: transform .45s var(--ease-out); }
+    .rule-tab.is-open .lucide { transform: rotate(45deg) scale(1.08); }
+    .rule-panel-shell { overflow: hidden; border: 1px solid var(--line-strong); background: rgba(251, 248, 241, .72); box-shadow: 0 .9rem 2.2rem rgba(29, 48, 41, .07); }
+    .rule-panel[data-rule-panel] { min-height: 12rem; max-height: none; padding: clamp(1.5rem, 3vw, 2.8rem) clamp(1.5rem, 4vw, 4rem); color: var(--paper-muted); font-family: var(--serif); font-size: .96rem; line-height: 1.85; opacity: 1; transform: none; transition: height .48s var(--ease-out), opacity .3s ease, transform .48s var(--ease-out); }
+    .rule-panel[data-rule-panel].is-switching { opacity: 0; transform: translateY(.45rem); }
+    .rule-panel[data-rule-panel] > :first-child { margin-top: 0; }
+    .rule-panel-heading { display: grid; gap: .45rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+    .rule-panel-heading small { color: var(--rust); font-family: var(--sans); font-size: .58rem; letter-spacing: .14em; text-transform: uppercase; }
+    .rule-panel-heading h3 { margin: 0; color: var(--paper); font-family: var(--serif); font-size: clamp(1.55rem, 3vw, 2.4rem); font-weight: 400; line-height: 1.08; }
+    .rule-panel-content > :first-child { margin-top: 0; }
+    .rule-panel[data-rule-panel] p { max-width: 60rem; margin: 0 0 .85rem; }
+    .rule-panel[data-rule-panel] ol, .rule-panel[data-rule-panel] ul { max-width: 60rem; }
+
+    .notes-portal-card { position: relative; grid-template-columns: minmax(0, 1.2fr) minmax(18rem, .8fr); align-items: stretch; gap: 0; padding: 0; overflow: hidden; border-color: var(--line-strong); background: rgba(244, 240, 231, .52); box-shadow: 0 1rem 2.5rem rgba(29, 48, 41, .08); }
+    .notes-portal-card::before { content: "ARCHIVE / 01"; position: absolute; top: 1rem; right: 1.2rem; color: var(--gold); font-size: .55rem; letter-spacing: .16em; }
+    .notes-portal-card > div:first-child { padding: clamp(1.6rem, 4vw, 3.4rem); border-right: 1px solid var(--line); }
+    .notes-portal-card > div:last-child { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 2rem; padding: clamp(1.6rem, 4vw, 3.4rem); background: rgba(251, 248, 241, .34); }
+    .notes-portal-card h2 { max-width: 10ch; }
+    .notes-portal-card p { max-width: 28rem; margin: 0; }
+    .notes-portal-meta { margin-top: clamp(2rem, 6vw, 4.5rem); }
+    .notes-portal-card .button { margin-top: auto; }
+
+    .history-grid { align-items: start; gap: clamp(1rem, 2.2vw, 1.6rem); }
+    .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); }
+    .history-card:hover { border-color: var(--gold); box-shadow: 0 .9rem 2rem rgba(29, 48, 41, .08); }
+    .history-card-body { min-height: 0; display: flex; flex-direction: column; padding: clamp(1.2rem, 2.5vw, 2rem); }
+    .history-card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
+    .history-card-meta span:first-child { color: var(--gold); font-family: var(--serif); font-size: 1.7rem; }
+    .history-card-meta span:last-child { color: var(--paper-muted); font-size: .55rem; letter-spacing: .15em; }
+    .history-card-body h3 { margin: 1.15rem 0 .9rem; }
+    .history-card-copy { flex: 1; color: var(--paper-muted); }
+
+    .timeline-scroll { overflow-x: auto; padding: .15rem 0 1.1rem; scrollbar-color: var(--gold) transparent; scrollbar-width: thin; }
+    .timeline-track { --timeline-edge: 1.9rem; position: relative; width: max-content; min-width: 100%; padding: 1.2rem 1rem .4rem; }
+    .timeline-line { position: absolute; top: 3.35rem; left: var(--timeline-edge); z-index: 0; display: block; width: calc(100% - (var(--timeline-edge) * 2)); height: 1px; background: linear-gradient(90deg, transparent, var(--rust) 3%, var(--gold) 50%, var(--rust) 97%, transparent); }
+    .timeline-items { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(14, minmax(9.5rem, 10.5rem)); grid-auto-flow: column; grid-auto-columns: minmax(9.5rem, 10.5rem); gap: .85rem; min-width: max-content; }
+    .timeline-item { display: flex; flex-direction: column; align-items: flex-start; min-height: 9.6rem; padding: 0 .45rem 1rem; border: 1px solid transparent; border-top-color: var(--line); background: rgba(244, 240, 231, .2); text-align: left; scroll-snap-align: center; transition: transform .45s var(--ease-out), border-color .35s ease, background .35s ease, opacity .3s ease; }
+    .timeline-item:hover, .timeline-item:focus-visible, .timeline-item.is-active { border-color: var(--gold); background: rgba(251, 248, 241, .7); transform: translateY(-.25rem); }
+    .timeline-item small { margin-top: .15rem; color: var(--gold); font-size: .58rem; letter-spacing: .1em; }
+    .timeline-dot { display: block; flex: 0 0 auto; width: .82rem; height: .82rem; margin: .85rem 0 .9rem; border: 2px solid var(--rust); border-radius: 50%; background: var(--ink); box-shadow: 0 0 0 .3rem rgba(56, 88, 75, .08); transition: transform .4s var(--ease-out), background .35s ease, box-shadow .4s var(--ease-out); }
+    .timeline-item:hover .timeline-dot, .timeline-item:focus-visible .timeline-dot, .timeline-item.is-active .timeline-dot { background: var(--gold-bright); box-shadow: 0 0 0 .4rem rgba(163, 94, 61, .14); transform: scale(1.14); }
+    .timeline-work { color: var(--rust); font-size: .58rem; letter-spacing: .08em; }
+    .timeline-item h3 { margin: .6rem 0 .55rem; color: var(--paper); font-family: var(--serif); font-size: 1.25rem; font-weight: 400; line-height: 1.1; }
+    .timeline-item p { display: inline-flex; align-items: center; gap: .35rem; margin: 1rem 0 0; color: var(--paper-muted); font-size: .63rem; letter-spacing: .06em; }
+    .timeline-item p .lucide { width: .8rem; height: .8rem; transition: transform .35s var(--ease-out); }
+    .timeline-item:hover p .lucide, .timeline-item:focus-visible p .lucide, .timeline-item.is-active p .lucide { transform: translateX(.25rem); }
+    .timeline-focus { border: 1px solid var(--line); border-left: 2px solid var(--gold); background: rgba(251, 248, 241, .72); box-shadow: 0 .8rem 1.8rem rgba(29, 48, 41, .06); }
+
+    @media (max-width: 620px) {
+      .rule-tabs { grid-template-columns: 1fr; }
+      .rule-card.rule-tab { min-height: 0; }
+      .notes-portal-card { grid-template-columns: 1fr; }
+      .notes-portal-card > div:first-child { border-right: 0; border-bottom: 1px solid var(--line); }
+      .notes-portal-card > div:last-child { min-height: 14rem; }
+      .timeline-track { --timeline-edge: 1.85rem; }
+      .timeline-items { grid-template-columns: repeat(14, minmax(12rem, 78vw)); grid-auto-columns: minmax(12rem, 78vw); }
+      .timeline-item { min-height: 9.8rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .rule-card.rule-tab, .rule-panel[data-rule-panel], .notes-portal-card, .history-card, .timeline-item, .timeline-dot { transition: none !important; }
+      .rule-panel[data-rule-panel].is-switching { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -867,7 +940,7 @@
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
           <div><span class="section-kicker">family / power</span><h2 class="section-title">先看三条规则<br>再看谁被它们改变</h2></div>
-          <p class="section-intro">引言与观影方法被拆成可以展开的判断。它们不是摘要，是进入整份笔记的钥匙</p>
+          <p class="section-intro">引言与观影方法被拆成可以切换的判断。它们不是摘要，是进入整份笔记的钥匙</p>
         </div>
         <div class="rule-grid" id="ruleGrid"></div>
       </div>
@@ -896,9 +969,11 @@
           <p class="timeline-caption">拖动这条横向时间线<br>看一个名字如何从避难所变成囚笼</p>
         </div>
         <div class="timeline-wrap" data-reveal data-delay="1">
-          <div class="timeline-line"></div>
-          <div class="timeline-scroll">
-            <div class="timeline-items" id="timelineItems"></div>
+          <div class="timeline-scroll" aria-label="三部曲时间线">
+            <div class="timeline-track">
+              <span class="timeline-line" aria-hidden="true"></span>
+              <div class="timeline-items" id="timelineItems"></div>
+            </div>
           </div>
           <div class="timeline-focus" id="timelineFocus" aria-live="polite"></div>
         </div>
@@ -1068,6 +1143,9 @@
     let quoteIndex = 0;
     const filterTimers = new Map();
     let searchLastFocus = null;
+    let activeRuleId = '';
+    let ruleSwitchTimer;
+    let selectTimeline = null;
 
     function hydrateIcons() {
       if (window.lucide) {
@@ -1182,25 +1260,61 @@
       return { main: match ? match[1].trim() : String(title), alias: match ? match[2].trim() : '' };
     }
 
+    function selectRule(ruleId, { focus = false } = {}) {
+      const rule = archive.rules.find((item) => item.id === ruleId);
+      const grid = document.getElementById('ruleGrid');
+      const panel = grid?.querySelector('[data-rule-panel]');
+      const tab = rule ? document.getElementById(rule.id) : null;
+      if (!rule || !panel || !tab) return;
+      const apply = () => {
+        grid.querySelectorAll('[data-rule-tab]').forEach((item) => {
+          const active = item.id === rule.id;
+          item.classList.toggle('is-open', active);
+          item.setAttribute('aria-selected', String(active));
+          item.tabIndex = active ? 0 : -1;
+        });
+        panel.innerHTML = `<div class="rule-panel-heading"><small>${escapeHtml(rule.group)}</small><h3>${escapeHtml(rule.title)}</h3></div><div class="rule-panel-content">${rule.html}</div>`;
+        panel.dataset.ruleId = rule.id;
+        panel.setAttribute('aria-labelledby', rule.id);
+        panel.classList.remove('is-switching');
+        panel.style.height = '';
+        hydrateIcons();
+        if (focus) tab.focus();
+      };
+      clearTimeout(ruleSwitchTimer);
+      const animate = activeRuleId && activeRuleId !== rule.id && !reduceMotionQuery.matches;
+      activeRuleId = rule.id;
+      if (!animate) {
+        apply();
+        return;
+      }
+      panel.style.height = `${panel.offsetHeight}px`;
+      panel.classList.add('is-switching');
+      ruleSwitchTimer = setTimeout(() => {
+        apply();
+        panel.style.height = `${panel.scrollHeight}px`;
+        requestAnimationFrame(() => { panel.style.height = ''; });
+      }, 170);
+    }
+
     function renderRules() {
       const icons = ['shield-check', 'eye', 'scale'];
-      document.getElementById('ruleGrid').innerHTML = archive.rules.map((rule, index) => `<article class="rule-card is-open" id="${rule.id}" data-reveal data-delay="${index + 1}"><button class="rule-trigger" type="button" aria-expanded="true" aria-controls="${rule.id}-panel"><span class="rule-number">${String(index + 1).padStart(2, '0')}</span><span><small>${escapeHtml(rule.group)}</small><strong>${escapeHtml(rule.title)}</strong></span><i data-lucide="${icons[index] || 'scale'}"></i></button><div class="rule-panel" id="${rule.id}-panel">${rule.html}</div></article>`).join('');
+      const grid = document.getElementById('ruleGrid');
+      grid.innerHTML = `<div class="rule-tabs" role="tablist" aria-label="三条观影规则">${archive.rules.map((rule, index) => `<button class="rule-card rule-tab ${index === 0 ? 'is-open' : ''}" id="${rule.id}" type="button" role="tab" aria-selected="${index === 0}" aria-controls="rule-panel" data-rule-tab data-rule-id="${rule.id}" data-reveal data-delay="${index + 1}"><span class="rule-number">${String(index + 1).padStart(2, '0')}</span><span class="rule-tab-copy"><small>${escapeHtml(rule.group)}</small><strong>${escapeHtml(rule.title)}</strong></span><i data-lucide="${icons[index] || 'scale'}"></i></button>`).join('')}</div><div class="rule-panel-shell"><div class="rule-panel" id="rule-panel" role="tabpanel" tabindex="0" data-rule-panel></div></div>`;
       hydrateIcons();
-      document.querySelectorAll('#ruleGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
-      document.querySelectorAll('.rule-trigger').forEach((trigger) => {
-        const toggle = () => {
-          const panel = trigger.nextElementSibling;
-          const expanded = trigger.getAttribute('aria-expanded') === 'true';
-          const open = !expanded;
-          trigger.setAttribute('aria-expanded', String(open));
-          panel.classList.toggle('is-collapsed', !open);
-          trigger.closest('.rule-card').classList.toggle('is-open', open);
-        };
-        trigger.addEventListener('click', toggle);
-        trigger.closest('.rule-card').addEventListener('click', (event) => {
-          if (!event.target.closest('.rule-trigger, .rule-panel')) toggle();
+      grid.querySelectorAll('[data-reveal]').forEach((element) => revealObserver.observe(element));
+      const tabs = [...grid.querySelectorAll('[data-rule-tab]')];
+      tabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => selectRule(tab.dataset.ruleId));
+        tab.addEventListener('keydown', (event) => {
+          const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+          const targetIndex = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : direction ? (index + direction + tabs.length) % tabs.length : -1;
+          if (targetIndex < 0) return;
+          event.preventDefault();
+          selectRule(tabs[targetIndex].dataset.ruleId, { focus: true });
         });
       });
+      selectRule(archive.rules[0]?.id);
     }
 
     function characterMarkup(person, index, compact = false) {
@@ -1258,27 +1372,62 @@
     }
 
     function renderHistory() {
-      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><div class="history-card-body"><span>${String(index + 1).padStart(2, '0')} / FACT CHECKING</span><h3>${escapeHtml(item.title)}</h3><div>${item.html}</div></div></article>`).join('');
+      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><div class="history-card-body"><div class="history-card-meta"><span>${String(index + 1).padStart(2, '0')}</span><span>FACT CHECKING</span></div><h3>${escapeHtml(item.title)}</h3><div class="history-card-copy">${item.html}</div></div></article>`).join('');
       document.querySelectorAll('#historyGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
     }
 
     function renderTimeline() {
       const workChapter = (work) => work.includes('教父1') ? 'chapter-03' : work.includes('教父2') ? 'chapter-04' : 'chapter-05';
-      document.getElementById('timelineItems').innerHTML = archive.timeline.map((item, index) => `<article class="timeline-item" id="${item.id}" tabindex="0" role="button" data-chapter="${workChapter(item.work)}"><span class="timeline-dot"></span><small>${escapeHtml(item.era)}</small><h3>${escapeHtml(item.event.split('：')[0])}</h3><p>${escapeHtml(item.work)}<br>${escapeHtml(item.event)}</p></article>`).join('');
-      const focus = (item, card) => {
-        document.querySelectorAll('.timeline-item').forEach((entry) => entry.classList.remove('is-active'));
-        card.classList.add('is-active');
+      document.getElementById('timelineItems').innerHTML = archive.timeline.map((item) => `<article class="timeline-item" id="${item.id}" tabindex="0" role="button" aria-pressed="false" data-chapter="${workChapter(item.work)}"><small>${escapeHtml(item.era)}</small><span class="timeline-dot" aria-hidden="true"></span><span class="timeline-work">${escapeHtml(item.work)}</span><h3>${escapeHtml(item.label || item.event)}</h3><p>查看事件详情 <i data-lucide="arrow-right"></i></p></article>`).join('');
+      const items = [...document.querySelectorAll('.timeline-item')];
+      const track = document.querySelector('.timeline-track');
+      const line = document.querySelector('.timeline-line');
+      const syncTimelineLine = () => {
+        if (!track || !line || !items.length) return;
+        const trackRect = track.getBoundingClientRect();
+        const firstDot = items[0].querySelector('.timeline-dot').getBoundingClientRect();
+        const lastDot = items.at(-1).querySelector('.timeline-dot').getBoundingClientRect();
+        const start = firstDot.left + firstDot.width / 2 - trackRect.left;
+        const end = lastDot.left + lastDot.width / 2 - trackRect.left;
+        line.style.left = `${start}px`;
+        line.style.width = `${Math.max(0, end - start)}px`;
+      };
+      syncTimelineLine();
+      if (track && 'ResizeObserver' in window) new ResizeObserver(syncTimelineLine).observe(track);
+      const activate = (item, card, { focus = false } = {}) => {
+        items.forEach((entry) => {
+          const active = entry === card;
+          entry.classList.toggle('is-active', active);
+          entry.setAttribute('aria-pressed', String(active));
+        });
         const chapterTarget = `${card.dataset.chapter}-heading`;
         document.getElementById('timelineFocus').innerHTML = `<strong>${escapeHtml(item.era)}</strong><span>${escapeHtml(item.work)}</span><p>${escapeHtml(item.event)}</p><a class="button" href="notes.html#${encodeURIComponent(chapterTarget)}"><i data-lucide="arrow-up-right"></i>打开对应电影正文</a>`;
         hydrateIcons();
+        if (focus) card.focus({ preventScroll: true });
       };
-      const items = [...document.querySelectorAll('.timeline-item')];
+      selectTimeline = (id, options = {}) => {
+        const index = archive.timeline.findIndex((item) => item.id === id);
+        if (index < 0 || !items[index]) return;
+        activate(archive.timeline[index], items[index], options);
+      };
       items.forEach((card, index) => {
-        const choose = () => focus(archive.timeline[index], card);
-        card.addEventListener('click', choose);
-        card.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); choose(); } });
+        card.addEventListener('click', () => selectTimeline(card.id));
+        card.addEventListener('keydown', (event) => {
+          const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+          const targetIndex = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : direction ? (index + direction + items.length) % items.length : -1;
+          if (targetIndex >= 0) {
+            event.preventDefault();
+            selectTimeline(items[targetIndex].id, { focus: true });
+            items[targetIndex].scrollIntoView({ behavior: reduceMotionQuery.matches ? 'auto' : 'smooth', block: 'nearest', inline: 'center' });
+            return;
+          }
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            selectTimeline(card.id, { focus: true });
+          }
+        });
       });
-      if (items[0]) focus(archive.timeline[0], items[0]);
+      if (items[0]) selectTimeline(items[0].id);
     }
 
     function renderQuotes() {
@@ -1543,10 +1692,13 @@
             if (item.kind === 'person') target = document.querySelector(`#characters [data-person="${item.id}"]`) || target;
             if (item.kind === 'motif') target = document.querySelector(`#motifGrid [data-motif="${item.id}"]`) || target;
             if (item.kind === 'rule') {
-              const trigger = target?.querySelector('.rule-trigger');
-              if (trigger && trigger.getAttribute('aria-expanded') !== 'true') trigger.click();
+              selectRule(item.id);
+              target = document.getElementById(item.id);
             }
-            if (item.kind === 'timeline') target?.click();
+            if (item.kind === 'timeline') {
+              selectTimeline?.(item.id);
+              target = document.getElementById(item.id);
+            }
             if (item.kind === 'quote') {
               const quoteIndex = archive.quotes.findIndex((quote) => quote.id === item.id);
               if (quoteIndex >= 0) showQuote(quoteIndex);

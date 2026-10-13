@@ -19,6 +19,18 @@ For a new archive module:
 
 The compiler creates source targets in `scripts/build-content.cjs`; the page must consume those targets instead of inventing a second mapping.
 
+### Shared Panels and Continuous Tracks
+
+When several records share one reading surface, use one state owner instead of rendering multiple competing long panels. The rules module is the concrete pattern:
+
+- `renderRules()` renders three `role="tab"` buttons and one `#rule-panel` `role="tabpanel"`.
+- `selectRule(ruleId, options)` is the only selection path for clicks, arrow/Home/End keys, and search results; it updates `aria-selected`, `tabindex`, `is-open`, and the panel content together.
+- The panel includes the escaped group/title and the compiler-produced `rule.html`; never replace the selected rule with a hand-written summary.
+
+For chronological records, keep the navigation summary and full event separate. `renderTimeline()` emits `timeline.label` into each button-like node and keeps the complete `timeline.event` in `#timelineFocus`. All nodes belong to one `.timeline-track`; the connector is measured from the first `.timeline-dot` center to the last after rendering so a legacy multi-row grid cannot silently create a broken line.
+
+Do not restore a seven-column wrapping grid for a continuous timeline, and do not make the full event text compete with every node. A horizontal track with an honest overflow boundary is preferable to a visually connected line that does not reach the actual nodes.
+
 ## Rendering and Content Safety
 
 Generated text goes through the existing `escapeHtml` path when it is placed into an HTML template. Generated rich note fragments come from the controlled Markdown renderer in `scripts/build-content.cjs`. Preserve that boundary:

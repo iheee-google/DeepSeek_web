@@ -13,7 +13,7 @@ Do not add TypeScript terminology or pretend that a JavaScript object is statica
 - chapters/sections: `id`, `title`, `html`, `text`, `blocks`, and heading metadata;
 - rules/history/motifs: `id`, `title`, rendered `html`, plain `text`, search `blocks`, and source `target` where applicable;
 - people: `id`, `title`, `actor`, `group`, `image`, rendered `html`, `text`, `blocks`, and a full-text `target`;
-- timeline: `id`, `era`, `work`, and `event`;
+- timeline: `id`, `era`, `work`, `label`, and `event`; `label` is a short navigation summary derived by `scripts/build-content.cjs`, while `event` remains the complete source-backed description;
 - quotes: `id`, `group`, `original`, `translation`, `source`, and `explanation`;
 - search records: `kind`, `id`, `target`, `title`, and searchable `text`.
 
