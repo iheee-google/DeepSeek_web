@@ -124,10 +124,11 @@ test.describe('柯里昂档案桌面端', () => {
     await page.mouse.down();
     await page.mouse.move(timelineBox.x + 80, timelineBox.y - 40);
     await page.mouse.up();
+    await expect(timelineScroller).not.toHaveClass(/is-dragging/);
     const releasedScrollLeft = await timelineScroller.evaluate((node) => node.scrollLeft);
-    await page.mouse.move(timelineBox.x + 80, timelineBox.y + 80);
+    await page.mouse.move(timelineBox.x + 260, timelineBox.y + 80);
     await page.waitForTimeout(120);
-    await expect(timelineScroller).toHaveJSProperty('scrollLeft', releasedScrollLeft);
+    await expect.poll(() => timelineScroller.evaluate((node) => node.scrollLeft)).toBe(releasedScrollLeft);
     await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
     await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
     await expect(page.locator('#historyGrid img')).toHaveCount(0);
