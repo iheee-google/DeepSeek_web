@@ -588,7 +588,9 @@
       .meta-chip { min-width: 7.2rem; }
       .hero-index { display: none; }
       .section { padding: 5.5rem 1.1rem; }
-      .section-header, .timeline-head { display: block; }
+      .section-header, .timeline-head, .history-section .section-header { display: block; }
+      .history-section .section-title { font-size: clamp(1.85rem, 8.3vw, 4.5rem); }
+      .history-grid { grid-template-columns: 1fr; }
       .note-toolbar { align-items: flex-start; flex-direction: column; }
       .note-content { font-size: .93rem; }
       .search-panel { padding: 5.8rem .6rem .6rem; }
@@ -735,9 +737,12 @@
     .character-index { color: #f0c995; }
     .character-body p { color: rgba(244, 240, 231, .75); }
     .history-section { background: #dce4dc; }
-    .history-section .section-header { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(17rem, .85fr); align-items: end; }
+    .history-section .section-header { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(17rem, .65fr); align-items: end; }
+    .history-section .section-title { max-width: 52rem; font-size: clamp(2.4rem, 4.8vw, 5rem); }
+    .history-section .section-title > span { white-space: nowrap; }
     .history-section .section-intro { max-width: 30rem; padding: 1.15rem 0 1.15rem 1.25rem; border-left: 1px solid var(--gold); background: linear-gradient(90deg, rgba(163, 94, 61, .07), transparent); }
-    .history-intro > span { display: block; margin-bottom: .65rem; color: var(--gold); font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; }
+    .history-intro > a { display: block; margin-bottom: .65rem; color: var(--gold); font-size: .56rem; letter-spacing: .18em; text-transform: uppercase; text-decoration: none; }
+    .history-intro > a:hover { color: var(--gold-bright); text-decoration: underline; text-underline-offset: .25rem; }
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
     .history-card { display: grid; grid-template-columns: .8fr 1.2fr; min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); }
     .history-card img { width: 100%; height: 100%; min-height: 25rem; object-fit: cover; filter: sepia(.18) saturate(.75) contrast(1.04) brightness(.9); transition: transform .9s var(--ease-out), filter .6s ease; }
@@ -747,6 +752,10 @@
     .history-card-body h3 { margin: .8rem 0 1.1rem; color: var(--paper); font-family: var(--serif); font-size: clamp(1.4rem, 2.2vw, 2rem); font-weight: 400; line-height: 1.05; }
     .history-card-body > div { color: var(--paper-muted); font-family: var(--serif); font-size: .82rem; line-height: 1.8; }
     .history-card-body p { margin: 0 0 .8rem; }
+    @media (max-width: 620px) {
+      .history-section .section-header { display: block; }
+      .history-grid { grid-template-columns: 1fr; }
+    }
     .motif { background: var(--panel); }
     .motif:hover { background: var(--panel-light); }
     .motif-action { display: inline-flex; align-items: center; gap: .35rem; margin-top: 1.2rem; color: var(--rust); font-size: .63rem; letter-spacing: .08em; }
@@ -931,8 +940,8 @@
     <section class="section history-section" id="history" data-section="history">
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
-          <div><span class="section-kicker">fact / fiction</span><h2 class="section-title">电影借来的现实<br>与它重新编造的神话</h2></div>
-          <p class="section-intro history-intro"><span>chapter 09 / fact checking</span>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
+          <div><span class="section-kicker">fact / fiction</span><h2 class="section-title"><span>电影借来的现实</span><br><span>与它重新编造的神话</span></h2></div>
+          <p class="section-intro history-intro"><a href="notes.html#chapter-09-heading">chapter 09 / fact checking</a>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p>
         </div>
         <div class="history-grid" id="historyGrid"></div>
       </div>

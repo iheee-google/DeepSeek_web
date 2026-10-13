@@ -8,6 +8,8 @@
     dimensions: null,
     status: null,
     trigger: null,
+    closeTimer: null,
+    closeSequence: 0,
     mode: 'fit',
     scale: 1
   };
@@ -179,6 +181,12 @@
     const source = sourceFor(image);
     if (!source) return;
     ensureViewer();
+    state.closeSequence += 1;
+    if (state.closeTimer) {
+      window.clearTimeout(state.closeTimer);
+      state.closeTimer = null;
+    }
+    state.dialog.classList.remove('is-closing');
     state.trigger = image;
     state.title.textContent = imageLabel(image);
     state.dimensions.textContent = '读取影像尺寸…';
@@ -200,17 +208,36 @@
   }
 
   function closeViewer() {
-    if (!state.dialog?.open) return;
+    if (!state.dialog?.open || state.dialog.classList.contains('is-closing')) return;
+    const token = ++state.closeSequence;
     const exitPromise = document.fullscreenElement === state.panel ? document.exitFullscreen?.() : null;
-    state.panel.classList.remove('is-simulated-fullscreen');
-    state.dialog.close();
-    document.body.classList.remove('image-viewer-open');
     const trigger = state.trigger;
+    let closeFinished = false;
+    let fullscreenExited = !exitPromise;
+    const restoreFocus = () => {
+      if (!closeFinished || !fullscreenExited || token !== state.closeSequence || !trigger?.isConnected) return;
+      window.setTimeout(() => {
+        if (token === state.closeSequence && trigger.isConnected) trigger.focus({ preventScroll: true });
+      }, reduceMotion.matches ? 0 : 40);
+    };
+    const finishFullscreenExit = () => {
+      fullscreenExited = true;
+      restoreFocus();
+    };
+    if (exitPromise?.then) exitPromise.then(finishFullscreenExit, finishFullscreenExit);
+    state.panel.classList.remove('is-simulated-fullscreen');
+    state.dialog.classList.add('is-closing');
     state.trigger = null;
-    if (!trigger?.isConnected) return;
-    const restoreFocus = () => window.setTimeout(() => trigger.focus({ preventScroll: true }), reduceMotion.matches ? 0 : 40);
-    if (exitPromise?.finally) exitPromise.finally(restoreFocus);
-    else restoreFocus();
+    const finishClose = () => {
+      if (token !== state.closeSequence) return;
+      state.closeTimer = null;
+      state.dialog.classList.remove('is-closing');
+      if (state.dialog.open) state.dialog.close();
+      document.body.classList.remove('image-viewer-open');
+      closeFinished = true;
+      restoreFocus();
+    };
+    state.closeTimer = window.setTimeout(finishClose, reduceMotion.matches ? 0 : 280);
   }
 
   function isViewerImage(image) {

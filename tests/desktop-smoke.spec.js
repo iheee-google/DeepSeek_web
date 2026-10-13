@@ -74,6 +74,14 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('[data-viewer-action="fullscreen"]')).toHaveAttribute('aria-pressed', 'true');
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await poster.click({ force: true });
+    await page.locator('[data-viewer-action="close"]').click();
+    await expect(page.locator('#corleoneImageViewer')).toHaveClass(/is-closing/);
+    await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelector('.hero-poster img')));
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveClass(/is-closing/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
 
     await expect(page.locator('#ruleGrid .rule-card')).toHaveCount(3);
     await expect(page.locator('#quoteIndex .quote-index-button')).toHaveCount(9);
@@ -251,6 +259,49 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
     await expectDiagnosticsClean(diagnostics);
+  });
+
+  test('图片查看器原始尺寸可滚动触达全部边缘', async ({ browser }) => {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const diagnostics = collectDiagnostics(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.locator('.hero-poster img').first().click();
+    await page.locator('[data-viewer-action="actual"]').click();
+    const actual = await page.locator('.image-viewer-stage').evaluate((stage) => {
+      const image = stage.querySelector('.image-viewer-image');
+      const imageRect = image.getBoundingClientRect();
+      return { width: imageRect.width, height: imageRect.height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, scrollWidth: stage.scrollWidth, scrollHeight: stage.scrollHeight, clientWidth: stage.clientWidth, clientHeight: stage.clientHeight };
+    });
+    expect(actual.width).toBe(actual.naturalWidth);
+    expect(actual.height).toBe(actual.naturalHeight);
+    expect(actual.scrollWidth).toBeGreaterThan(actual.clientWidth);
+    expect(actual.scrollHeight).toBeGreaterThan(actual.clientHeight);
+    expect(await page.locator('.image-viewer-stage').evaluate((stage) => {
+      const image = stage.querySelector('.image-viewer-image');
+      const viewport = stage.getBoundingClientRect();
+      const style = getComputedStyle(stage);
+      const padding = { left: parseFloat(style.paddingLeft), right: parseFloat(style.paddingRight), top: parseFloat(style.paddingTop), bottom: parseFloat(style.paddingBottom) };
+      stage.scrollLeft = 0;
+      stage.scrollTop = 0;
+      const start = image.getBoundingClientRect();
+      stage.scrollLeft = stage.scrollWidth - stage.clientWidth;
+      stage.scrollTop = stage.scrollHeight - stage.clientHeight;
+      const end = image.getBoundingClientRect();
+      return start.left >= viewport.left + padding.left - 1 && start.top >= viewport.top + padding.top - 1 && end.right <= viewport.right - padding.right + 1 && end.bottom <= viewport.bottom - padding.bottom + 1;
+    })).toBe(true);
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    await page.locator('[data-viewer-action="zoom-in"]').click();
+    const doubled = await page.locator('.image-viewer-image').evaluate((image) => ({ width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight }));
+    expect(doubled.width / doubled.naturalWidth).toBeGreaterThan(1.9);
+    expect(doubled.width / doubled.naturalWidth).toBeLessThan(2.01);
+    expect(doubled.height / doubled.naturalHeight).toBeGreaterThan(1.9);
+    expect(doubled.height / doubled.naturalHeight).toBeLessThan(2.01);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expectDiagnosticsClean(diagnostics);
+    await page.close();
   });
 
   test('首页搜索会激活模块并把正文结果送入全文页', async ({ page }) => {
