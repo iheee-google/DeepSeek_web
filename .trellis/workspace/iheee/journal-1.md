@@ -28,3 +28,4 @@
 
 - The history module now uses two vertically stacked, natural-height evidence bands. The four historical facts and three interpretation boundaries remain compiler-rendered in full; no history images or source-note changes were introduced.
 - Desktop screenshot review confirms the compact section header, controlled body width, stable IDs, chapter 09 link, and no adjacent short-card blank column. Mobile behavior was not treated as a design deliverable.
+- Advisor hardening removed the legacy history-card translate hover, wrapped the left metadata/title into a compact aside, and added opacity, overflow, chapter-link, and history-search assertions. Final desktop screenshots cover the header plus both evidence bands.

@@ -148,6 +148,18 @@ test.describe('柯里昂档案桌面端', () => {
     }));
     expect(historyRects[1].top).toBeGreaterThanOrEqual(historyRects[0].bottom);
     expect(historyRects.every((rect) => rect.width > 900)).toBe(true);
+    const historyGeometry = await page.locator('#historyGrid > .history-card').evaluateAll((cards) => cards.map((card) => {
+      const aside = card.querySelector('.history-card-aside').getBoundingClientRect();
+      const copy = card.querySelector('.history-card-copy');
+      return { asideHeight: aside.height, cardHeight: card.getBoundingClientRect().height, copyOverflow: copy.scrollHeight > copy.clientHeight + 1 };
+    }));
+    expect(historyGeometry.every(({ asideHeight, cardHeight, copyOverflow }) => asideHeight < cardHeight && !copyOverflow)).toBe(true);
+    await page.locator('#history').scrollIntoViewIfNeeded();
+    await expect.poll(() => page.locator('#historyGrid > .history-card').first().evaluate((card) => Number(getComputedStyle(card).opacity))).toBe(1);
+    await page.locator('.history-intro a').click();
+    await expect(page).toHaveURL(/notes\.html#chapter-09-heading$/);
+    await expect(page.locator('#chapter-09-heading')).toBeVisible();
+    await page.goto('/', { waitUntil: 'networkidle' });
     await expect(page.locator('#ruleGrid .rule-card.is-open')).toHaveCount(1);
     await expect(page.locator('#ruleGrid [role="tab"]')).toHaveCount(3);
     await expect(page.locator('#rule-panel')).toBeVisible();
@@ -448,6 +460,13 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#searchInput').fill(ruleData.title);
     await page.locator(`[data-search-index="${ruleData.index}"]`).click();
     await expect(page.locator(`#${ruleData.id}`)).toHaveClass(/is-open/);
+
+    const historyData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.history[1].id, title: window.CORLEONE_ARCHIVE.history[1].title, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'history' && item.id === window.CORLEONE_ARCHIVE.history[1].id) }));
+    await page.locator('#searchToggle').click();
+    await page.locator('#searchInput').fill(historyData.title);
+    await page.locator(`[data-search-index="${historyData.index}"]`).click();
+    await expect(page.locator(`#${historyData.id}`)).toHaveClass(/search-hit/);
+    await expect.poll(() => page.locator(`#${historyData.id}`).evaluate((node) => node.getBoundingClientRect().top >= document.querySelector('header').getBoundingClientRect().bottom)).toBe(true);
 
     await page.evaluate(() => {
       window.CORLEONE_ARCHIVE.search = [

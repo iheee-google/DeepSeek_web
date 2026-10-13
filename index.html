@@ -747,7 +747,7 @@
     .history-intro > a:hover { color: var(--gold-bright); text-decoration: underline; text-underline-offset: .25rem; }
     .history-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(1rem, 3vw, 2rem); }
     .history-card { min-height: 25rem; overflow: hidden; border: 1px solid var(--line); background: rgba(244, 240, 231, .65); transition: transform .5s var(--ease-out), background .4s ease; }
-    .history-card:hover { background: rgba(244, 240, 231, .92); transform: translateY(-.25rem); }
+    .history-card:hover { background: rgba(244, 240, 231, .92); }
     .history-card-body { min-height: 25rem; padding: 1.6rem; }
     .history-card-body > span { color: var(--gold); font-family: var(--serif); font-size: 1.3rem; }
     .history-card-body h3 { margin: .8rem 0 1.1rem; color: var(--paper); font-family: var(--serif); font-size: clamp(1.4rem, 2.2vw, 2rem); font-weight: 400; line-height: 1.05; }
@@ -853,18 +853,19 @@
     .history-card { min-height: 0; border-color: var(--line-strong); background: rgba(244, 240, 231, .48); transition: border-color .35s ease, background .35s ease, box-shadow .45s var(--ease-out); }
     .history-card:hover, .history-card:focus-within { border-color: var(--gold); background: rgba(251, 248, 241, .72); box-shadow: 0 .9rem 2rem rgba(29, 48, 41, .08); }
     .history-card-body { display: grid; grid-template-columns: minmax(12rem, .25fr) minmax(0, .75fr); column-gap: clamp(1.5rem, 4vw, 4rem); min-height: 0; padding: clamp(1.5rem, 3vw, 2.8rem); }
-    .history-card-meta { grid-column: 1; display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
+    .history-card-aside { grid-column: 1; align-self: start; }
+    .history-card-meta { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
     .history-card-meta span:first-child { color: var(--gold); font-family: var(--serif); font-size: 1.7rem; }
     .history-card-meta span:last-child { color: var(--paper-muted); font-size: .55rem; letter-spacing: .15em; }
-    .history-card-body h3 { grid-column: 1; margin: 1.15rem 0 0; max-width: 12ch; color: var(--paper); font-family: var(--serif); font-size: clamp(1.5rem, 2.1vw, 2.15rem); font-weight: 400; line-height: 1.08; }
-    .history-card-copy { grid-column: 2; grid-row: 1 / span 2; align-self: start; max-width: 52rem; padding-left: clamp(1.5rem, 3vw, 3rem); border-left: 1px solid var(--line); color: var(--paper-muted); }
+    .history-card-body h3 { margin: 1.15rem 0 0; max-width: 12ch; color: var(--paper); font-family: var(--serif); font-size: clamp(1.5rem, 2.1vw, 2.15rem); font-weight: 400; line-height: 1.08; }
+    .history-card-copy { grid-column: 2; grid-row: 1; align-self: start; max-width: 52rem; padding-left: clamp(1.5rem, 3vw, 3rem); border-left: 1px solid var(--line); color: var(--paper-muted); }
     .history-card-copy p { margin: 0 0 1rem; }
     .history-card-copy ul, .history-card-copy ol { margin: 0; padding-left: 1.25rem; }
     .history-card-copy li + li { margin-top: .85rem; }
 
     @media (max-width: 900px) {
       .history-card-body { grid-template-columns: 1fr; row-gap: 1.2rem; }
-      .history-card-meta, .history-card-body h3, .history-card-copy { grid-column: 1; grid-row: auto; }
+      .history-card-aside, .history-card-copy { grid-column: 1; grid-row: auto; }
       .history-card-copy { padding: 1.2rem 0 0; border-top: 1px solid var(--line); border-left: 0; }
     }
 
@@ -1388,7 +1389,7 @@
     }
 
     function renderHistory() {
-      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><div class="history-card-body"><div class="history-card-meta"><span>${String(index + 1).padStart(2, '0')}</span><span>FACT CHECKING</span></div><h3>${escapeHtml(item.title)}</h3><div class="history-card-copy">${item.html}</div></div></article>`).join('');
+      document.getElementById('historyGrid').innerHTML = archive.history.map((item, index) => `<article class="history-card" id="${item.id}" data-reveal data-delay="${index + 1}"><div class="history-card-body"><div class="history-card-aside"><div class="history-card-meta"><span>${String(index + 1).padStart(2, '0')}</span><span>FACT CHECKING</span></div><h3>${escapeHtml(item.title)}</h3></div><div class="history-card-copy">${item.html}</div></div></article>`).join('');
       document.querySelectorAll('#historyGrid [data-reveal]').forEach((element) => revealObserver.observe(element));
     }
 
