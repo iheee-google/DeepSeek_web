@@ -664,6 +664,10 @@ test.describe('柯里昂档案桌面端', () => {
       await expect(page.locator('#searchPanel')).toHaveClass(/is-open/);
       await page.locator('#searchInput').fill('教父');
       await expect(page.locator('.search-result').first()).toBeVisible();
+      await expect.poll(() => page.locator('.search-shell').evaluate((shell) => {
+        const style = getComputedStyle(shell);
+        return style.opacity === '1' && style.transform === 'none';
+      })).toBe(true);
       const searchGeometry = await page.evaluate(() => {
         const shell = document.querySelector('.search-shell');
         const shellRect = shell.getBoundingClientRect();
@@ -778,10 +782,53 @@ test.describe('柯里昂档案桌面端', () => {
       });
       expect(notesHeaderGeometry.overlaps, `${viewport.width} notes header overlap`).toEqual([]);
       await page.locator('.note-sidebar').scrollIntoViewIfNeeded();
-      await page.waitForTimeout(50);
+      const readActiveToc = () => page.locator('#noteToc').evaluate((toc) => {
+        const active = toc.querySelector('a.is-active')?.getBoundingClientRect();
+        const rail = toc.getBoundingClientRect();
+        return {
+          href: toc.querySelector('a.is-active')?.getAttribute('href') || '',
+          scrollTop: toc.scrollTop,
+          top: active?.top ?? 0,
+          bottom: active?.bottom ?? 0,
+          visible: Boolean(active && active.top >= rail.top - 1 && active.bottom <= rail.bottom + 1)
+        };
+      });
+      let previousActiveToc = null;
+      let stableActiveTocSamples = 0;
+      await expect.poll(async () => {
+        const state = await readActiveToc();
+        const isStable = state.visible && previousActiveToc
+          && state.href === previousActiveToc.href
+          && Math.abs(state.scrollTop - previousActiveToc.scrollTop) < .5
+          && Math.abs(state.top - previousActiveToc.top) < .5
+          && Math.abs(state.bottom - previousActiveToc.bottom) < .5;
+        stableActiveTocSamples = isStable ? stableActiveTocSamples + 1 : 0;
+        previousActiveToc = state;
+        return stableActiveTocSamples >= 2;
+      }).toBe(true);
       await page.locator('#noteToc').evaluate((toc) => { toc.scrollTop = toc.scrollHeight; });
-      await expect.poll(() => page.locator('#noteToc').evaluate((toc) => toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1)).toBe(true);
-      await page.waitForTimeout(100);
+      const readTocEnd = () => page.locator('#noteToc').evaluate((toc) => {
+        const last = toc.querySelector('a:last-of-type')?.getBoundingClientRect();
+        return {
+          atEnd: toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1,
+          lastInViewport: Boolean(last && last.top >= -1 && last.bottom <= window.innerHeight + 1),
+          scrollTop: toc.scrollTop,
+          lastTop: last?.top ?? 0,
+          lastBottom: last?.bottom ?? 0
+        };
+      });
+      let previousTocEnd = null;
+      let stableTocEndSamples = 0;
+      await expect.poll(async () => {
+        const state = await readTocEnd();
+        const isStable = state.atEnd && state.lastInViewport && previousTocEnd
+          && Math.abs(state.scrollTop - previousTocEnd.scrollTop) < .5
+          && Math.abs(state.lastTop - previousTocEnd.lastTop) < .5
+          && Math.abs(state.lastBottom - previousTocEnd.lastBottom) < .5;
+        stableTocEndSamples = isStable ? stableTocEndSamples + 1 : 0;
+        previousTocEnd = state;
+        return stableTocEndSamples >= 2;
+      }).toBe(true);
       const tocGeometry = await page.locator('#noteToc').evaluate((toc) => {
         const links = [...toc.querySelectorAll('a')];
         const rail = toc.getBoundingClientRect();
