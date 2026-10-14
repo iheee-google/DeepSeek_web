@@ -74,7 +74,7 @@
 3. 打开已有 `morphPerson()` 角色介绍，不复制卡片内容、不新增第二套人物弹窗；关闭该卡片后焦点回到目标卡片。
 4. 成功消费参数后只用 `history.replaceState` 删除 `person`，保留其他 query 参数和 `#characters`；无效参数则保持普通首页且不抛错。
 5. 人物弹窗中的“完整正文”链接继续使用现有 `notes.html#chapter-06-part-*` 目标。
-6. 覆盖浏览器 Back/BFCache：返回 `notes.html` 时确认弹窗关闭、背景 `inert` 和滚动锁清除，浏览器原有阅读位置恢复，不增加持久化阅读状态。
+6. 确认跳转前把当前 hash 和滚动位置写入当前历史条目的临时 `history.state`；返回 `notes.html` 时在 `pageshow` 中等待浏览器滚动连续稳定后恢复并消费该状态，确认弹窗关闭、背景 `inert` 和滚动锁清除。该状态随历史条目存在，不使用持久化存储；同时用真实 `pageshow.persisted` 覆盖 BFCache。
 
 ## Compatibility and accessibility
 

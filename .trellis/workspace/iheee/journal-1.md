@@ -114,5 +114,6 @@
 
 - 任务 `10-14-note-character-links` 已按批准方案实施：构建器为 44 条人物记录生成受控 `mentions`/`mentionExclusions` 映射，全文页对明确可唯一归属名称生成 `.person-mention` 控件；泛称、英文词边界、链接/代码节点和 `person-43` 历史同名语境不会误标。
 - 角色名称点击后进入原生确认弹窗；取消、遮罩、Escape、Tab、Enter/Space、焦点恢复、滚动锁、`inert`、立即重开和 `prefers-reduced-motion` 均有回归。确认后进入首页，目标人物卡在初始化、hash 定位和 reveal/几何稳定后打开，保留其他 query 并消费 `person` 参数。
-- 验证：生产构建、内容构建、发布白名单、脚本和两页内联脚本语法、`git diff --check` 通过；Playwright 10/10 通过。1920×1080、1440×900、1024×900 均为 DPR 1、字体 loaded、237 个标注、无横向溢出和页面/控制台错误；390px 仅作为既有历史回归。
-- 当前实现尚未推送远程；Cloudflare 仍由 GitHub `main` 的 Workers Builds 自动部署，不执行手动 Wrangler 发布。
+- 确认跳转前把当前 hash/滚动位置写入历史条目的临时 `history.state`，普通返回和真实 BFCache `pageshow.persisted=true` 均等待滚动稳定后恢复并清理弹窗状态；不使用持久化存储。
+- 验证：生产构建、内容构建、发布白名单、脚本和两页内联脚本语法、`git diff --check` 通过；Playwright 11/11 通过。1920×1080、1440×900、1024×900 均为 DPR 1、字体 loaded、237 个标注、无横向溢出和页面/控制台错误；三种视口均重新查看了非空弹窗/人物卡截图，390px 仅作为既有历史回归。
+- BFCache 测试使用 Chromium 新 headless 模式移除默认禁用参数，不再启动可见黑屏窗口。当前实现尚未推送远程；Cloudflare 仍由 GitHub `main` 的 Workers Builds 自动部署，不执行手动 Wrangler 发布。

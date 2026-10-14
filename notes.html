@@ -272,7 +272,6 @@
       let personConfirmOpenFrame;
       let personConfirmPreviousOverflow = '';
       let personConfirmPreviousScrollY = 0;
-      let personConfirmPendingScrollY = null;
       let personConfirmState = 'closed';
 
       function setNotesBackgroundInert(isInert) {
@@ -369,6 +368,44 @@
         if (restoreFocus && trigger?.isConnected) trigger.focus({ preventScroll: true });
       }
 
+      function getSavedNoteReturnPosition() {
+        const saved = window.history.state?.noteCharacterReturn;
+        return saved && Number.isFinite(saved.scrollY) && typeof saved.hash === 'string' ? saved : null;
+      }
+
+      function clearSavedNoteReturnPosition() {
+        const currentState = window.history.state;
+        if (!currentState || typeof currentState !== 'object' || !('noteCharacterReturn' in currentState)) return;
+        const nextState = { ...currentState };
+        delete nextState.noteCharacterReturn;
+        window.history.replaceState(Object.keys(nextState).length ? nextState : null, '', window.location.href);
+      }
+
+      function restoreSavedNoteReturnPosition() {
+        const saved = getSavedNoteReturnPosition();
+        if (!saved || saved.hash !== window.location.hash) return false;
+        let previous = null;
+        let stableSamples = 0;
+        const sample = () => {
+          const current = Math.round(window.scrollY);
+          stableSamples = current === previous ? stableSamples + 1 : 0;
+          previous = current;
+          const currentSaved = getSavedNoteReturnPosition();
+          if (!currentSaved || currentSaved.hash !== saved.hash || currentSaved.scrollY !== saved.scrollY) return;
+          if (stableSamples >= 3 && document.fonts.status === 'loaded') {
+            window.scrollTo({ top: saved.scrollY, left: 0, behavior: 'auto' });
+            window.requestAnimationFrame(() => {
+              const finalState = getSavedNoteReturnPosition();
+              if (finalState?.hash === saved.hash && finalState.scrollY === saved.scrollY) clearSavedNoteReturnPosition();
+            });
+            return;
+          }
+          window.requestAnimationFrame(sample);
+        };
+        window.requestAnimationFrame(sample);
+        return true;
+      }
+
       function closePersonConfirm({ restoreFocus = true } = {}) {
         if (personConfirmState === 'closed' || personConfirmState === 'navigating') return;
         cancelAnimationFrame(personConfirmOpenFrame);
@@ -387,8 +424,7 @@
         clearTimeout(personConfirmCloseTimer);
         if (personConfirmState === 'closed') {
           personConfirmPreviousOverflow = document.body.style.overflow;
-          personConfirmPreviousScrollY = personConfirmPendingScrollY ?? window.scrollY;
-          personConfirmPendingScrollY = null;
+          personConfirmPreviousScrollY = window.scrollY;
           document.body.style.overflow = 'hidden';
         }
         personConfirmState = 'opening';
@@ -409,11 +445,6 @@
         });
       }
 
-      noteContent.addEventListener('pointerdown', (event) => {
-        const trigger = event.target.closest?.('.person-mention');
-        if (trigger) personConfirmPendingScrollY = window.scrollY;
-      }, true);
-      noteContent.addEventListener('pointercancel', () => { personConfirmPendingScrollY = null; }, true);
       noteContent.addEventListener('click', (event) => {
         const trigger = event.target.closest('.person-mention');
         if (trigger) openPersonConfirm(trigger);
@@ -424,6 +455,8 @@
         if (personConfirmState !== 'open' || !personConfirmTarget || !archive.people.some((person) => person.id === personConfirmTarget.id)) return;
         personConfirmState = 'navigating';
         personConfirmGo.disabled = true;
+        const currentState = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
+        window.history.replaceState({ ...currentState, noteCharacterReturn: { hash: window.location.hash, scrollY: personConfirmPreviousScrollY } }, '', window.location.href);
         window.location.href = `index.html?person=${encodeURIComponent(personConfirmTarget.id)}#characters`;
       });
       document.addEventListener('keydown', (event) => {
@@ -444,9 +477,9 @@
       }, true);
       window.addEventListener('pageshow', () => {
         clearTimeout(personConfirmCloseTimer);
-        if (personConfirmState === 'closed' && personConfirm.hidden) return;
         window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
           if (personConfirmState !== 'closed' || !personConfirm.hidden) finishPersonConfirm(false);
+          restoreSavedNoteReturnPosition();
         }));
       });
 
@@ -529,7 +562,9 @@
         window.setTimeout(() => {
           const target = document.getElementById(id);
           if (!target) return;
-          target.scrollIntoView({ behavior: 'auto', block: 'start' });
+          if (getSavedNoteReturnPosition()?.hash !== window.location.hash) {
+            target.scrollIntoView({ behavior: 'auto', block: 'start' });
+          }
           target.classList.add('search-hit');
           window.setTimeout(() => target.classList.remove('search-hit'), 1700);
           window.requestAnimationFrame(updateTocFromGeometry);

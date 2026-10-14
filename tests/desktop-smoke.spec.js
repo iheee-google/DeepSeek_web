@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { chromium } = require('playwright');
 const { resolvePublicPath } = require('../scripts/serve-preview.cjs');
 
 function collectDiagnostics(page) {
@@ -1132,7 +1133,7 @@ test.describe('柯里昂档案桌面端', () => {
     expect(new Set(currentIds).size).toBe(currentIds.length);
     expect(currentIds.filter((id) => expectedIds.includes(id))).toEqual(expectedIds);
 
-    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve) => {
+    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
       let previous = null;
       let stableSamples = 0;
       const started = performance.now();
@@ -1140,7 +1141,8 @@ test.describe('柯里昂档案桌面端', () => {
         const current = Math.round(window.scrollY);
         stableSamples = current === previous ? stableSamples + 1 : 0;
         previous = current;
-        if (stableSamples >= 3 || performance.now() - started > 4000) { resolve(current); return; }
+        if (stableSamples >= 3) { resolve(current); return; }
+        if (performance.now() - started > 4000) { reject(new Error('滚动位置未稳定')); return; }
         window.requestAnimationFrame(sample);
       };
       sample();
@@ -1208,25 +1210,26 @@ test.describe('柯里昂档案桌面端', () => {
     const targetId = await firstPerson27Mention.evaluate((node) => node.closest('[id]')?.id);
     expect(targetId).toBeTruthy();
     await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
-    const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve) => {
+    const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve, reject) => {
       let previous = '';
       let stableSamples = 0;
       const started = performance.now();
       const sample = () => {
         const target = document.getElementById(id);
-        if (!target) { resolve(false); return; }
+        if (!target) { reject(new Error(`找不到正文锚点：${id}`)); return; }
         const computed = getComputedStyle(target);
         const rect = target.getBoundingClientRect();
         const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
         const ready = computed.opacity === '1' && computed.transform === 'none';
         stableSamples = ready && signature === previous ? stableSamples + 1 : 0;
         previous = signature;
-        if (stableSamples >= 3 || performance.now() - started > 4000) { resolve(ready); return; }
+        if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(ready); return; }
+        if (performance.now() - started > 4000) { reject(new Error(`正文锚点未稳定：${id}`)); return; }
         requestAnimationFrame(sample);
       };
       requestAnimationFrame(sample);
     }), targetId);
-    await expect.poll(waitForSettledTarget).toBe(true);
+    expect(await waitForSettledTarget()).toBe(true);
     const trigger = page.locator(`#${targetId} .person-mention[data-person="person-27"]`).first();
     const noteAnchorBefore = await page.evaluate((id) => {
       const rect = document.getElementById(id).getBoundingClientRect();
@@ -1242,7 +1245,7 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
     await page.goBack({ waitUntil: 'networkidle' });
     await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-    await expect.poll(waitForSettledTarget).toBe(true);
+    expect(await waitForSettledTarget()).toBe(true);
     await expect(page.locator('#personConfirm')).toBeHidden();
     expect(await page.locator('[inert]').count()).toBe(0);
     expect(await page.evaluate(() => document.body.style.overflow)).toBe(noteOverflowBefore);
@@ -1252,7 +1255,9 @@ test.describe('柯里昂档案桌面端', () => {
       return { documentTop: window.scrollY + rect.top, viewportTop: rect.top, viewportBottom: rect.bottom };
     }, targetId);
     expect(Math.abs(noteAnchorAfter.documentTop - noteAnchorBefore.documentTop)).toBeLessThan(4);
-    expect(noteAnchorAfter.viewportTop).toBeGreaterThanOrEqual(0);
+    expect(Math.abs(noteAnchorAfter.viewportTop - noteAnchorBefore.viewportTop)).toBeLessThan(4);
+    const notesHeaderBottom = await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom);
+    expect(noteAnchorAfter.viewportTop).toBeGreaterThanOrEqual(notesHeaderBottom - 1);
     expect(noteAnchorAfter.viewportBottom).toBeLessThanOrEqual(900);
     await page.goto('/index.html?person=person-01&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
@@ -1261,6 +1266,86 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
     await expect(page.locator('#characters [data-person="person-01"]')).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
+  });
+
+  test('启用 BFCache 的 Chromium 返回全文后清理人物确认状态', async () => {
+    const enabledBrowser = await chromium.launch({ headless: false, args: ['--headless=new'], ignoreDefaultArgs: ['--disable-back-forward-cache'] });
+    const context = await enabledBrowser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: 'http://127.0.0.1:4173' });
+    const page = await context.newPage();
+    const diagnostics = collectDiagnostics(page);
+    try {
+      await page.route('**/*', async (route) => {
+        if (route.request().resourceType() !== 'document') return route.continue();
+        const response = await route.fetch();
+        const headers = { ...response.headers() };
+        delete headers['cache-control'];
+        await route.fulfill({ status: response.status(), headers, body: await response.body() });
+      });
+      await page.addInitScript(() => {
+        window.addEventListener('pageshow', (event) => {
+          const key = 'character-link-pageshow-events';
+          const events = JSON.parse(sessionStorage.getItem(key) || '[]');
+          events.push({ path: location.pathname, persisted: event.persisted });
+          sessionStorage.setItem(key, JSON.stringify(events));
+        });
+      });
+      await page.goto('/notes.html', { waitUntil: 'networkidle' });
+      const trigger = page.locator('.person-mention[data-person="person-27"]').first();
+      const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
+      expect(targetId).toBeTruthy();
+      await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
+      const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve, reject) => {
+        let previous = '';
+        let stableSamples = 0;
+        const started = performance.now();
+        const sample = () => {
+          const target = document.getElementById(id);
+          if (!target) { reject(new Error(`找不到 BFCache 正文锚点：${id}`)); return; }
+          const rect = target.getBoundingClientRect();
+          const computed = getComputedStyle(target);
+          const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
+          const ready = computed.opacity === '1' && computed.transform === 'none';
+          stableSamples = ready && signature === previous ? stableSamples + 1 : 0;
+          previous = signature;
+          if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(true); return; }
+          if (performance.now() - started > 4000) { reject(new Error(`BFCache 正文锚点未稳定：${id}`)); return; }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }), targetId);
+      expect(await waitForSettledTarget()).toBe(true);
+      const anchorBefore = await page.evaluate((id) => {
+        const rect = document.getElementById(id).getBoundingClientRect();
+        return { documentTop: scrollY + rect.top, viewportTop: rect.top };
+      }, targetId);
+      const box = await trigger.boundingBox();
+      if (!box) throw new Error('BFCache 人物标注不可见');
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+      await page.locator('#personConfirmGo').click();
+      await expect(page).toHaveURL(/index\.html#characters$/);
+      await expect(page.locator('#reader')).toHaveClass(/is-open/);
+      await page.goBack({ waitUntil: 'networkidle' });
+      await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
+      await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem('character-link-pageshow-events') || '[]').some((event) => event.path === '/notes.html' && event.persisted))).toBe(true);
+      await page.waitForFunction(() => {
+        const dialog = document.getElementById('personConfirm');
+        return dialog?.hidden && !document.querySelector('[inert]') && document.body.style.overflow === '';
+      });
+      expect(await waitForSettledTarget()).toBe(true);
+      const anchorAfter = await page.evaluate((id) => {
+        const rect = document.getElementById(id).getBoundingClientRect();
+        return { documentTop: scrollY + rect.top, viewportTop: rect.top, viewportBottom: rect.bottom };
+      }, targetId);
+      expect(Math.abs(anchorAfter.documentTop - anchorBefore.documentTop)).toBeLessThan(4);
+      expect(Math.abs(anchorAfter.viewportTop - anchorBefore.viewportTop)).toBeLessThan(4);
+      expect(anchorAfter.viewportTop).toBeGreaterThanOrEqual(await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom) - 1);
+      expect(anchorAfter.viewportBottom).toBeLessThanOrEqual(900);
+      expect(await page.locator('.person-mention').count()).toBeGreaterThan(0);
+      await expectDiagnosticsClean(diagnostics);
+    } finally {
+      await context.close();
+      await enabledBrowser.close();
+    }
   });
 
   test('角色名称标注跳过跨节点与受保护内容并支持减弱动效', async ({ page }) => {
