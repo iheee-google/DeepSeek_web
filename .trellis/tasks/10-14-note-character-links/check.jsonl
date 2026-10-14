@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"全文文本保真、稳定 ID、键盘/ARIA、动画状态和浏览器回归检查"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"角色标注按钮、确认弹窗、焦点恢复和同页深链的组件契约"}

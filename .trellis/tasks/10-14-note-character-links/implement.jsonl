@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"原生 HTML/JavaScript 交互控件、dialog、焦点管理和现有角色卡片边界"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"构建、Playwright、reduced-motion、稳定状态与预览边界验收规则"}
