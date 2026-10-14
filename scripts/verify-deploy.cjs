@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const dist = path.join(root, 'dist');
-const allowedTopLevel = new Set(['index.html', 'notes.html', 'assets', '_headers']);
+const allowedTopLevel = new Set(['index.html', 'notes.html', 'assets', '_redirects', '_headers']);
 const requiredHeaders = [
   'Content-Security-Policy:',
   'Referrer-Policy:',
@@ -22,16 +22,21 @@ function assertFile(relativePath) {
   if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) fail(`missing file ${relativePath}`);
 }
 
-if (!fs.existsSync(dist) || !fs.statSync(dist).isDirectory()) fail('dist/ is missing');
+if (!fs.existsSync(dist) || !fs.lstatSync(dist).isDirectory()) fail('dist/ is missing or not a real directory');
+if (fs.lstatSync(dist).isSymbolicLink()) fail('dist/ must not be a symbolic link');
 
 for (const entry of fs.readdirSync(dist)) {
   if (!allowedTopLevel.has(entry)) fail(`unexpected top-level entry ${entry}`);
+  if (fs.lstatSync(path.join(dist, entry)).isSymbolicLink()) fail(`symbolic link is not publishable: ${entry}`);
 }
 
 assertFile('index.html');
 assertFile('notes.html');
+assertFile('_redirects');
 assertFile('_headers');
 assertFile('assets/data/archive.js');
+
+if (fs.readFileSync(path.join(dist, '_redirects'), 'utf8') !== '/ /index.html 200\n') fail('root proxy rule is missing or changed');
 
 const headers = fs.readFileSync(path.join(dist, '_headers'), 'utf8');
 for (const header of requiredHeaders) {
@@ -46,6 +51,7 @@ function rejectSymlinks(relativeDir) {
   for (const entry of fs.readdirSync(directory)) {
     const relativePath = path.join(relativeDir, entry);
     const filePath = path.join(dist, relativePath);
+    if (entry.startsWith('.')) fail(`hidden path is not publishable: ${relativePath}`);
     if (fs.lstatSync(filePath).isSymbolicLink()) fail(`symbolic link is not publishable: ${relativePath}`);
     if (fs.statSync(filePath).isDirectory()) rejectSymlinks(relativePath);
   }

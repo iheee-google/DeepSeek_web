@@ -17,6 +17,7 @@ assets/data/archive.js
         ├─ 复制 index.html
         ├─ 复制 notes.html
         ├─ 复制 assets/
+        ├─ 写入 dist/_redirects（根路径 200 proxy）
         └─ 写入 dist/_headers
         │
         ▼ npx wrangler deploy
@@ -31,8 +32,11 @@ wrangler.jsonc → assets.directory = ./dist
 
 - 先调用现有 `scripts/build-content.cjs`，确保生成数据来自原始 Markdown。
 - 删除旧 `dist/` 后重新复制 allowlist，避免前一次构建遗留文件上线。
-- 只复制 `index.html`、`notes.html` 和完整 `assets/`；不复制源码、测试、任务、包管理文件或 `.git`。
+- 只复制 `index.html`、`notes.html` 和完整 `assets/`，并生成 Cloudflare 元文件 `_redirects` 与 `_headers`；不复制源码、测试、任务、包管理文件或 `.git`。
+- `_redirects` 用 `/ /index.html 200` 保持根路径在 `html_handling: "none"` 下可访问；Cloudflare 不把该文件作为静态资源提供。
 - 在 `dist/_headers` 写入 Cloudflare Workers Static Assets 支持的安全头规则。官方文档确认 assets-only 部署会解析该文件，并不会把 `_headers` 本身作为资源提供。
+- 构建完成后立即调用 `scripts/verify-deploy.cjs`；发布边界校验失败时 `npm run build` 以非零状态退出，阻断后续 Wrangler 部署。
+- 发布校验递归拒绝隐藏路径和符号链接，包括 `dist` 顶层和 `assets/` 内部，避免通过目录别名绕过 allowlist。
 
 `dist/` 是可重建产物，不作为作者输入；加入 `.gitignore`，避免把本地产物误当成源代码提交。
 
@@ -45,7 +49,8 @@ wrangler.jsonc → assets.directory = ./dist
   "name": "deepseek-web",
   "compatibility_date": "2026-10-06",
   "assets": {
-    "directory": "./dist"
+    "directory": "./dist",
+    "html_handling": "none"
   }
 }
 ```
@@ -69,7 +74,7 @@ wrangler.jsonc → assets.directory = ./dist
 
 发布目录校验脚本检查：
 
-1. 必须存在 `index.html`、`notes.html`、`assets/`、`_headers`。
+1. 必须存在 `index.html`、`notes.html`、`assets/`、`_redirects`、`_headers`。
 2. 禁止存在 `content/`、`scripts/`、`.trellis/`、`tests/`、`.git/`、`package.json` 等顶层公开路径。
 3. `_headers` 必须包含安全头关键字。
 4. `assets/data/archive.js` 必须存在且包含预期生成数据。

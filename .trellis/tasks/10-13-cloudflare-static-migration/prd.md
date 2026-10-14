@@ -1,9 +1,5 @@
 # 接入 Cloudflare 生产构建与迁移
 
-## Goal
-
-为原生档案站准备 dist 生产构建和 Wrangler 静态资源部署，替换旧 Astro 构建链路；只做本地适配与验证，不推送远程
-
 ## Background Facts
 
 - Cloudflare 截图确认当前项目使用 Workers Builds：构建命令为 `pnpm run build`，部署命令为 `npx wrangler deploy`，根目录为 `/`。
@@ -37,8 +33,8 @@
 ## Requirements
 
 1. 生产构建必须从当前内容源重新生成 archive 数据，不能依赖手工修改生成文件。
-2. `dist/` 必须是干净目录，只包含网站运行所需的两个 HTML 入口、`assets/` 和 `_headers`；源 Markdown、构建脚本和开发配置不得进入发布目录。
-3. Wrangler 配置必须使用 `assets.directory: "./dist"` 的 assets-only 形态，不添加 `main` 或 `assets.binding`。
+2. `dist/` 必须是干净目录，只包含网站运行所需的两个 HTML 入口、`assets/`、`_redirects` 和 `_headers`；源 Markdown、构建脚本和开发配置不得进入发布目录。
+3. Wrangler 配置必须使用 `assets.directory: "./dist"` 的 assets-only 形态，并设置 `assets.html_handling: "none"` 保留现有 `.html` 稳定入口；不添加 `main` 或 `assets.binding`。
 4. 发布响应头必须覆盖静态资源安全基线；本地预览和生产发布的边界都要能被验证。
 5. 当前已有首页、全文页、图片查看器、搜索、规则、史实和时间轴回归不能因新增构建入口而退化。
 6. 所有工作停留在本地代码和提交层面，远程推送需另行明确授权。
@@ -46,10 +42,12 @@
 ## Acceptance Criteria
 
 - [x] `npm run build` 在当前依赖环境中成功，并生成最新 archive 数据与 `dist/`；构建输出为 10 章、44 人物、14 时间节点、12 符号、80 张影像。
-- [x] `dist/` 内容清单符合 allowlist：包含 `index.html`、`notes.html`、`assets/`、`_headers`，不包含 `content/`、`scripts/`、`.trellis/`、测试、包配置或 `.git`。
-- [x] `wrangler.jsonc` 指向 `./dist`，`npx wrangler@4 deploy --dry-run` 读取 98 个资源并退出，没有 Astro 配置注入或二次构建。
+- [x] 在当前 `HEAD` 的临时干净检出中执行 `npm ci --ignore-scripts --include=dev` 后再次通过 `npm run build` 和发布目录校验。
+- [x] `dist/` 内容清单符合 allowlist：包含 `index.html`、`notes.html`、`assets/`、`_redirects`、`_headers`，不包含 `content/`、`scripts/`、`.trellis/`、测试、包配置或 `.git`。
+- [x] `wrangler.jsonc` 指向 `./dist`，设置 `html_handling: "none"`；`npx wrangler@4 deploy --dry-run` 读取 99 个资源并退出，没有 Astro 配置注入或二次构建。
 - [x] `_headers` 包含 CSP、`X-Frame-Options`、`X-Content-Type-Options`、`Referrer-Policy` 和 `Permissions-Policy` 声明。
 - [x] `npm test` 的 6 项回归、脚本和测试文件语法检查、发布目录检查、任务校验和 `git diff --check` 通过。
+- [x] Wrangler 本地生产 smoke 验证 `/`、`/notes.html` 和 archive 资源为 200，源码/部署元文件为 404，安全响应头实际返回。
 - [x] 现有本地预览、页面入口和生成数据计数保持有效；未执行远程部署，不声称域名已替换。
 
 ## Open Questions

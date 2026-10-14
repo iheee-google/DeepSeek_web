@@ -34,4 +34,5 @@
 ## Cloudflare static migration
 
 - Cloudflare Workers Builds currently uses `pnpm run build`, `npx wrangler deploy`, and root `/`; this task prepares the native archive site for the replacement build command `npm run build` without remote push or production deployment.
-- The local production bundle now builds `dist/` from the content generator and publishes only `index.html`, `notes.html`, `assets/`, and `_headers`. Wrangler assets-only dry-run read 98 files with no bindings; six Playwright regressions and deploy-boundary checks passed.
+- The local production bundle now builds `dist/` from the content generator and publishes only `index.html`, `notes.html`, `assets/`, `_redirects`, and `_headers`. The build self-verifies its publish boundary, rejects hidden paths and symlinks, and preserves `.html` routes with `html_handling: "none"` plus a root 200 proxy.
+- A clean temporary checkout passed `npm ci --ignore-scripts --include=dev`, `npm run build`, and `npm run verify:deploy`; Wrangler assets-only dry-run read 99 files with no bindings. Local Wrangler production smoke returned 200 for `/`, `/notes.html`, and archive data, 404 for source and metadata paths, and the expected security headers. Six Playwright regressions and all syntax/diff checks passed.

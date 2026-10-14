@@ -6,6 +6,17 @@ The project has no configured lint or TypeScript check. Do not claim either has 
 
 ## Required Workflow
 
+### Production Static Bundle
+
+The Cloudflare Workers Builds path for this repository is an assets-only Wrangler deployment. Keep production packaging separate from the source tree:
+
+- `npm run build` must regenerate `assets/data/archive.js` and create a clean `dist/` containing only `index.html`, `notes.html`, `assets/`, `/_redirects`, and `/_headers`.
+- `wrangler.jsonc` must point `assets.directory` to `./dist`, set `assets.html_handling` to `"none"` when the site has stable `.html` routes such as `/notes.html`, and must not add a Worker `main` or asset binding for this static site.
+- When `html_handling: "none"` is used for a root site, generate a `/ /index.html 200` rule in `_redirects` so `/` remains a working entry; `_redirects` is deployment metadata and must not be served directly.
+- The build command must run the publish-boundary verifier before it can hand control to `npx wrangler deploy`; a passing source preview alone is not evidence that the production bundle is safe.
+- Verify the bundle with `npm run verify:deploy` and `npx wrangler@4 deploy --dry-run`. For runtime confidence, use `wrangler dev --local` against the generated bundle and check security headers plus rejection of source paths.
+- Never expose the repository root as the public asset directory. `content/`, `scripts/`, `.trellis/`, tests, package files, and `.git/` remain build inputs or development files, not published assets.
+
 ### When the note or asset references change
 
 1. Edit `content/godfather-trilogy-notes-v4.md` and the corresponding local asset files.
