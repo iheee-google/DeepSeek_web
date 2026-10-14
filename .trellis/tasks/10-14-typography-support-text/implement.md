@@ -51,3 +51,4 @@
 - 首轮验证：`npm run build`、`npm test` 7/7、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check` 均通过；三种桌面视口截图已复核。
 - 顾问收尾后，字号断言改为读取实际文本节点，全文入口链接归入操作角色；目录测试先将侧栏滚入 viewport，再验证末项可达和链接边界。桌面激活目录反馈改为垂直位移，避免整宽链接产生横向滚动区。
 - 最终 `task.py validate` 已通过：`implement.jsonl` 与 `check.jsonl` 各包含一条本地 frontend 规范引用；完整 `npm run build`、`npm test` 7/7、语法检查和 `git diff --check` 再次通过。
+- 顾问追加的搜索状态验收已落地：三个桌面视口生成真实结果，搜索壳体严格无横向溢出，结果内容列不再被长标题撑宽，实际摘录字号和既有显式省略契约均有断言；`1440×900` 搜索结果截图已复核。

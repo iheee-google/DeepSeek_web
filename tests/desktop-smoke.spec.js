@@ -595,6 +595,7 @@ test.describe('柯里昂档案桌面端', () => {
       { label: '人物辅助说明', selector: '.character-body p', minimum: 13 },
       { label: '符号辅助说明', selector: '.motif p', minimum: 13 },
       { label: '全文入口统计', selector: '.notes-portal-meta span', minimum: 12 },
+      { label: '史实继续阅读入口', selector: '.history-intro > a', minimum: 13 },
       { label: '首页页脚', selector: '.site-footer', minimum: 12 }
     ];
     const notesFontRoles = [
@@ -659,6 +660,42 @@ test.describe('柯里昂档案桌面端', () => {
       expect(homeEnvironment.fonts).toBe('loaded');
       expect(homeEnvironment.declaredFont).toBeTruthy();
       assertFontRoles(await measureFontRoles(homeFontRoles), viewport.width);
+      await page.locator('#searchToggle').click();
+      await expect(page.locator('#searchPanel')).toHaveClass(/is-open/);
+      await page.locator('#searchInput').fill('教父');
+      await expect(page.locator('.search-result').first()).toBeVisible();
+      const searchGeometry = await page.evaluate(() => {
+        const shell = document.querySelector('.search-shell');
+        const shellRect = shell.getBoundingClientRect();
+        const results = [...document.querySelectorAll('.search-result')];
+        const textSizes = results.flatMap((result) => ['strong', 'span', 'small'].map((selector) => {
+          const node = result.querySelector(selector);
+          return node ? { selector, size: Number.parseFloat(getComputedStyle(node).fontSize), width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height, scrollHeight: node.scrollHeight, whiteSpace: getComputedStyle(node).whiteSpace, textOverflow: getComputedStyle(node).textOverflow } : null;
+        }).filter(Boolean));
+        const resultOverflow = results.some((result) => {
+          const rect = result.getBoundingClientRect();
+          const title = result.querySelector('strong');
+          const kind = result.querySelector('small');
+          return rect.left < shellRect.left - 1 || rect.right > shellRect.right + 1
+            || [title, kind].some((node) => node && node.scrollHeight > node.clientHeight + 1);
+        });
+        return {
+          resultCount: results.length,
+          shellHorizontalOverflow: shell.scrollWidth > shell.clientWidth + 1,
+          resultOverflow,
+          textSizes
+        };
+      });
+      expect(searchGeometry.resultCount, `${viewport.width} search results`).toBeGreaterThan(0);
+      expect(searchGeometry.shellHorizontalOverflow, `${viewport.width} search shell horizontal overflow`).toBe(false);
+      expect(searchGeometry.resultOverflow, `${viewport.width} search result clipping`).toBe(false);
+      expect(searchGeometry.textSizes.every(({ size }) => size > 0), `${viewport.width} search text visibility`).toBe(true);
+      expect(searchGeometry.textSizes.filter(({ selector }) => selector === 'span').every(({ size }) => size >= 12), `${viewport.width} search excerpt font size`).toBe(true);
+      expect(searchGeometry.textSizes.filter(({ selector }) => selector === 'small').every(({ size }) => size >= 11), `${viewport.width} search type font size`).toBe(true);
+      expect(searchGeometry.textSizes.filter(({ selector }) => selector === 'span').every(({ width, height }) => width > 0 && height > 0), `${viewport.width} search excerpt visibility`).toBe(true);
+      expect(searchGeometry.textSizes.filter(({ selector }) => selector === 'span').every(({ whiteSpace, textOverflow }) => whiteSpace === 'nowrap' && textOverflow === 'ellipsis'), `${viewport.width} search excerpt clipping contract`).toBe(true);
+      await page.locator('#searchClose').click();
+      await expect(page.locator('#searchPanel')).not.toHaveClass(/is-open/);
       const quoteIndexLabelLines = await page.locator('.quote-index-label').evaluateAll((labels) => labels.map((label) => {
         const lines = new Map();
         const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
@@ -741,11 +778,27 @@ test.describe('柯里昂档案桌面端', () => {
       });
       expect(notesHeaderGeometry.overlaps, `${viewport.width} notes header overlap`).toEqual([]);
       await page.locator('.note-sidebar').scrollIntoViewIfNeeded();
+      await page.waitForTimeout(50);
+      await page.locator('#noteToc').evaluate((toc) => { toc.scrollTop = toc.scrollHeight; });
+      await expect.poll(() => page.locator('#noteToc').evaluate((toc) => toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1)).toBe(true);
+      await page.waitForTimeout(100);
       const tocGeometry = await page.locator('#noteToc').evaluate((toc) => {
         const links = [...toc.querySelectorAll('a')];
-        toc.scrollTop = toc.scrollHeight;
         const rail = toc.getBoundingClientRect();
         const last = links.at(-1)?.getBoundingClientRect();
+        const textOverflow = links.some((link) => {
+          const walker = document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
+          const range = document.createRange();
+          let textNode;
+          while ((textNode = walker.nextNode())) {
+            if (!textNode.data.trim()) continue;
+            range.selectNodeContents(textNode);
+            for (const rect of range.getClientRects()) {
+              if (rect.width > 0 && (rect.left < rail.left - 1 || rect.right > rail.right + 1)) return true;
+            }
+          }
+          return false;
+        });
         return {
           linkCount: links.length,
           scrollHeight: toc.scrollHeight,
@@ -753,18 +806,21 @@ test.describe('柯里昂档案桌面端', () => {
           reachedEnd: toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1,
           lastLinkInside: Boolean(last && last.bottom <= rail.bottom + 1),
           lastLinkInViewport: Boolean(last && last.top >= -1 && last.bottom <= window.innerHeight + 1),
-          tocHorizontalOverflow: links.some((link) => {
+          tocHorizontalOverflow: toc.scrollWidth > toc.clientWidth + 1,
+          tocLinkHorizontalOverflow: links.some((link) => {
             const rect = link.getBoundingClientRect();
-            const tocRect = toc.getBoundingClientRect();
-            return rect.left < tocRect.left - 1 || rect.right > tocRect.right + 1;
-          })
+            return rect.left < rail.left - 1 || rect.right > rail.right + 1;
+          }),
+          tocTextHorizontalOverflow: textOverflow
         };
       });
       expect(tocGeometry.linkCount, `${viewport.width} notes toc link count`).toBeGreaterThan(44);
       expect(tocGeometry.reachedEnd, `${viewport.width} notes toc reaches end`).toBe(true);
       expect(tocGeometry.lastLinkInside, `${viewport.width} notes toc last link`).toBe(true);
       expect(tocGeometry.lastLinkInViewport, `${viewport.width} notes toc last link viewport`).toBe(true);
-      expect(tocGeometry.tocHorizontalOverflow, `${viewport.width} notes toc link horizontal overflow`).toBe(false);
+      expect(tocGeometry.tocHorizontalOverflow, `${viewport.width} notes toc horizontal overflow`).toBe(false);
+      expect(tocGeometry.tocLinkHorizontalOverflow, `${viewport.width} notes toc link horizontal overflow`).toBe(false);
+      expect(tocGeometry.tocTextHorizontalOverflow, `${viewport.width} notes toc text horizontal overflow`).toBe(false);
       test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify({ ...notesEnvironment, toc: tocGeometry, header: notesHeaderGeometry })}` });
     }
 
