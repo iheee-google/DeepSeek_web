@@ -82,6 +82,13 @@ Images must preserve their natural aspect ratio. New zoom or modal behavior must
 - Quote switching must settle before geometry assertions: wait for `#quoteText` to lose its transition transform, then use `getBoundingClientRect()` to check equal left/right insets, equal mark box widths, and both mark centers against the main quote center for every stable quote ID. Review both a one-line and a two-line quote at each desktop viewport.
 - Quote presentation may remove only approved decorative Chinese commas/full stops in `showQuote()`'s display mapping. Source Markdown, generated archive data, full-text notes, English originals, search text, and accessible quote labels remain unchanged.
 
+### Auxiliary Text and Stable Geometry
+
+- For desktop support-text adjustments, use a small set of semantic role variables in the existing page-local `@media (min-width: 901px)` blocks: navigation, TOC, action, metadata, and decorative micro labels. Do not scale `html`/`body`, body copy, display titles, or the main quote to enlarge auxiliary text; keep the role boundaries explicit and let long Chinese labels wrap naturally.
+- Playwright typography checks must inspect text-bearing descendants rather than only a parent container, and must measure the actual CSS viewport, DPR, `document.fonts.status`, and declared font stack without claiming a concrete CJK font that CSSOM cannot expose.
+- When measuring the notes Rail TOC, first wait for the active-link auto-follow geometry to remain stable, then scroll to the end and require consecutive stable samples of `scrollTop` and the last-link bounds. IntersectionObserver callbacks and smooth `scrollTo()` can otherwise overwrite a diagnostic scroll after it appears to succeed.
+- When measuring an animated search panel, wait for its settled visible state (`opacity: 1` and `transform: none`) before checking result geometry or capturing evidence. Search result grid content columns must use `min-width: 0` so long titles cannot expand the result beyond the panel; any intentional excerpt truncation must remain an explicit `nowrap` + `ellipsis` contract and be tested as such.
+
 ## Preview Security Boundary
 
 Use `npm run preview`, which calls `scripts/serve-preview.cjs`. The service must continue to:
