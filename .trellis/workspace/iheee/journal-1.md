@@ -109,3 +109,10 @@
 ### Next Steps
 
 - 如需后续改动，创建新的 Trellis 任务；当前仅保留本地预览状态。
+
+## 2026-10-14 · 全文角色名称标注与人物卡跳转
+
+- 任务 `10-14-note-character-links` 已按批准方案实施：构建器为 44 条人物记录生成受控 `mentions`/`mentionExclusions` 映射，全文页对明确可唯一归属名称生成 `.person-mention` 控件；泛称、英文词边界、链接/代码节点和 `person-43` 历史同名语境不会误标。
+- 角色名称点击后进入原生确认弹窗；取消、遮罩、Escape、Tab、Enter/Space、焦点恢复、滚动锁、`inert`、立即重开和 `prefers-reduced-motion` 均有回归。确认后进入首页，目标人物卡在初始化、hash 定位和 reveal/几何稳定后打开，保留其他 query 并消费 `person` 参数。
+- 验证：生产构建、内容构建、发布白名单、脚本和两页内联脚本语法、`git diff --check` 通过；Playwright 10/10 通过。1920×1080、1440×900、1024×900 均为 DPR 1、字体 loaded、237 个标注、无横向溢出和页面/控制台错误；390px 仅作为既有历史回归。
+- 当前实现尚未推送远程；Cloudflare 仍由 GitHub `main` 的 Workers Builds 自动部署，不执行手动 Wrangler 发布。

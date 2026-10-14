@@ -56,7 +56,7 @@ The Playwright suite in `tests/desktop-smoke.spec.js` is the behavior contract. 
 - filter transitions, quote changes, TOC tracking, and long-document positioning;
 - reduced-motion behavior where animation affects assertions.
 
-Use semantic buttons/links and test keyboard paths, not only mouse clicks. Dialogs must remain scrollable when their content exceeds the viewport and must return focus to the triggering element.
+Use semantic buttons/links and test keyboard paths, not only mouse clicks. Dialogs must remain scrollable when their content exceeds the viewport and must return focus to the triggering element. For dialogs opened from long notes, capture the pre-activation scroll position during `pointerdown` (before setting the source content `inert`) and restore it after focus transfer; native click focus can otherwise move the document before the click handler runs. On BFCache `pageshow`, defer temporary dialog cleanup until the browser has restored its scroll position, then verify the original content anchor rather than comparing raw `scrollY` across dynamic reveal layout.
 
 ## Motion and Layout
 

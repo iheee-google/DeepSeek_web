@@ -1090,4 +1090,216 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#modeToggle')).toHaveCount(0);
     await expectDiagnosticsClean(diagnostics);
   });
+
+  test('全文角色名称标注保真并通过确认框跳转人物档案', async ({ page }) => {
+    const diagnostics = collectDiagnostics(page);
+    await page.goto('/notes.html', { waitUntil: 'networkidle' });
+    const expectedText = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.map((section) => {
+      const template = document.createElement('template');
+      template.innerHTML = section.html;
+      return template.content.textContent;
+    }).join(''));
+    const actualText = await page.locator('#noteContent').textContent();
+    expect(actualText).toBe(expectedText);
+
+    const expectedLinks = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.flatMap((section) => {
+      const template = document.createElement('template');
+      template.innerHTML = section.html;
+      return [...template.content.querySelectorAll('a')].map((link) => ({ href: link.getAttribute('href'), target: link.getAttribute('target'), rel: link.getAttribute('rel') }));
+    }));
+    const actualLinks = await page.locator('#noteContent a').evaluateAll((links) => links.map((link) => ({ href: link.getAttribute('href'), target: link.getAttribute('target'), rel: link.getAttribute('rel') })));
+    expect(actualLinks).toEqual(expectedLinks);
+
+    await expect(page.locator('.person-mention')).not.toHaveCount(0);
+    await expect(page.locator('#chapter-06-part-49 .person-mention')).not.toHaveCount(0);
+    await expect(page.locator('.person-mention[data-person="person-01"]').filter({ hasText: 'Don Vito' })).toHaveCount(1);
+    await expect(page.locator('#chapter-09-block-008 .person-mention')).toHaveCount(0);
+    expect(await page.locator('.person-mention').evaluateAll((buttons) => !buttons.some((button) => ['柯里昂', '教父'].includes(button.textContent)))).toBe(true);
+    expect(await page.locator('.person-mention[data-person="person-27"]').evaluateAll((buttons) => {
+      const names = new Set(buttons.map((button) => button.textContent));
+      return names.has('维克多·斯特拉奇') && names.has('卡迈恩·库尼奥');
+    })).toBe(true);
+    expect(await page.locator('.person-mention').evaluateAll((buttons) => {
+      const mentions = buttons.map((button) => button.getAttribute('data-mention'));
+      return new Set(mentions).size === mentions.length && buttons.every((button) => button.textContent === button.getAttribute('aria-label').replace(/^查看/, '').replace(/的人物介绍$/, ''));
+    })).toBe(true);
+    const expectedIds = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.flatMap((section) => {
+      const template = document.createElement('template');
+      template.innerHTML = section.html;
+      return [...template.content.querySelectorAll('[id]')].map((element) => element.id);
+    }));
+    const currentIds = await page.locator('#noteContent [id]').evaluateAll((nodes) => nodes.map((node) => node.id));
+    expect(new Set(currentIds).size).toBe(currentIds.length);
+    expect(currentIds.filter((id) => expectedIds.includes(id))).toEqual(expectedIds);
+
+    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve) => {
+      let previous = null;
+      let stableSamples = 0;
+      const started = performance.now();
+      const sample = () => {
+        const current = Math.round(window.scrollY);
+        stableSamples = current === previous ? stableSamples + 1 : 0;
+        previous = current;
+        if (stableSamples >= 3 || performance.now() - started > 4000) { resolve(current); return; }
+        window.requestAnimationFrame(sample);
+      };
+      sample();
+    }));
+    const trigger = page.locator('.person-mention[data-person="person-01"]').first();
+    const mouseClick = async (locator) => {
+      const box = await locator.boundingBox();
+      if (!box) throw new Error('人物标注不可见');
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    };
+    await trigger.scrollIntoViewIfNeeded();
+    const scrollBefore = await waitForStableScroll();
+    await mouseClick(trigger);
+    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personConfirmName')).toHaveText(await trigger.textContent());
+    await expect(page.locator('#personConfirmCancel')).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.locator('.person-confirm-close')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#personConfirmCancel')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.locator('#personConfirmGo')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expect(trigger).toBeFocused();
+    const scrollAfter = await waitForStableScroll();
+    expect(Math.abs(scrollAfter - scrollBefore)).toBeLessThan(2);
+
+    await trigger.focus();
+    await trigger.press('Space');
+    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await page.locator('#personConfirmCancel').click();
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.focus();
+    await trigger.press('Enter');
+    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await page.locator('.person-confirm-backdrop').click({ position: { x: 4, y: 4 } });
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    await mouseClick(trigger);
+    await page.locator('.person-confirm-close').click();
+    await page.evaluate(() => document.querySelector('.person-mention[data-person="person-01"]').click());
+    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personConfirm')).toHaveCount(1);
+    await page.locator('#personConfirmCancel').click();
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await mouseClick(trigger);
+    await page.locator('#personConfirmGo').click();
+    await expect(page).toHaveURL(/index\.html#characters$/);
+    await expect(page.locator('#reader')).toHaveClass(/is-open/);
+    await expect(page.locator('#readerTitleMain')).toContainText('维托·柯里昂');
+    await expect(page.locator('#readerFullLink')).toHaveAttribute('href', /notes\.html#chapter-06-/);
+    await expectDiagnosticsClean(diagnostics);
+  });
+
+  test('人物深链安全处理无效参数并支持返回全文', async ({ page }) => {
+    const diagnostics = collectDiagnostics(page);
+    await page.goto('/index.html?person=unknown&keep=1#characters', { waitUntil: 'networkidle' });
+    await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
+    await expect(page).toHaveURL(/index\.html\?person=unknown&keep=1#characters$/);
+
+    await page.goto('/notes.html', { waitUntil: 'networkidle' });
+    const firstPerson27Mention = page.locator('.person-mention[data-person="person-27"]').first();
+    const targetId = await firstPerson27Mention.evaluate((node) => node.closest('[id]')?.id);
+    expect(targetId).toBeTruthy();
+    await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
+    const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve) => {
+      let previous = '';
+      let stableSamples = 0;
+      const started = performance.now();
+      const sample = () => {
+        const target = document.getElementById(id);
+        if (!target) { resolve(false); return; }
+        const computed = getComputedStyle(target);
+        const rect = target.getBoundingClientRect();
+        const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
+        const ready = computed.opacity === '1' && computed.transform === 'none';
+        stableSamples = ready && signature === previous ? stableSamples + 1 : 0;
+        previous = signature;
+        if (stableSamples >= 3 || performance.now() - started > 4000) { resolve(ready); return; }
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    }), targetId);
+    await expect.poll(waitForSettledTarget).toBe(true);
+    const trigger = page.locator(`#${targetId} .person-mention[data-person="person-27"]`).first();
+    const noteAnchorBefore = await page.evaluate((id) => {
+      const rect = document.getElementById(id).getBoundingClientRect();
+      return { documentTop: window.scrollY + rect.top, viewportTop: rect.top };
+    }, targetId);
+    const noteOverflowBefore = await page.evaluate(() => document.body.style.overflow);
+    const mentionCountBefore = await page.locator('.person-mention').count();
+    const box = await trigger.boundingBox();
+    if (!box) throw new Error('共享人物标注不可见');
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await page.locator('#personConfirmGo').click();
+    await expect(page).toHaveURL(/index\.html#characters$/);
+    await expect(page.locator('#reader')).toHaveClass(/is-open/);
+    await page.goBack({ waitUntil: 'networkidle' });
+    await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
+    await expect.poll(waitForSettledTarget).toBe(true);
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    expect(await page.locator('[inert]').count()).toBe(0);
+    expect(await page.evaluate(() => document.body.style.overflow)).toBe(noteOverflowBefore);
+    expect(await page.locator('.person-mention').count()).toBe(mentionCountBefore);
+    const noteAnchorAfter = await page.evaluate((id) => {
+      const rect = document.getElementById(id).getBoundingClientRect();
+      return { documentTop: window.scrollY + rect.top, viewportTop: rect.top, viewportBottom: rect.bottom };
+    }, targetId);
+    expect(Math.abs(noteAnchorAfter.documentTop - noteAnchorBefore.documentTop)).toBeLessThan(4);
+    expect(noteAnchorAfter.viewportTop).toBeGreaterThanOrEqual(0);
+    expect(noteAnchorAfter.viewportBottom).toBeLessThanOrEqual(900);
+    await page.goto('/index.html?person=person-01&keep=1#characters', { waitUntil: 'networkidle' });
+    await expect(page.locator('#reader')).toHaveClass(/is-open/);
+    await expect(page).toHaveURL(/index\.html\?keep=1#characters$/);
+    await page.locator('#readerClose').click();
+    await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
+    await expect(page.locator('#characters [data-person="person-01"]')).toBeFocused();
+    await expectDiagnosticsClean(diagnostics);
+  });
+
+  test('角色名称标注跳过跨节点与受保护内容并支持减弱动效', async ({ page }) => {
+    const diagnostics = collectDiagnostics(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addInitScript(() => {
+      let archiveValue;
+      Object.defineProperty(window, 'CORLEONE_ARCHIVE', {
+        configurable: true,
+        get: () => archiveValue,
+        set: (value) => {
+          archiveValue = {
+            ...value,
+            sections: value.sections.map((section, index) => index === 0 ? {
+              ...section,
+              html: `${section.html}
+<p id="mention-fixture-plain">Don Vito</p>
+<p id="mention-fixture-boundary">Don Vitone 教父</p>
+<p id="mention-fixture-cross"><strong>Don</strong> <em>Vito</em></p>
+<p id="mention-fixture-link"><a href="#mention-fixture-link-target">Don Vito</a></p>
+<p id="mention-fixture-code"><code>Don Vito</code></p>`
+            } : section)
+          };
+        }
+      });
+    });
+    await page.goto('/notes.html#mention-fixture-plain', { waitUntil: 'networkidle' });
+    await expect(page.locator('#mention-fixture-plain .person-mention')).toHaveCount(1);
+    await expect(page.locator('#mention-fixture-boundary .person-mention')).toHaveCount(0);
+    await expect(page.locator('#mention-fixture-cross .person-mention')).toHaveCount(0);
+    await expect(page.locator('#mention-fixture-link .person-mention')).toHaveCount(0);
+    await expect(page.locator('#mention-fixture-code .person-mention')).toHaveCount(0);
+    const mentionCount = await page.locator('.person-mention').count();
+    await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
+    await expect(page.locator('.person-mention')).toHaveCount(mentionCount);
+    await page.locator('#mention-fixture-plain .person-mention').click();
+    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expectDiagnosticsClean(diagnostics);
+  });
 });

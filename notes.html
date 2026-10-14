@@ -86,6 +86,31 @@
     .note-content th, .note-content td { min-width: 8rem; padding: .7rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
     .note-content th { color: var(--accent); background: rgba(56, 88, 75, .08); font-weight: 700; }
     .note-content code { padding: .1em .3em; color: var(--paper); background: rgba(56, 88, 75, .08); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .8em; }
+    .note-content .person-mention { display: inline; margin: 0; padding: 0 .08em .04em; border: 0; border-bottom: 1px solid rgba(56, 88, 75, .42); border-radius: .12em; color: var(--olive); background: rgba(56, 88, 75, .035); cursor: pointer; text-align: inherit; text-decoration: none; transition: color .25s ease, background .25s ease, border-color .25s ease, box-shadow .25s ease; }
+    .note-content .person-mention:hover { border-bottom-color: var(--accent); color: var(--accent); background: rgba(163, 94, 61, .08); }
+    .note-content .person-mention:active { background: rgba(163, 94, 61, .16); }
+    .note-content .person-mention:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 4px rgba(163, 94, 61, .12); }
+    .person-confirm[hidden] { display: none; }
+    .person-confirm { position: fixed; z-index: 230; inset: 0; display: grid; place-items: center; padding: 1.25rem; visibility: hidden; opacity: 0; pointer-events: none; transition: opacity .3s ease, visibility 0s linear .3s; }
+    .person-confirm.is-open { visibility: visible; opacity: 1; pointer-events: auto; transition-delay: 0s; }
+    .person-confirm.is-closing { visibility: visible; opacity: 0; pointer-events: none; }
+    .person-confirm-backdrop { position: absolute; inset: 0; background: rgba(29, 48, 41, .52); backdrop-filter: blur(14px) saturate(82%); }
+    .person-confirm-panel { position: relative; width: min(100%, 34rem); max-height: min(90vh, 42rem); overflow: auto; padding: clamp(1.5rem, 4vw, 2.8rem); border: 1px solid var(--line-strong); color: var(--paper); background: var(--panel-light); box-shadow: 0 2rem 5rem rgba(29, 48, 41, .26); transform: translateY(1rem) scale(.98); transition: transform .42s var(--ease), opacity .3s ease; }
+    .person-confirm.is-open .person-confirm-panel { transform: none; }
+    .person-confirm.is-closing .person-confirm-panel { transform: translateY(.65rem) scale(.985); }
+    .person-confirm-close { position: absolute; top: .8rem; right: .8rem; display: grid; place-items: center; width: 2.35rem; height: 2.35rem; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--paper); background: transparent; cursor: pointer; transition: transform .3s var(--ease), background .25s ease, border-color .25s ease; }
+    .person-confirm-close:hover { border-color: var(--accent); background: rgba(163, 94, 61, .09); transform: rotate(8deg); }
+    .person-confirm-close:focus-visible, .person-confirm-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    .person-confirm-close svg { width: 1rem; height: 1rem; }
+    .person-confirm-kicker { display: block; margin-bottom: .8rem; color: var(--accent); font-size: .65rem; letter-spacing: .18em; text-transform: uppercase; }
+    .person-confirm-panel h2 { max-width: 90%; margin: 0; color: var(--paper); font-family: var(--serif); font-size: clamp(1.6rem, 4vw, 2.5rem); font-weight: 400; line-height: 1.12; }
+    .person-confirm-panel p { margin: 1rem 0 0; color: var(--paper-muted); font-size: .95rem; line-height: 1.75; }
+    .person-confirm-name { color: var(--accent); font-weight: 700; }
+    .person-confirm-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .65rem; margin-top: 1.6rem; }
+    .person-confirm-action { min-height: 2.7rem; padding: .7rem 1rem; border: 1px solid var(--line-strong); border-radius: 999px; color: var(--paper); background: transparent; cursor: pointer; font-size: .82rem; transition: transform .3s var(--ease), background .25s ease, border-color .25s ease; }
+    .person-confirm-action:hover { border-color: var(--accent); background: rgba(163, 94, 61, .1); transform: translateY(-2px); }
+    .person-confirm-action--primary { border-color: var(--accent); color: var(--panel-light); background: var(--accent); }
+    .person-confirm-action--primary:hover { color: var(--panel-light); background: var(--accent-bright); }
     .note-reveal { opacity: 0; transform: translateY(1.2rem); transition: opacity .8s var(--ease), transform .8s var(--ease); }
     .note-reveal.is-visible { opacity: 1; transform: none; }
     .search-hit { animation: noteHit 1.7s var(--ease) both; }
@@ -120,6 +145,7 @@
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
       .note-reveal { opacity: 1; transform: none; }
+      .person-confirm-panel { transform: none; }
     }
     /* systematic typography */
     :root {
@@ -210,6 +236,19 @@
     </div>
   </main>
   <button class="back-top" type="button" aria-label="回到顶部" title="回到顶部"><i data-lucide="arrow-up"></i></button>
+  <div class="person-confirm" id="personConfirm" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="personConfirmTitle" aria-describedby="personConfirmDescription" hidden>
+    <div class="person-confirm-backdrop" data-close-person-confirm></div>
+    <div class="person-confirm-panel" role="document">
+      <button class="person-confirm-close" type="button" data-close-person-confirm aria-label="关闭人物跳转确认"><i data-lucide="x"></i></button>
+      <span class="person-confirm-kicker">character archive</span>
+      <h2 id="personConfirmTitle">查看人物档案</h2>
+      <p id="personConfirmDescription">你即将查看 <span class="person-confirm-name" id="personConfirmName"></span> 的人物介绍，是否前往首页人物卡片？</p>
+      <div class="person-confirm-actions">
+        <button class="person-confirm-action" id="personConfirmCancel" type="button">继续阅读</button>
+        <button class="person-confirm-action person-confirm-action--primary" id="personConfirmGo" type="button">查看人物介绍</button>
+      </div>
+    </div>
+  </div>
   <script src="assets/vendor/lucide.min.js"></script>
   <script src="assets/data/archive.js"></script>
   <script src="assets/js/image-viewer.js"></script>
@@ -222,6 +261,194 @@
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       const hydrateIcons = () => window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true' } });
       const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
+      const personConfirm = document.getElementById('personConfirm');
+      const personConfirmName = document.getElementById('personConfirmName');
+      const personConfirmCancel = document.getElementById('personConfirmCancel');
+      const personConfirmGo = document.getElementById('personConfirmGo');
+      const notesBackground = [document.querySelector('.notes-header'), document.querySelector('.notes-main'), document.querySelector('.back-top')].filter(Boolean);
+      let personConfirmTrigger = null;
+      let personConfirmTarget = null;
+      let personConfirmCloseTimer;
+      let personConfirmOpenFrame;
+      let personConfirmPreviousOverflow = '';
+      let personConfirmPreviousScrollY = 0;
+      let personConfirmPendingScrollY = null;
+      let personConfirmState = 'closed';
+
+      function setNotesBackgroundInert(isInert) {
+        notesBackground.forEach((element) => { element.inert = isInert; });
+      }
+
+      function personMentionSpecs() {
+        return archive.people.flatMap((person) => (person.mentions || []).map((name) => ({ name, person })));
+      }
+
+      function isAsciiWordCharacter(character) {
+        return Boolean(character) && /[A-Za-z0-9_]/.test(character);
+      }
+
+      function hasEnglishWordBoundary(text, start, end, name) {
+        if (!/[A-Za-z0-9]/.test(name)) return true;
+        return !isAsciiWordCharacter(text[start - 1]) && !isAsciiWordCharacter(text[end]);
+      }
+
+      function mentionExcluded(spec, blockId) {
+        return (spec.person.mentionExclusions || []).some((exclusion) => exclusion.blockId === blockId && exclusion.text === spec.name);
+      }
+
+      function findMentionMatches(text, specs, blockId) {
+        const matches = [];
+        let cursor = 0;
+        while (cursor < text.length) {
+          const candidate = specs.find((spec) => text.startsWith(spec.name, cursor) && hasEnglishWordBoundary(text, cursor, cursor + spec.name.length, spec.name) && !mentionExcluded(spec, blockId));
+          if (!candidate) {
+            cursor += 1;
+            continue;
+          }
+          matches.push({ start: cursor, end: cursor + candidate.name.length, spec: candidate });
+          cursor += candidate.name.length;
+        }
+        return matches;
+      }
+
+      function annotatePersonMentions() {
+        if (noteContent.dataset.personMentionsReady === 'true') return;
+        const specs = personMentionSpecs().sort((a, b) => b.name.length - a.name.length || a.person.id.localeCompare(b.person.id) || a.name.localeCompare(b.name));
+        const walker = document.createTreeWalker(noteContent, NodeFilter.SHOW_TEXT);
+        const textNodes = [];
+        let node;
+        while ((node = walker.nextNode())) textNodes.push(node);
+        textNodes.forEach((textNode, nodeIndex) => {
+          const parent = textNode.parentElement;
+          const container = parent?.closest('p, li, blockquote, th, td, h4');
+          if (!container || parent.closest('a, button, code, pre, script, style, textarea, select')) return;
+          const blockElement = parent.closest('[data-note-block]');
+          const blockId = blockElement?.id || blockElement?.dataset.noteBlock || '';
+          const matches = findMentionMatches(textNode.data, specs, blockId);
+          if (!matches.length || !textNode.parentNode) return;
+          const anchor = blockElement?.id || parent.closest('[id]')?.id || 'note-content';
+          const fragment = document.createDocumentFragment();
+          let last = 0;
+          matches.forEach(({ start, end, spec }, matchIndex) => {
+            if (start > last) fragment.append(document.createTextNode(textNode.data.slice(last, start)));
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'person-mention';
+            button.dataset.person = spec.person.id;
+            button.dataset.mention = `${spec.person.id}:${anchor}:${nodeIndex}:${matchIndex}:${start}`;
+            button.setAttribute('aria-label', `查看${spec.name}的人物介绍`);
+            button.textContent = spec.name;
+            fragment.append(button);
+            last = end;
+          });
+          if (last < textNode.data.length) fragment.append(document.createTextNode(textNode.data.slice(last)));
+          textNode.parentNode.replaceChild(fragment, textNode);
+        });
+        noteContent.dataset.personMentionsReady = 'true';
+      }
+
+      function focusableInPersonConfirm() {
+        return [...personConfirm.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+          .filter((element) => !element.disabled && !element.hidden && element.getClientRects().length);
+      }
+
+      function finishPersonConfirm(restoreFocus = true) {
+        cancelAnimationFrame(personConfirmOpenFrame);
+        personConfirmOpenFrame = undefined;
+        personConfirm.hidden = true;
+        personConfirm.classList.remove('is-open', 'is-closing');
+        personConfirm.setAttribute('aria-hidden', 'true');
+        personConfirmGo.disabled = false;
+        personConfirmState = 'closed';
+        setNotesBackgroundInert(false);
+        document.body.style.overflow = personConfirmPreviousOverflow;
+        window.scrollTo({ top: personConfirmPreviousScrollY, left: 0, behavior: 'auto' });
+        const trigger = personConfirmTrigger;
+        personConfirmTrigger = null;
+        personConfirmTarget = null;
+        if (restoreFocus && trigger?.isConnected) trigger.focus({ preventScroll: true });
+      }
+
+      function closePersonConfirm({ restoreFocus = true } = {}) {
+        if (personConfirmState === 'closed' || personConfirmState === 'navigating') return;
+        cancelAnimationFrame(personConfirmOpenFrame);
+        personConfirmOpenFrame = undefined;
+        clearTimeout(personConfirmCloseTimer);
+        personConfirmState = 'closing';
+        personConfirm.classList.remove('is-open');
+        personConfirm.classList.add('is-closing');
+        personConfirmCloseTimer = window.setTimeout(() => finishPersonConfirm(restoreFocus), reduceMotion ? 0 : 320);
+      }
+
+      function openPersonConfirm(trigger) {
+        const person = archive.people.find((item) => item.id === trigger.dataset.person);
+        if (!person || personConfirmState === 'navigating') return;
+        cancelAnimationFrame(personConfirmOpenFrame);
+        clearTimeout(personConfirmCloseTimer);
+        if (personConfirmState === 'closed') {
+          personConfirmPreviousOverflow = document.body.style.overflow;
+          personConfirmPreviousScrollY = personConfirmPendingScrollY ?? window.scrollY;
+          personConfirmPendingScrollY = null;
+          document.body.style.overflow = 'hidden';
+        }
+        personConfirmState = 'opening';
+        personConfirmTrigger = trigger;
+        personConfirmTarget = person;
+        personConfirmName.textContent = trigger.textContent.trim();
+        personConfirmGo.disabled = false;
+        personConfirm.hidden = false;
+        personConfirm.classList.remove('is-closing');
+        personConfirm.setAttribute('aria-hidden', 'false');
+        setNotesBackgroundInert(true);
+        personConfirmOpenFrame = window.requestAnimationFrame(() => {
+          if (personConfirmState !== 'opening') return;
+          personConfirmState = 'open';
+          personConfirm.classList.add('is-open');
+          personConfirmCancel.focus({ preventScroll: true });
+          window.scrollTo({ top: personConfirmPreviousScrollY, left: 0, behavior: 'auto' });
+        });
+      }
+
+      noteContent.addEventListener('pointerdown', (event) => {
+        const trigger = event.target.closest?.('.person-mention');
+        if (trigger) personConfirmPendingScrollY = window.scrollY;
+      }, true);
+      noteContent.addEventListener('pointercancel', () => { personConfirmPendingScrollY = null; }, true);
+      noteContent.addEventListener('click', (event) => {
+        const trigger = event.target.closest('.person-mention');
+        if (trigger) openPersonConfirm(trigger);
+      });
+      personConfirm.querySelectorAll('[data-close-person-confirm]').forEach((element) => element.addEventListener('click', () => closePersonConfirm()));
+      personConfirmCancel.addEventListener('click', () => closePersonConfirm());
+      personConfirmGo.addEventListener('click', () => {
+        if (personConfirmState !== 'open' || !personConfirmTarget || !archive.people.some((person) => person.id === personConfirmTarget.id)) return;
+        personConfirmState = 'navigating';
+        personConfirmGo.disabled = true;
+        window.location.href = `index.html?person=${encodeURIComponent(personConfirmTarget.id)}#characters`;
+      });
+      document.addEventListener('keydown', (event) => {
+        if (personConfirmState === 'closed' || personConfirmState === 'navigating') return;
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          event.stopPropagation();
+          closePersonConfirm();
+          return;
+        }
+        if (event.key !== 'Tab') return;
+        const focusable = focusableInPersonConfirm();
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }, true);
+      window.addEventListener('pageshow', () => {
+        clearTimeout(personConfirmCloseTimer);
+        if (personConfirmState === 'closed' && personConfirm.hidden) return;
+        window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+          if (personConfirmState !== 'closed' || !personConfirm.hidden) finishPersonConfirm(false);
+        }));
+      });
 
       document.getElementById('notesChapterCount').textContent = archive.meta.chapterCount;
       document.getElementById('notesPeopleCount').textContent = archive.meta.peopleCount;
@@ -241,6 +468,7 @@
         });
       }
       groupNoteHeadingParentheticals();
+      annotatePersonMentions();
       hydrateIcons();
 
       const headings = [...noteContent.querySelectorAll('h2, h3')];

@@ -80,3 +80,11 @@
 - 不复制角色卡片正文到全文页，不添加外部组件依赖。
 - 不用固定延时代替弹窗、滚动、reveal 或跨页卡片最终状态的条件等待。
 - 不削弱现有焦点、Escape、reduced-motion、搜索、目录和预览边界回归。
+
+## Execution record
+
+- 已在 `scripts/build-content.cjs` 中建立 44 条按完整标题校验的受控角色名称映射，生成 `mentions` / `mentionExclusions` 元数据；`person-27` 的两位人物共用 `person-27`，`person-43` 的历史同名语境按块 ID 排除。
+- `notes.html` 使用一次性文本节点遍历生成原生 `.person-mention` 按钮，保留正文字符、链接、稳定 ID 和受保护节点；页面级确认框支持取消、遮罩、Escape、Tab、Enter/Space、焦点恢复、滚动锁、`inert`、reduced-motion、立即重开和 `pageshow` 清理。
+- `index.html` 消费严格校验的 `person` query，在 hash 初始定位后补偿一次滚动，等待目标卡 reveal/几何稳定后复用 `morphPerson()`，成功只删除 `person` 并保留其他 query。
+- `tests/desktop-smoke.spec.js` 新增正文保真、别名/共享卡、映射排除、焦点与弹窗状态、跨页返回、非法 query、隔离 fixture 和 reduced-motion 回归。
+- 验证：生产构建和发布白名单通过；完整 Playwright 10/10 通过（含新增 3 项）；内容构建、脚本语法、内联脚本语法、预览边界和 `git diff --check` 通过。正式桌面视口为 1920×1080、1440×900、1024×900，DPR 1，字体 loaded，无横向溢出或页面错误；390px 仅沿用历史回归。

@@ -1756,6 +1756,60 @@
       openReader(card, characterData.get(card.dataset.person));
     }
 
+    function scrollDeepLinkedPersonIntoView(card) {
+      const root = document.documentElement;
+      const previousScrollBehavior = root.style.scrollBehavior;
+      root.style.scrollBehavior = 'auto';
+      card.scrollIntoView({ behavior: 'auto', block: 'center' });
+      root.style.scrollBehavior = previousScrollBehavior;
+    }
+
+    function waitForDeepLinkedPerson(card) {
+      return new Promise((resolve) => {
+        let previous = '';
+        let stableFrames = 0;
+        let compensatedHashScroll = false;
+        const started = performance.now();
+        const check = () => {
+          if (!card.isConnected || card.hidden) { resolve(false); return; }
+          if (performance.now() - started > 2400) { resolve(false); return; }
+          const rect = card.getBoundingClientRect();
+          const inViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+          if (!inViewport && !compensatedHashScroll) {
+            compensatedHashScroll = true;
+            scrollDeepLinkedPersonIntoView(card);
+            previous = '';
+            stableFrames = 0;
+            window.requestAnimationFrame(check);
+            return;
+          }
+          const computed = getComputedStyle(card);
+          const signature = [rect.left, rect.top, rect.width, rect.height, computed.opacity, computed.transform].join('|');
+          const revealed = reduceMotionQuery.matches || card.classList.contains('is-visible') || Number.parseFloat(computed.opacity) >= 1;
+          stableFrames = inViewport && revealed && signature === previous ? stableFrames + 1 : 0;
+          previous = signature;
+          if (stableFrames >= 3) { resolve(true); return; }
+          window.requestAnimationFrame(check);
+        };
+        window.requestAnimationFrame(check);
+      });
+    }
+
+    async function openPersonFromQuery() {
+      await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+      const params = new URLSearchParams(window.location.search);
+      const personId = params.get('person');
+      if (!personId || !archive.people.some((person) => person.id === personId)) return;
+      const card = document.querySelector(`#characters [data-person="${CSS.escape(personId)}"]`);
+      if (!card || card.hidden) return;
+      scrollDeepLinkedPersonIntoView(card);
+      if (!await waitForDeepLinkedPerson(card)) return;
+      morphPerson(card);
+      params.delete('person');
+      const query = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${query ? `?${query}` : ''}#characters`);
+    }
+
     function updateReaderFullscreen() {
       if (!readerFullscreen) return;
       const active = document.fullscreenElement === readerPanel || reader.classList.contains('is-expanded');
@@ -1957,6 +2011,7 @@
     renderCharacters();
     renderHistory();
     renderMotifs();
+    openPersonFromQuery();
 
     backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 

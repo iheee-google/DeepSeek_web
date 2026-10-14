@@ -122,6 +122,90 @@ function extractHeadingList(markdown, prefix) {
   });
 }
 
+const PERSON_MENTION_RULES = [
+  ['person-01', '维托·柯里昂 (Vito Corleone / Don Vito)', ['维托·柯里昂', 'Vito Corleone', 'Don Vito']],
+  ['person-02', '麦克·柯里昂 (Michael Corleone / Don Michael)', ['麦克·柯里昂', 'Michael Corleone', 'Don Michael']],
+  ['person-03', '桑尼·柯里昂 (Santino "Sonny" Corleone)', ['桑尼·柯里昂', '桑尼', 'Santino "Sonny" Corleone']],
+  ['person-04', '弗雷多·柯里昂 (Fredo Corleone)', ['弗雷多·柯里昂', 'Fredo Corleone']],
+  ['person-05', '汤姆·哈根 (Tom Hagen)', ['汤姆·哈根', 'Tom Hagen']],
+  ['person-06', '康妮·柯里昂 (Connie Corleone)', ['康妮·柯里昂', 'Connie Corleone']],
+  ['person-07', '文森特·曼奇尼 / 柯里昂 (Vincent Mancini / Vincent Corleone)', ['文森特·曼奇尼', 'Vincent Mancini', 'Vincent Corleone']],
+  ['person-08', '玛丽·柯里昂 (Mary Corleone)', ['玛丽·柯里昂', 'Mary Corleone']],
+  ['person-09', '安东尼·柯里昂 (Anthony Corleone)', ['安东尼·柯里昂', 'Anthony Corleone']],
+  ['person-10', '卡梅拉·柯里昂 / 柯里昂太太 (Carmella Corleone)', ['卡梅拉·柯里昂', '柯里昂太太', 'Carmella Corleone']],
+  ['person-11', '彼得·克莱门扎 (Peter Clemenza)', ['彼得·克莱门扎', 'Peter Clemenza']],
+  ['person-12', '萨尔瓦托雷·泰西欧 (Salvatore Tessio)', ['萨尔瓦托雷·泰西欧', 'Salvatore Tessio']],
+  ['person-13', '卢卡·布拉西 (Luca Brasi)', ['卢卡·布拉西', 'Luca Brasi']],
+  ['person-14', '阿尔·内里 (Al Neri)', ['阿尔·内里', 'Al Neri']],
+  ['person-15', '罗科·兰波内 (Rocco Lampone)', ['罗科·兰波内', 'Rocco Lampone']],
+  ['person-16', '弗兰克·潘坦捷利 / 弗兰基 (Frank Pentangeli)', ['弗兰克·潘坦捷利', '弗兰基', 'Frank Pentangeli']],
+  ['person-17', '凯·亚当斯 (Kay Adams-Corleone)', ['凯·亚当斯', 'Kay Adams-Corleone']],
+  ['person-18', '阿波洛尼亚·维特利 (Apollonia Vitelli-Corleone)', ['阿波洛尼亚·维特利', 'Apollonia Vitelli-Corleone']],
+  ['person-19', '卡洛·里齐 (Carlo Rizzi)', ['卡洛·里齐', 'Carlo Rizzi']],
+  ['person-20', '约翰尼·芳丹 (Johnny Fontane)', ['约翰尼·芳丹', 'Johnny Fontane']],
+  ['person-21', '露西·曼奇尼 (Lucy Mancini)', ['露西·曼奇尼', 'Lucy Mancini']],
+  ['person-22', '阿梅里戈·本纳瑟拉 (Amerigo Bonasera)', ['阿梅里戈·本纳瑟拉', 'Amerigo Bonasera']],
+  ['person-23', '维吉尔·索洛佐 / “土耳其人” (Virgil "The Turk" Sollozzo)', ['维吉尔·索洛佐', '土耳其人', 'Virgil "The Turk" Sollozzo']],
+  ['person-24', '马克·麦克拉斯基警长 (Captain Mark McCluskey)', ['马克·麦克拉斯基警长', '马克·麦克拉斯基', 'Captain Mark McCluskey']],
+  ['person-25', '埃米利奥·巴西尼 (Emilio Barzini)', ['埃米利奥·巴西尼', 'Emilio Barzini']],
+  ['person-26', '菲利普·塔塔基利亚 (Philip Tattaglia)', ['菲利普·塔塔基利亚', 'Philip Tattaglia']],
+  ['person-27', '维克多·斯特拉奇 (Victor Stracci) 与 卡迈恩·库尼奥 (Carmine Cuneo)', ['维克多·斯特拉奇', 'Victor Stracci', '卡迈恩·库尼奥', 'Carmine Cuneo']],
+  ['person-28', '杰克·沃尔茨 (Jack Woltz)', ['杰克·沃尔茨', 'Jack Woltz']],
+  ['person-29', '保利·加托 (Paulie Gatto)', ['保利·加托', 'Paulie Gatto']],
+  ['person-30', '莫·格林 (Moe Greene)', ['莫·格林', 'Moe Greene']],
+  ['person-31', '海曼·罗斯 (Hyman Roth)', ['海曼·罗斯', 'Hyman Roth']],
+  ['person-32', '强尼·欧拉 (Johnny Ola)', ['强尼·欧拉', 'Johnny Ola']],
+  ['person-33', '范努奇 (Don Fanucci)', ['范努奇', 'Don Fanucci']],
+  ['person-34', '奇乔老教父 (Don Ciccio)', ['奇乔老教父', '奇乔', 'Don Ciccio']],
+  ['person-35', '法布里奇奥 (Fabrizio)', ['法布里奇奥', 'Fabrizio']],
+  ['person-36', '唐·托马西诺 (Don Tommasino)', ['唐·托马西诺', 'Don Tommasino']],
+  ['person-37', '帕特·吉尔里参议员 (Senator Pat Geary)', ['帕特·吉尔里参议员', '帕特·吉尔里', 'Senator Pat Geary']],
+  ['person-38', '乔伊·扎萨 (Joey Zasa)', ['乔伊·扎萨', 'Joey Zasa']],
+  ['person-39', '多尼·阿托贝洛 (Don Altobello)', ['多尼·阿托贝洛', 'Don Altobello']],
+  ['person-40', '莉乔·吕凯西 (Don Licio Lucchesi)', ['莉乔·吕凯西', 'Don Licio Lucchesi']],
+  ['person-41', '吉尔代大主教 (Archbishop Gilday)', ['吉尔代大主教', 'Archbishop Gilday']],
+  ['person-42', '弗雷德里克·凯恩斯齐格 (Frederick Keinszig)', ['弗雷德里克·凯恩斯齐格', 'Frederick Keinszig']],
+  ['person-43', '兰贝托枢机 / 教皇若望·保禄一世 (Cardinal Lamberto)', ['兰贝托枢机', '教皇若望·保禄一世', 'Cardinal Lamberto'], [{ blockId: 'chapter-09-block-008', text: '教皇若望·保禄一世' }]],
+  ['person-44', '蒙泰莱普雷的莫斯卡 (Mosca of Montelepre)', ['蒙泰莱普雷的莫斯卡', 'Mosca of Montelepre']]
+].map(([id, title, names, exclusions = []]) => ({ id, title, names, exclusions }));
+
+function validatePersonMentionRules(people) {
+  if (people.length !== PERSON_MENTION_RULES.length) {
+    throw new Error(`人物名称映射数量不匹配：规则 ${PERSON_MENTION_RULES.length}，数据 ${people.length}`);
+  }
+  const rulesById = new Map(PERSON_MENTION_RULES.map((rule) => [rule.id, rule]));
+  const aliases = new Map();
+  people.forEach((person) => {
+    const rule = rulesById.get(person.id);
+    if (!rule || rule.title !== person.title) {
+      throw new Error(`人物名称映射与标题不匹配：${person.id} / ${person.title}`);
+    }
+    const names = [...new Set(rule.names.map((name) => String(name).trim()))].filter(Boolean);
+    if (!names.length) throw new Error(`人物名称映射为空：${person.id}`);
+    names.forEach((name) => {
+      const existing = aliases.get(name);
+      if (existing && existing !== person.id) throw new Error(`人物名称别名冲突：${name} / ${existing} / ${person.id}`);
+      if (['教父', 'Godfather', 'Don'].includes(name)) throw new Error(`人物名称别名过于宽泛：${person.id} / ${name}`);
+      if (person.actor && name === person.actor) throw new Error(`人物名称与演员名重合：${person.id} / ${name}`);
+      aliases.set(name, person.id);
+    });
+    const entries = [...aliases.entries()];
+    entries.forEach(([name, personId], index) => {
+      entries.slice(index + 1).forEach(([otherName, otherPersonId]) => {
+        if (personId !== otherPersonId && (name.includes(otherName) || otherName.includes(name))) {
+          throw new Error(`人物名称别名重叠：${name} / ${otherName}`);
+        }
+      });
+    });
+    person.mentions = names.sort((a, b) => b.length - a.length || a.localeCompare(b));
+    person.mentionExclusions = rule.exclusions;
+  });
+  const configuredIds = new Set(PERSON_MENTION_RULES.map((rule) => rule.id));
+  if (configuredIds.size !== people.length || people.some((person) => !configuredIds.has(person.id))) {
+    throw new Error('人物名称映射存在未知或缺失的 person ID');
+  }
+}
+
 function parsePeople(markdown) {
   const matcher = /^(#{1,4})\s+(.+)$/gm;
   const matches = [...markdown.matchAll(matcher)];
@@ -154,7 +238,20 @@ function parsePeople(markdown) {
       blocks: extractSearchBlocks(html)
     });
   }
+  validatePersonMentionRules(people);
   return people;
+}
+
+function validatePersonMentionExclusions(people, sections) {
+  const blocks = new Map(sections.flatMap((section) => section.blocks.map((block) => [block.id, block.text])));
+  people.forEach((person) => {
+    (person.mentionExclusions || []).forEach((exclusion) => {
+      const text = blocks.get(exclusion.blockId);
+      if (!text || !text.includes(exclusion.text)) {
+        throw new Error(`人物名称排除语境失效：${person.id} / ${exclusion.blockId}`);
+      }
+    });
+  });
 }
 
 function timelineLabel(event) {
@@ -282,6 +379,7 @@ const motifs = motifBlocks.map((block, index) => {
 });
 
 const people = parsePeople(source);
+validatePersonMentionExclusions(people, sections);
 const chapters = sections.filter((section) => section.id.startsWith('chapter-'));
 if (directory) {
   let directoryIndex = 0;
