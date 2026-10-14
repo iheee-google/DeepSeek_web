@@ -698,6 +698,7 @@ test.describe('柯里昂档案桌面端', () => {
         const quote = quotes[index];
         await page.locator(`[data-quote-index="${index}"]`).click();
         await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe(quote.id);
+        await expect.poll(() => page.locator('#quoteText').evaluate((node) => getComputedStyle(node).transform)).toBe('none');
         const state = await page.locator('#quoteText').evaluate((node) => {
           const quoteRect = node.getBoundingClientRect();
           const verticalTolerance = parseFloat(getComputedStyle(node).fontSize) * .15 + 1;
@@ -743,13 +744,29 @@ test.describe('柯里昂档案桌面端', () => {
       await expect(page.locator('.quote-mark--open')).toHaveText('“');
       await expect(page.locator('.quote-mark--close')).toHaveText('”');
       const quoteMarkGeometry = await page.evaluate(() => {
-        const inner = document.querySelector('.quote-inner').getBoundingClientRect();
-        const open = document.querySelector('.quote-mark--open').getBoundingClientRect();
-        const close = document.querySelector('.quote-mark--close').getBoundingClientRect();
-        return { leftInset: open.left - inner.left, rightInset: inner.right - close.right, openWidth: open.width, closeWidth: close.width, openTransform: getComputedStyle(document.querySelector('.quote-mark--open')).transform, closeTransform: getComputedStyle(document.querySelector('.quote-mark--close')).transform };
+        const main = document.querySelector('.quote-main').getBoundingClientRect();
+        const quote = document.querySelector('#quoteText').getBoundingClientRect();
+        const openNode = document.querySelector('.quote-mark--open');
+        const closeNode = document.querySelector('.quote-mark--close');
+        const open = openNode.getBoundingClientRect();
+        const close = closeNode.getBoundingClientRect();
+        const center = (rect) => rect.top + rect.height / 2;
+        return {
+          leftInset: open.left - main.left,
+          rightInset: main.right - close.right,
+          openWidth: open.width,
+          closeWidth: close.width,
+          openCenter: center(open),
+          closeCenter: center(close),
+          quoteCenter: center(quote),
+          openTransform: getComputedStyle(openNode).transform,
+          closeTransform: getComputedStyle(closeNode).transform
+        };
       });
       expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
       expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
+      expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.closeCenter)).toBeLessThan(1);
+      expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.quoteCenter)).toBeLessThan(1);
       expect(quoteMarkGeometry.openTransform).toBe('none');
       expect(quoteMarkGeometry.closeTransform).toBe('none');
 

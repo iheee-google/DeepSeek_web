@@ -452,12 +452,14 @@
     .insight span { color: var(--paper-muted); font-size: .72rem; line-height: 1.7; }
 
     .quote-section { padding-top: 7rem; padding-bottom: 7rem; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: radial-gradient(circle at 50% 50%, rgba(166, 68, 42, .16), transparent 35rem), #11110f; }
-    .quote-inner { display: grid; grid-template-columns: 1fr minmax(0, 4fr) 1fr; gap: 2rem; align-items: center; }
-    .quote-mark { color: var(--gold); font-family: Georgia, serif; font-size: 8rem; font-weight: 400; line-height: .5; opacity: .72; }
-    .quote-mark:last-child { align-self: end; transform: rotate(180deg); text-align: right; }
+    .quote-inner { display: block; }
+    .quote-main { display: grid; grid-template-columns: 1fr minmax(0, 4fr) 1fr; gap: 2rem; align-items: center; }
+    .quote-mark { align-self: center; color: var(--gold); font-family: Georgia, serif; font-size: 8rem; font-weight: 400; line-height: .5; opacity: .72; }
+    .quote-mark:last-child { transform: none; text-align: right; }
     .quote-block { text-align: center; }
     .quote-block blockquote { max-width: 46rem; margin: 0 auto; font-family: var(--serif); font-size: clamp(2rem, 4.5vw, 5rem); font-weight: 400; letter-spacing: -.06em; line-height: 1.04; transition: opacity .35s ease, transform .35s var(--ease-out); }
     .quote-block blockquote.is-switching { opacity: 0; transform: translateY(.8rem); }
+    .quote-details { margin-top: 1.5rem; text-align: center; }
     .quote-source { margin-top: 1.5rem; color: var(--paper-muted); font-size: .65rem; letter-spacing: .14em; text-transform: uppercase; }
     .quote-controls { display: flex; justify-content: center; gap: .65rem; margin-top: 1.7rem; }
 
@@ -598,7 +600,7 @@
       .section-intro, .timeline-caption { margin-top: 1.3rem; }
       .chapter-toolbar { align-items: flex-start; flex-direction: column; }
       .chapter-card { min-height: 27rem; }
-      .quote-inner { grid-template-columns: 1fr; gap: 0; }
+      .quote-main { grid-template-columns: 1fr; gap: 0; }
       .quote-mark { display: none; }
       .quote-block blockquote { font-size: 2.35rem; }
       .characters-grid { grid-template-columns: 1fr 1fr; }
@@ -926,10 +928,11 @@
       .history-section .section-header { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, .8fr); }
       .history-section .section-title { max-width: none; font-size: clamp(2.4rem, 4.4vw, 4.8rem); line-height: 1; }
       .finale h2 { max-width: none; line-height: .9; }
-      .quote-inner { grid-template-columns: minmax(4rem, .7fr) minmax(0, 5fr) minmax(4rem, .7fr); gap: clamp(1rem, 3vw, 3rem); }
+      .quote-main { grid-template-columns: minmax(4rem, .7fr) minmax(0, 5fr) minmax(4rem, .7fr); gap: clamp(1rem, 3vw, 3rem); }
       .quote-mark { display: block; width: 1em; font-size: clamp(4.5rem, 7vw, 8rem); line-height: 1; transform: none !important; }
-      .quote-mark--open { align-self: start; justify-self: start; }
-      .quote-mark--close { align-self: end; justify-self: end; text-align: right; }
+      .quote-mark--open, .quote-mark--close { align-self: center; }
+      .quote-mark--open { justify-self: start; }
+      .quote-mark--close { justify-self: end; text-align: right; }
       .quote-block blockquote { max-width: var(--archive-quote-measure); font-size: var(--archive-quote-size); line-height: 1.08; letter-spacing: -.04em; }
       .quote-index-label { text-wrap: balance; }
       .quote-index-label .quote-index-phrase { white-space: nowrap; }
@@ -939,7 +942,7 @@
       .section-intro, .timeline-caption { max-width: 38rem; }
       .notes-portal-card { grid-template-columns: minmax(0, 1.2fr) minmax(15rem, .8fr); }
       .notes-portal-card h2 { font-size: clamp(2.5rem, 5vw, 4.8rem); }
-      .quote-inner { grid-template-columns: minmax(3.5rem, .7fr) minmax(0, 5fr) minmax(3.5rem, .7fr); gap: 1rem; }
+      .quote-main { grid-template-columns: minmax(3.5rem, .7fr) minmax(0, 5fr) minmax(3.5rem, .7fr); gap: 1rem; }
     }
   </style>
 </head>
@@ -1040,15 +1043,19 @@
     <section class="section quote-section" id="quotes" data-section="quotes">
       <div class="section-shell quote-shell" data-reveal="scale">
         <div class="quote-inner">
-          <span class="quote-mark quote-mark--open" aria-hidden="true">“</span>
-          <div class="quote-block">
-            <blockquote id="quoteText" aria-label="档案引文正在载入"><span class="quote-display" aria-hidden="true"></span></blockquote>
+          <div class="quote-main">
+            <span class="quote-mark quote-mark--open" aria-hidden="true">“</span>
+            <div class="quote-block">
+              <blockquote id="quoteText" aria-label="档案引文正在载入"><span class="quote-display" aria-hidden="true"></span></blockquote>
+            </div>
+            <span class="quote-mark quote-mark--close" aria-hidden="true">”</span>
+          </div>
+          <div class="quote-details">
             <p class="quote-translation" id="quoteTranslation"></p>
             <p class="quote-source" id="quoteSource"></p>
             <p class="quote-explanation" id="quoteExplanation"></p>
             <div class="quote-controls"><button class="button" id="nextQuote" type="button"><i data-lucide="refresh-cw"></i>换一条引文</button></div>
           </div>
-          <span class="quote-mark quote-mark--close" aria-hidden="true">”</span>
         </div>
         <div class="quote-index" id="quoteIndex" aria-label="引文索引"></div>
       </div>
