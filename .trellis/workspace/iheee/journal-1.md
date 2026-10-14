@@ -71,3 +71,41 @@
 - Final search evidence reports 9 results, shell `scrollWidth === clientWidth`, result buttons inside the shell, and no page horizontal overflow at `1920×1080`, `1440×900`, and `1024×900`; a visible `1440×900` result screenshot was reviewed. Final build, 7/7 Playwright, syntax, task-context, and diff checks pass.
 - The final advisor evidence pass waits for the search shell to reach `opacity=1` and `transform=none` before geometry or screenshots. The TOC end assertion now waits for the active link's own geometry to stabilize before diagnostic scrolling, then confirms two consecutive stable samples of `scrollTop` and the last-link bounds; the stable `notes-1440-toc-end.png` and search screenshot were regenerated and visually reviewed.
 - After this stabilization change, the full 7-test Playwright suite passed again, task context validation passed, and syntax/diff checks passed. The local preview remains the handoff state; no task archive, remote push, or deployment was performed.
+
+
+## Session 1: 完成档案辅助文字排版任务
+<!-- trellis-session: v=2 fp=62d45352e9328395 -->
+
+**Date**: 2026-10-14
+**Task**: 完成档案辅助文字排版任务
+**Branch**: `master`
+
+### Summary
+
+用户确认本地效果无误。完成全文页顶栏、侧栏目录及首页同类辅助文字的桌面层级放大，修复搜索结果长标题撑破弹窗的问题；1920×1080、1440×900、1024×900 几何回归和 7/7 Playwright、构建、语法、任务校验、diff 检查均通过。更新 frontend quality spec，任务已归档到 .trellis/tasks/archive/2026-10/10-14-typography-support-text/；未推送远程或部署。
+
+### Main Changes
+
+- 提交 e677f12 完成实现，324b292 固化辅助文字几何验收约定。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ca5738f` | 放大档案辅助文字层级 |
+| `7761142` | 完善辅助文字排版验收 |
+| `a921802` | 补齐辅助文字与搜索排版验收 |
+| `e677f12` | 稳定辅助文字排版回归证据 |
+| `324b292` | 记录辅助文字几何验收约定 |
+
+### Testing
+
+- [OK] npm run build、npm test 7/7、JavaScript 语法检查、task.py validate 和 git diff --check 均通过。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 如需后续改动，创建新的 Trellis 任务；当前仅保留本地预览状态。
