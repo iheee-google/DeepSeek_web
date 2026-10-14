@@ -30,11 +30,12 @@
    - 无效参数保持普通首页且无 console/page error；现有角色卡片和全文链接行为不变。
 
 5. **扩展浏览器回归**
-   - notes：检查明确中文名、英文名/正式别名和 `person-27` 两个人名均生成正确 `data-person`；检查泛称、姓氏和同名反例没有被标注。
+   - notes：检查明确中文名、英文名/正式别名和 `person-27` 两个人名均生成正确 `data-person`；检查泛称、姓氏、`chapter-09-block-008` 的历史同名语境没有被标注，`chapter-06-part-49` 的角色标题可标注。
    - notes：点击标注、取消、Escape、Tab、焦点恢复、滚动位置保持、重复初始化不重复包裹和 dialog ARIA 状态。
-   - notes：比较标注前后完整 `#noteContent.textContent`、已有链接属性、heading/block ID 和未标注文本；覆盖跨 `strong/em` 文本节点的安全跳过。
+   - notes：比较标注前后完整 `#noteContent.textContent`、已有链接属性、heading/block ID 和未标注文本；覆盖当前清点结果及跨 `strong/em` 文本节点的安全跳过。
    - 跨页：确认后 URL、首页人物模块、角色卡片标题和正文链接对应正确人物。
-   - 首页：等待完整初始化、reveal 稳定后再开卡；非法 `person` query 不打开错误卡片、不报错，保留其他 query；关闭卡片焦点回到目标卡片。
+   - 首页：完成全部初始化后先滚动目标卡，再等待 reveal/几何稳定后开卡；非法 `person` query 不打开错误卡片、不报错，保留其他 query；关闭卡片焦点回到目标卡片。
+   - 返回路径：确认跳转后使用浏览器 Back 返回全文，验证 BFCache/`pageshow` 后 dialog、inert、滚动锁和重复标注状态清理，阅读位置恢复。
    - reduced-motion：弹窗和深链交互均能到达最终状态；连续关闭后立即重新打开不出现重复层或重复导航。
 
 6. **验证与证据**
