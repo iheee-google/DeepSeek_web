@@ -537,6 +537,160 @@ test.describe('柯里昂档案桌面端', () => {
     await expectDiagnosticsClean(diagnostics);
   });
 
+  test('桌面文字层级与引文展示保持语义行组', async ({ page }) => {
+    test.setTimeout(60_000);
+    const diagnostics = collectDiagnostics(page);
+    const viewports = [
+      { width: 1920, height: 1080 },
+      { width: 1440, height: 900 },
+      { width: 1024, height: 900 }
+    ];
+    const titleSelectors = [
+      '#notes-portal h2',
+      '#rules .section-title',
+      '#timeline .section-title',
+      '#characters .section-title',
+      '#history .section-title',
+      '#motifs .section-title',
+      '#finale h2'
+    ];
+    const measureTitle = async (selector) => page.locator(selector).evaluate((title) => {
+      const titleRect = title.getBoundingClientRect();
+      const lines = [...title.querySelectorAll(':scope > .title-line')];
+      return {
+        text: title.textContent.replace(/\s+/g, ''),
+        lines: lines.map((line) => {
+          const range = document.createRange();
+          range.selectNodeContents(line);
+          const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+          const rect = line.getBoundingClientRect();
+          return { text: line.textContent, rectCount: rects.length, width: rect.width, right: rect.right, titleRight: titleRect.right, characters: [...line.textContent].length };
+        })
+      };
+    });
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      await expect(page.locator('#ruleGrid .rule-card')).toHaveCount(3);
+      await expect(page.locator('#timelineItems .timeline-item')).toHaveCount(14);
+      await expect(page.locator('#characters [data-person]')).toHaveCount(44);
+      await expect(page.locator('#historyGrid .history-card')).toHaveCount(2);
+      await expect(page.locator('#motifGrid .motif')).toHaveCount(12);
+      for (const selector of titleSelectors) {
+        const title = await measureTitle(selector);
+        expect(title.lines.length, `${viewport.width} ${selector} line count`).toBeGreaterThan(0);
+        expect(title.lines.every((line) => line.rectCount === 1 && line.width > 0 && line.right <= line.titleRight + 1 && line.characters > 1), `${viewport.width} ${selector} line geometry`).toBe(true);
+      }
+      const homeEnvironment = await page.evaluate(() => ({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        dpr: window.devicePixelRatio,
+        fonts: document.fonts.status,
+        declaredFont: getComputedStyle(document.querySelector('.section-title')).fontFamily,
+        actualFont: '浏览器 CSSOM 未暴露实际字体，按声明字体栈记录',
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+      }));
+      expect(homeEnvironment).toMatchObject({ innerWidth: viewport.width, innerHeight: viewport.height, horizontalOverflow: false });
+      expect(homeEnvironment.dpr).toBeGreaterThan(0);
+      expect(homeEnvironment.fonts).toBe('loaded');
+      expect(homeEnvironment.declaredFont).toBeTruthy();
+      test.info().annotations.push({ type: 'viewport-baseline', description: `home ${JSON.stringify(homeEnvironment)}` });
+      await page.goto('/notes.html', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      const heroTitle = await measureTitle('.notes-hero h1');
+      expect(heroTitle.lines.every((line) => line.rectCount === 1 && line.width > 0 && line.right <= line.titleRight + 1 && line.characters > 1), `${viewport.width} notes hero geometry`).toBe(true);
+      const chapterHeadingLines = await page.locator('.note-content h1, .note-content h2[id^="chapter-"], .note-content h3').evaluateAll((headings) => headings.map((heading) => {
+        const textNodes = [];
+        const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
+        let textNode;
+        while ((textNode = walker.nextNode())) textNodes.push(textNode);
+        const lines = new Map();
+        const range = document.createRange();
+        textNodes.forEach((node) => {
+          for (let index = 0; index < node.length; index += 1) {
+            if (/\s/.test(node.data[index])) continue;
+            range.setStart(node, index);
+            range.setEnd(node, index + 1);
+            const rect = [...range.getClientRects()].find((item) => item.width > 0 && item.height > 0);
+            if (!rect) continue;
+            const key = Math.round(rect.top * 10) / 10;
+            if (!lines.has(key)) lines.set(key, []);
+            lines.get(key).push(node.data[index]);
+          }
+        });
+        return [...lines.values()].map((line) => line.join(''));
+      }));
+      expect(chapterHeadingLines.length).toBeGreaterThan(0);
+      expect(chapterHeadingLines.every((lines) => lines.length > 0 && lines.every((line) => [...line].length > 1)), `${viewport.width} chapter heading line geometry`).toBe(true);
+      const notesEnvironment = await page.evaluate(() => ({
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight,
+        dpr: window.devicePixelRatio,
+        fonts: document.fonts.status,
+        declaredFont: getComputedStyle(document.querySelector('.note-content')).fontFamily,
+        actualFont: '浏览器 CSSOM 未暴露实际字体，按声明字体栈记录',
+        horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+      }));
+      expect(notesEnvironment).toMatchObject({ innerWidth: viewport.width, innerHeight: viewport.height, horizontalOverflow: false });
+      expect(notesEnvironment.dpr).toBeGreaterThan(0);
+      expect(notesEnvironment.fonts).toBe('loaded');
+      expect(notesEnvironment.declaredFont).toBeTruthy();
+      test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify(notesEnvironment)}` });
+    }
+
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+    const quotes = await page.evaluate(() => window.CORLEONE_ARCHIVE.quotes.map(({ id, translation, original, source, group, explanation }) => ({ id, translation, original, source, group, explanation })));
+    for (let index = 0; index < quotes.length; index += 1) {
+      const quote = quotes[index];
+      await page.locator(`[data-quote-index="${index}"]`).click();
+      await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe(quote.id);
+      const state = await page.locator('#quoteText').evaluate((node) => ({
+        display: node.textContent.replace(/\s+/g, ''),
+        accessible: node.getAttribute('aria-label'),
+        lines: [...node.querySelectorAll('.quote-line')].map((line) => ({ text: line.textContent, rectCount: (() => { const range = document.createRange(); range.selectNodeContents(line); return [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0).length; })() })),
+        translation: document.getElementById('quoteTranslation').textContent,
+        source: document.getElementById('quoteSource').textContent,
+        explanation: document.getElementById('quoteExplanation').textContent
+      }));
+      expect(state.display).toBe(quote.translation.replace(/[，。]/g, ''));
+      expect(state.accessible).toBe(quote.translation);
+      expect(state.lines.length).toBeGreaterThanOrEqual(1);
+      expect(state.lines.length).toBeLessThanOrEqual(3);
+      expect(state.lines.every((line) => line.rectCount === 1 && [...line.text].length > 1)).toBe(true);
+      expect(state.translation).toBe(quote.original);
+      expect(state.source).toBe(`${quote.source} / ${quote.group}`);
+      expect(state.explanation).toBe(quote.explanation);
+    }
+    await expect(page.locator('.quote-mark--open')).toHaveText('“');
+    await expect(page.locator('.quote-mark--close')).toHaveText('”');
+    const quoteMarkGeometry = await page.evaluate(() => {
+      const inner = document.querySelector('.quote-inner').getBoundingClientRect();
+      const open = document.querySelector('.quote-mark--open').getBoundingClientRect();
+      const close = document.querySelector('.quote-mark--close').getBoundingClientRect();
+      return { leftInset: open.left - inner.left, rightInset: inner.right - close.right, openWidth: open.width, closeWidth: close.width, openTransform: getComputedStyle(document.querySelector('.quote-mark--open')).transform, closeTransform: getComputedStyle(document.querySelector('.quote-mark--close')).transform };
+    });
+    expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
+    expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
+    expect(quoteMarkGeometry.openTransform).toBe('none');
+    expect(quoteMarkGeometry.closeTransform).toBe('none');
+
+    await page.locator('[data-quote-index="1"]').click();
+    await page.locator('[data-quote-index="6"]').click();
+    await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe('quote-07');
+    await expect(page.locator('#quoteTranslation')).toHaveText(quotes[6].original);
+    await expect(page.locator('#quoteSource')).toHaveText(`${quotes[6].source} / ${quotes[6].group}`);
+    await expect(page.locator('#quoteExplanation')).toHaveText(quotes[6].explanation);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.locator('[data-quote-index="7"]').click();
+    await expect(page.locator('#quoteText')).toHaveAttribute('data-quote-id', 'quote-08');
+    await expect(page.locator('#quoteText')).not.toHaveClass(/is-switching/);
+    await expectDiagnosticsClean(diagnostics);
+  });
+
   test('全文页保留原文并维护跨章节目录定位', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/notes.html', { waitUntil: 'networkidle' });

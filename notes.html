@@ -121,6 +121,24 @@
       *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .001ms !important; animation-duration: .001ms !important; }
       .note-reveal { opacity: 1; transform: none; }
     }
+    /* systematic typography */
+    .title-line { display: block; white-space: normal; }
+    .notes-hero { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .75fr); gap: clamp(2rem, 7vw, 7rem); }
+    .notes-hero > div { min-width: 0; }
+    .notes-hero h1 { max-width: none; font-size: clamp(4rem, 7.2vw, 8.4rem); line-height: .92; letter-spacing: -.06em; }
+    .notes-hero p { max-width: 30rem; line-height: 1.65; }
+    .note-content h1, .note-content h2, .note-content h3 { text-wrap: balance; }
+    .note-content h1 .title-group, .note-content h2 .title-group, .note-content h3 .title-group { display: inline; }
+    .note-content h1 .title-group { white-space: nowrap; }
+    .note-content h1 .title-group--parenthetical, .note-content h2 .title-group--parenthetical, .note-content h3 .title-group--parenthetical { white-space: nowrap; }
+    @media (min-width: 901px) {
+      .title-line { white-space: nowrap; }
+    }
+    @media (min-width: 901px) and (max-width: 1100px) {
+      .notes-hero { grid-template-columns: minmax(0, 1fr) minmax(18rem, .72fr); gap: 2rem; }
+      .notes-hero h1 { font-size: clamp(4rem, 7.5vw, 6.8rem); }
+      .note-content h1 { font-size: clamp(3rem, 5.8vw, 4.8rem); }
+    }
   </style>
 </head>
 <body>
@@ -143,7 +161,7 @@
     <section class="notes-hero">
       <div>
         <span class="notes-kicker">the complete dossier</span>
-        <h1>把所有沉默<br>还给正文</h1>
+        <h1><span class="title-line">把所有沉默</span><span class="title-line">还给正文</span></h1>
       </div>
       <div>
         <p>一份关于庇护如何变成诅咒的完整笔记。这里不删减摘要，只把原文交还给它自己的节奏。</p>
@@ -181,6 +199,19 @@
       document.getElementById('notesImageCount').textContent = archive.meta.imageCount;
       document.getElementById('noteMeta').textContent = `${archive.meta.chapterCount} 章 / ${archive.meta.peopleCount} 人物 / ${archive.meta.imageCount} 张影像`;
       noteContent.innerHTML = archive.sections.map((section) => `<section class="note-chapter" id="${escapeHtml(section.id)}">${section.html}</section>`).join('');
+      function groupNoteHeadingParentheticals() {
+        noteContent.querySelectorAll('h1, h2[id^="chapter-"], h3').forEach((heading) => {
+          const fragments = heading.textContent.split(/(（[^）]*）)/g).filter(Boolean);
+          if (fragments.length === 1) return;
+          heading.replaceChildren(...fragments.map((fragment) => {
+            const span = document.createElement('span');
+            span.className = fragment.startsWith('（') ? 'title-group title-group--parenthetical' : 'title-group';
+            span.textContent = fragment;
+            return span;
+          }));
+        });
+      }
+      groupNoteHeadingParentheticals();
       hydrateIcons();
 
       const headings = [...noteContent.querySelectorAll('h2, h3')];

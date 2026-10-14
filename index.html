@@ -901,6 +901,35 @@
       .rule-card.rule-tab, .rule-panel[data-rule-panel], .notes-portal-card, .history-card, .timeline-item, .timeline-dot { transition: none !important; }
       .rule-panel[data-rule-panel].is-switching { opacity: 1; transform: none; }
     }
+    /* systematic typography */
+    .title-line { display: block; white-space: normal; }
+    .section-header, .timeline-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(20rem, .65fr); align-items: end; gap: clamp(2rem, 6vw, 6rem); }
+    .section-header > :first-child, .timeline-head > :first-child { min-width: 0; }
+    .section-title { max-width: none; font-size: clamp(2.4rem, 5vw, 5.2rem); line-height: .98; letter-spacing: -.045em; }
+    .section-intro, .timeline-caption { width: 100%; max-width: 30rem; }
+    .notes-portal-card { grid-template-columns: minmax(0, 1.35fr) minmax(16rem, .65fr); }
+    .notes-portal-card > div:first-child, .notes-portal-card > div:last-child { min-width: 0; }
+    .notes-portal-card h2 { max-width: none; font-size: clamp(2.5rem, 5vw, 5.4rem); line-height: .98; letter-spacing: -.045em; }
+    .history-section .section-header { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, .8fr); }
+    .history-section .section-title { max-width: none; font-size: clamp(2.4rem, 4.4vw, 4.8rem); line-height: 1; }
+    .finale h2 { max-width: none; line-height: .9; }
+    .quote-inner { grid-template-columns: minmax(4rem, .7fr) minmax(0, 5fr) minmax(4rem, .7fr); gap: clamp(1rem, 3vw, 3rem); }
+    .quote-mark { display: block; width: 1em; font-size: clamp(4.5rem, 7vw, 8rem); line-height: 1; transform: none !important; }
+    .quote-mark--open { align-self: start; justify-self: start; }
+    .quote-mark--close { align-self: end; justify-self: end; text-align: right; }
+    .quote-block blockquote { max-width: 58rem; font-size: clamp(2.1rem, 4vw, 4.8rem); line-height: 1.08; letter-spacing: -.04em; }
+    .quote-display, .quote-line { display: block; }
+    .quote-line { white-space: normal; }
+    @media (min-width: 901px) {
+      .title-line, .quote-line { white-space: nowrap; }
+    }
+    @media (min-width: 901px) and (max-width: 1100px) {
+      .section-header, .timeline-head, .history-section .section-header { grid-template-columns: 1fr; gap: 1.25rem; }
+      .section-intro, .timeline-caption { max-width: 38rem; }
+      .notes-portal-card { grid-template-columns: minmax(0, 1.2fr) minmax(15rem, .8fr); }
+      .notes-portal-card h2 { font-size: clamp(2.5rem, 5vw, 4.8rem); }
+      .quote-inner { grid-template-columns: minmax(3.5rem, .7fr) minmax(0, 5fr) minmax(3.5rem, .7fr); gap: 1rem; }
+    }
   </style>
 </head>
 <body>
@@ -956,7 +985,7 @@
     <section class="section rules-section" id="rules" data-section="rules">
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
-          <div><span class="section-kicker">family / power</span><h2 class="section-title">先看三条规则<br>再看谁被它们改变</h2></div>
+          <div><span class="section-kicker">family / power</span><h2 class="section-title"><span class="title-line">先看三条规则</span><span class="title-line">再看谁被它们改变</span></h2></div>
           <p class="section-intro">引言与观影方法被拆成可以切换的判断。它们不是摘要，是进入整份笔记的钥匙</p>
         </div>
         <div class="rule-grid" id="ruleGrid"></div>
@@ -968,7 +997,7 @@
         <div class="notes-portal-card" data-reveal="left">
           <div>
             <span class="section-kicker">the complete dossier</span>
-            <h2>把所有沉默<br>还给正文</h2>
+            <h2><span class="title-line">把所有沉默</span><span class="title-line">还给正文</span></h2>
             <div class="notes-portal-meta"><span><strong id="portalChapterCount">10</strong>章节</span><span><strong id="portalPeopleCount">44</strong>人物</span><span><strong id="portalImageCount">80</strong>张影像</span></div>
           </div>
           <div>
@@ -982,7 +1011,7 @@
     <section class="section timeline-section" id="timeline" data-section="timeline">
       <div class="section-shell">
         <div class="timeline-head" data-reveal="right">
-          <div><span class="section-kicker">a century of consequence</span><h2 class="section-title">时间不会<br>替任何人宽恕</h2></div>
+          <div><span class="section-kicker">a century of consequence</span><h2 class="section-title"><span class="title-line">时间不会</span><span class="title-line">替任何人宽恕</span></h2></div>
           <p class="timeline-caption">横向拖动或点击节点<br>看一个名字如何从避难所变成囚笼</p>
         </div>
         <div class="timeline-wrap" data-reveal data-delay="1">
@@ -1000,15 +1029,15 @@
     <section class="section quote-section" id="quotes" data-section="quotes">
       <div class="section-shell quote-shell" data-reveal="scale">
         <div class="quote-inner">
-          <span class="quote-mark">“</span>
+          <span class="quote-mark quote-mark--open" aria-hidden="true">“</span>
           <div class="quote-block">
-            <blockquote id="quoteText">档案引文正在载入</blockquote>
+            <blockquote id="quoteText" aria-label="档案引文正在载入"><span class="quote-display" aria-hidden="true"></span></blockquote>
             <p class="quote-translation" id="quoteTranslation"></p>
             <p class="quote-source" id="quoteSource"></p>
             <p class="quote-explanation" id="quoteExplanation"></p>
             <div class="quote-controls"><button class="button" id="nextQuote" type="button"><i data-lucide="refresh-cw"></i>换一条引文</button></div>
           </div>
-          <span class="quote-mark">“</span>
+          <span class="quote-mark quote-mark--close" aria-hidden="true">”</span>
         </div>
         <div class="quote-index" id="quoteIndex" aria-label="引文索引"></div>
       </div>
@@ -1017,7 +1046,7 @@
     <section class="section characters-section" id="characters" data-section="characters">
       <div class="section-shell">
         <div class="section-header" data-reveal="left">
-          <div><span class="section-kicker">the bloodline</span><h2 class="section-title">四十四张面孔<br>一条家族暗线</h2></div>
+          <div><span class="section-kicker">the bloodline</span><h2 class="section-title"><span class="title-line">四十四张面孔</span><span class="title-line">一条家族暗线</span></h2></div>
           <p class="section-intro">从教父到证人，从继承人到敌人。人物不再是四张海报，而是一张可以逐层打开的关系网</p>
         </div>
         <div class="character-spotlight" id="characterSpotlight"></div>
@@ -1032,7 +1061,7 @@
     <section class="section history-section" id="history" data-section="history">
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
-          <div><span class="section-kicker">fact / fiction</span><h2 class="section-title"><span>电影借来的现实</span><br><span>与它重新编造的神话</span></h2></div>
+          <div><span class="section-kicker">fact / fiction</span><h2 class="section-title"><span class="title-line">电影借来的现实</span><span class="title-line">与它重新编造的神话</span></h2></div>
           <div class="section-intro history-intro"><a href="notes.html#chapter-09-heading">chapter 09 / fact checking</a><p>第九章不作为脚注藏起来。史实对照和鉴赏边界被单独抬到台面上</p></div>
         </div>
         <div class="history-grid" id="historyGrid"></div>
@@ -1042,7 +1071,7 @@
     <section class="section" id="motifs" data-section="motifs">
       <div class="section-shell">
         <div class="section-header" data-reveal="right">
-          <div><span class="section-kicker">visual grammar</span><h2 class="section-title">物件先开口<br>人物随后沉默</h2></div>
+          <div><span class="section-kicker">visual grammar</span><h2 class="section-title"><span class="title-line">物件先开口</span><span class="title-line">人物随后沉默</span></h2></div>
           <p class="section-intro">橙子 鱼 木门 奶油卷<br>每件物品都是一封无声的信</p>
         </div>
         <div class="motif-layout" id="motifGrid"></div>
@@ -1053,7 +1082,7 @@
       <div class="finale-media"><img src="assets/scenes/michael-chair.jpg" alt="迟暮的麦克独坐在阴影中" loading="lazy"></div>
       <div class="section-shell finale-content" data-reveal="left">
         <span class="section-kicker">the last frame</span>
-        <h2>长寿<br>是无法遗忘的痛苦</h2>
+        <h2><span class="title-line">长寿</span><span class="title-line">是无法遗忘的痛苦</span></h2>
         <p>权力征服了一切 却把执剑者剥蚀得一无所有<br>档案到这里结束 余生还在继续</p>
         <div class="finale-bottom"><span>the corleone archive · 1901 — 1997</span><span><i data-lucide="film"></i> an unfinished elegy</span></div>
       </div>
@@ -1158,6 +1187,18 @@
     let readerCloseTimer;
     let readerFocusTimer;
     let quoteIndex = 0;
+    let quoteSwitchTimer;
+    const quoteDisplayBreaks = Object.freeze({
+      'quote-01': [],
+      'quote-02': [11],
+      'quote-03': [6],
+      'quote-04': [9],
+      'quote-05': [10],
+      'quote-06': [10],
+      'quote-07': [7],
+      'quote-08': [],
+      'quote-09': []
+    });
     const filterTimers = new Map();
     let searchLastFocus = null;
     let activeRuleId = '';
@@ -1507,20 +1548,38 @@
 
     function showQuote(index, animate = true) {
       if (!quotes.length) return;
-      quoteIndex = (index + quotes.length) % quotes.length;
-      const quote = quotes[quoteIndex];
+      const nextIndex = (index + quotes.length) % quotes.length;
+      quoteIndex = nextIndex;
+      const quote = quotes[nextIndex];
       const text = document.getElementById('quoteText');
       const apply = () => {
-        text.textContent = quote.translation || quote.original;
+        if (quoteIndex !== nextIndex) return;
+        const display = text.querySelector('.quote-display');
+        const cleaned = (quote.translation || quote.original).replace(/[，。]/g, '');
+        const breaks = [...(quoteDisplayBreaks[quote.id] || []), cleaned.length];
+        let start = 0;
+        display.replaceChildren(...breaks.map((end) => {
+          const line = document.createElement('span');
+          line.className = 'quote-line';
+          line.textContent = cleaned.slice(start, end);
+          start = end;
+          return line;
+        }).filter((line) => line.textContent));
+        text.setAttribute('aria-label', quote.translation || quote.original);
+        text.dataset.quoteId = quote.id;
         document.getElementById('quoteTranslation').textContent = quote.original;
         document.getElementById('quoteSource').textContent = `${quote.source} / ${quote.group}`;
         document.getElementById('quoteExplanation').textContent = quote.explanation;
-        document.querySelectorAll('[data-quote-index]').forEach((button) => button.classList.toggle('is-active', Number(button.dataset.quoteIndex) === quoteIndex));
+        document.querySelectorAll('[data-quote-index]').forEach((button) => button.classList.toggle('is-active', Number(button.dataset.quoteIndex) === nextIndex));
         text.classList.remove('is-switching');
       };
+      window.clearTimeout(quoteSwitchTimer);
       if (!animate || reduceMotionQuery.matches) { apply(); return; }
       text.classList.add('is-switching');
-      setTimeout(apply, 260);
+      quoteSwitchTimer = window.setTimeout(() => {
+        quoteSwitchTimer = undefined;
+        apply();
+      }, 260);
     }
 
     function renderMotifs() {
