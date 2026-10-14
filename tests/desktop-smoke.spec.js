@@ -589,7 +589,8 @@ test.describe('柯里昂档案桌面端', () => {
       { label: '时间轴标签', selector: '.timeline-item small', minimum: 12 },
       { label: '时间轴操作入口', selector: '.timeline-item p', minimum: 13 },
       { label: '引文来源', selector: '.quote-source', minimum: 12 },
-      { label: '引文索引', selector: '.quote-index-button', minimum: 12 },
+      { label: '引文索引按钮', selector: '.quote-index-button', minimum: 12 },
+      { label: '引文索引文字', selector: '.quote-index-label', minimum: 12 },
       { label: '人物辅助标签', selector: '.character-body small', minimum: 11 },
       { label: '人物辅助说明', selector: '.character-body p', minimum: 13 },
       { label: '符号辅助说明', selector: '.motif p', minimum: 13 },
@@ -611,13 +612,17 @@ test.describe('柯里昂档案桌面端', () => {
     ];
     const measureFontRoles = async (roles) => page.evaluate((definitions) => definitions.map(({ label, selector, minimum }) => {
       const nodes = [...document.querySelectorAll(selector)];
-      return {
-        label,
-        selector,
-        minimum,
-        count: nodes.length,
-        sizes: nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
-      };
+      const sizes = nodes.flatMap((node) => {
+        const textParents = new Set();
+        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+        let textNode;
+        while ((textNode = walker.nextNode())) {
+          if (textNode.data.trim() && textNode.parentElement) textParents.add(textNode.parentElement);
+        }
+        const elements = textParents.size ? [...textParents] : [node];
+        return elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+      });
+      return { label, selector, minimum, count: nodes.length, sizes };
     }), roles);
     const assertFontRoles = (results, viewportWidth) => {
       results.forEach((result) => {
@@ -735,6 +740,7 @@ test.describe('柯里昂档案桌面端', () => {
         return { overlaps, regions };
       });
       expect(notesHeaderGeometry.overlaps, `${viewport.width} notes header overlap`).toEqual([]);
+      await page.locator('.note-sidebar').scrollIntoViewIfNeeded();
       const tocGeometry = await page.locator('#noteToc').evaluate((toc) => {
         const links = [...toc.querySelectorAll('a')];
         toc.scrollTop = toc.scrollHeight;
@@ -745,12 +751,20 @@ test.describe('柯里昂档案桌面端', () => {
           scrollHeight: toc.scrollHeight,
           clientHeight: toc.clientHeight,
           reachedEnd: toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1,
-          lastLinkInside: Boolean(last && last.bottom <= rail.bottom + 1)
+          lastLinkInside: Boolean(last && last.bottom <= rail.bottom + 1),
+          lastLinkInViewport: Boolean(last && last.top >= -1 && last.bottom <= window.innerHeight + 1),
+          tocHorizontalOverflow: links.some((link) => {
+            const rect = link.getBoundingClientRect();
+            const tocRect = toc.getBoundingClientRect();
+            return rect.left < tocRect.left - 1 || rect.right > tocRect.right + 1;
+          })
         };
       });
       expect(tocGeometry.linkCount, `${viewport.width} notes toc link count`).toBeGreaterThan(44);
       expect(tocGeometry.reachedEnd, `${viewport.width} notes toc reaches end`).toBe(true);
       expect(tocGeometry.lastLinkInside, `${viewport.width} notes toc last link`).toBe(true);
+      expect(tocGeometry.lastLinkInViewport, `${viewport.width} notes toc last link viewport`).toBe(true);
+      expect(tocGeometry.tocHorizontalOverflow, `${viewport.width} notes toc link horizontal overflow`).toBe(false);
       test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify({ ...notesEnvironment, toc: tocGeometry, header: notesHeaderGeometry })}` });
     }
 

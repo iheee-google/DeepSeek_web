@@ -45,7 +45,9 @@
 
 ## Execution Record
 
-- 任务已在用户批准最终规划后激活；因项目禁止子代理，使用 `task.py start --allow-empty-context`，由主会话完成实施与检查。
+- 用户批准最终规划后由主会话完成首轮实施；随后补登记任务激活，使用 `task.py start --allow-empty-context`，全程未调用子代理。
 - 实施修改仅落在 `index.html`、`notes.html` 和 `tests/desktop-smoke.spec.js`；`content/`、生成器、生成数据、图片、部署配置和移动端规则未改动。
 - 首轮回归发现人物卡存在更高特异性的旧字号规则，补充同一角色变量覆盖后定向测试通过；没有通过降低断言规避问题。
-- 当前验证：`npm run build`、`npm test` 7/7、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check` 均通过；三种桌面视口截图已复核。
+- 首轮验证：`npm run build`、`npm test` 7/7、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check` 均通过；三种桌面视口截图已复核。
+- 顾问收尾后，字号断言改为读取实际文本节点，全文入口链接归入操作角色；目录测试先将侧栏滚入 viewport，再验证末项可达和链接边界。桌面激活目录反馈改为垂直位移，避免整宽链接产生横向滚动区。
+- 最终 `task.py validate` 已通过：`implement.jsonl` 与 `check.jsonl` 各包含一条本地 frontend 规范引用；完整 `npm run build`、`npm test` 7/7、语法检查和 `git diff --check` 再次通过。
