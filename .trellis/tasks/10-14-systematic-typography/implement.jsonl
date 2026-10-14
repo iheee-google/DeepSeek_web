@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"排版改动必须遵循桌面 Playwright 回归、reduced-motion、原文保留和截图复核；移动端不属于本任务的实现或验收范围。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"首页和全文页是原生 HTML/CSS/JavaScript 路由；标题、动态模块、稳定 ID、语义结构和现有交互边界必须保持不变。"}

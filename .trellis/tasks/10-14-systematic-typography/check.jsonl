@@ -1,0 +1,2 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"验收需要覆盖 JavaScript 语法、npm test、git diff --check、桌面截图、无溢出和 reduced-motion 约束。"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"检查标题行组和布局调整不能破坏语义控制、稳定链接、动态渲染、焦点管理或跨路由内容定位。"}
