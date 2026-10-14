@@ -538,7 +538,7 @@ test.describe('柯里昂档案桌面端', () => {
   });
 
   test('桌面文字层级与引文展示保持语义行组', async ({ page }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     const diagnostics = collectDiagnostics(page);
     const viewports = [
       { width: 1920, height: 1080 },
@@ -557,6 +557,8 @@ test.describe('柯里昂档案桌面端', () => {
     const measureTitle = async (selector) => page.locator(selector).evaluate((title) => {
       const titleRect = title.getBoundingClientRect();
       const lines = [...title.querySelectorAll(':scope > .title-line')];
+      const parentRect = title.parentElement.getBoundingClientRect();
+      const edgeTolerance = parseFloat(getComputedStyle(title).fontSize) * .15 + 1;
       return {
         text: title.textContent.replace(/\s+/g, ''),
         lines: lines.map((line) => {
@@ -564,10 +566,23 @@ test.describe('柯里昂档案桌面端', () => {
           range.selectNodeContents(line);
           const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
           const rect = line.getBoundingClientRect();
-          return { text: line.textContent, rectCount: rects.length, width: rect.width, right: rect.right, titleRight: titleRect.right, characters: [...line.textContent].length };
+          const rangeRect = rects.reduce((bounds, item) => ({
+            left: Math.min(bounds.left, item.left),
+            top: Math.min(bounds.top, item.top),
+            right: Math.max(bounds.right, item.right),
+            bottom: Math.max(bounds.bottom, item.bottom)
+          }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+          return { text: line.textContent, rectCount: rects.length, width: rect.width, rangeRect, edgeTolerance, titleRect: { left: titleRect.left, top: titleRect.top, right: titleRect.right, bottom: titleRect.bottom }, parentRect: { left: parentRect.left, right: parentRect.right, top: parentRect.top, bottom: parentRect.bottom }, characters: [...line.textContent].length };
         })
       };
     });
+    const lineFitsTitleAndParent = (line) => line.rectCount === 1
+      && line.width > 0
+      && line.rangeRect.left >= Math.max(line.titleRect.left, line.parentRect.left) - 1
+      && line.rangeRect.top >= line.parentRect.top - line.edgeTolerance
+      && line.rangeRect.right <= Math.min(line.titleRect.right, line.parentRect.right) + 1
+      && line.rangeRect.bottom <= line.parentRect.bottom + line.edgeTolerance
+      && line.characters > 1;
 
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
@@ -581,7 +596,7 @@ test.describe('柯里昂档案桌面端', () => {
       for (const selector of titleSelectors) {
         const title = await measureTitle(selector);
         expect(title.lines.length, `${viewport.width} ${selector} line count`).toBeGreaterThan(0);
-        expect(title.lines.every((line) => line.rectCount === 1 && line.width > 0 && line.right <= line.titleRight + 1 && line.characters > 1), `${viewport.width} ${selector} line geometry`).toBe(true);
+        expect(title.lines.every(lineFitsTitleAndParent), `${viewport.width} ${selector} line geometry`).toBe(true);
       }
       const homeEnvironment = await page.evaluate(() => ({
         innerWidth: window.innerWidth,
@@ -600,7 +615,7 @@ test.describe('柯里昂档案桌面端', () => {
       await page.goto('/notes.html', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
       const heroTitle = await measureTitle('.notes-hero h1');
-      expect(heroTitle.lines.every((line) => line.rectCount === 1 && line.width > 0 && line.right <= line.titleRight + 1 && line.characters > 1), `${viewport.width} notes hero geometry`).toBe(true);
+      expect(heroTitle.lines.every(lineFitsTitleAndParent), `${viewport.width} notes hero geometry`).toBe(true);
       const chapterHeadingLines = await page.locator('.note-content h1, .note-content h2[id^="chapter-"], .note-content h3').evaluateAll((headings) => headings.map((heading) => {
         const textNodes = [];
         const walker = document.createTreeWalker(heading, NodeFilter.SHOW_TEXT);
@@ -640,54 +655,92 @@ test.describe('柯里昂档案桌面端', () => {
       test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify(notesEnvironment)}` });
     }
 
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/', { waitUntil: 'networkidle' });
-    await page.evaluate(() => document.fonts.ready);
     const quotes = await page.evaluate(() => window.CORLEONE_ARCHIVE.quotes.map(({ id, translation, original, source, group, explanation }) => ({ id, translation, original, source, group, explanation })));
-    for (let index = 0; index < quotes.length; index += 1) {
-      const quote = quotes[index];
-      await page.locator(`[data-quote-index="${index}"]`).click();
-      await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe(quote.id);
-      const state = await page.locator('#quoteText').evaluate((node) => ({
-        display: node.textContent.replace(/\s+/g, ''),
-        accessible: node.getAttribute('aria-label'),
-        lines: [...node.querySelectorAll('.quote-line')].map((line) => ({ text: line.textContent, rectCount: (() => { const range = document.createRange(); range.selectNodeContents(line); return [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0).length; })() })),
-        translation: document.getElementById('quoteTranslation').textContent,
-        source: document.getElementById('quoteSource').textContent,
-        explanation: document.getElementById('quoteExplanation').textContent
-      }));
-      expect(state.display).toBe(quote.translation.replace(/[，。]/g, ''));
-      expect(state.accessible).toBe(quote.translation);
-      expect(state.lines.length).toBeGreaterThanOrEqual(1);
-      expect(state.lines.length).toBeLessThanOrEqual(3);
-      expect(state.lines.every((line) => line.rectCount === 1 && [...line.text].length > 1)).toBe(true);
-      expect(state.translation).toBe(quote.original);
-      expect(state.source).toBe(`${quote.source} / ${quote.group}`);
-      expect(state.explanation).toBe(quote.explanation);
-    }
-    await expect(page.locator('.quote-mark--open')).toHaveText('“');
-    await expect(page.locator('.quote-mark--close')).toHaveText('”');
-    const quoteMarkGeometry = await page.evaluate(() => {
-      const inner = document.querySelector('.quote-inner').getBoundingClientRect();
-      const open = document.querySelector('.quote-mark--open').getBoundingClientRect();
-      const close = document.querySelector('.quote-mark--close').getBoundingClientRect();
-      return { leftInset: open.left - inner.left, rightInset: inner.right - close.right, openWidth: open.width, closeWidth: close.width, openTransform: getComputedStyle(document.querySelector('.quote-mark--open')).transform, closeTransform: getComputedStyle(document.querySelector('.quote-mark--close')).transform };
-    });
-    expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
-    expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
-    expect(quoteMarkGeometry.openTransform).toBe('none');
-    expect(quoteMarkGeometry.closeTransform).toBe('none');
+    const checkQuoteViewport = async (viewport) => {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      await page.setViewportSize(viewport);
+      await page.goto('/', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      const viewportLineGroups = [];
+      for (let index = 0; index < quotes.length; index += 1) {
+        const quote = quotes[index];
+        await page.locator(`[data-quote-index="${index}"]`).click();
+        await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe(quote.id);
+        const state = await page.locator('#quoteText').evaluate((node) => {
+          const quoteRect = node.getBoundingClientRect();
+          const edgeTolerance = parseFloat(getComputedStyle(node).fontSize) * .15 + 1;
+          return {
+            display: node.textContent.replace(/\s+/g, ''),
+            accessible: node.getAttribute('aria-label'),
+            quoteRect: { left: quoteRect.left, top: quoteRect.top, right: quoteRect.right, bottom: quoteRect.bottom },
+            edgeTolerance,
+            lines: [...node.querySelectorAll('.quote-line')].map((line) => {
+              const range = document.createRange();
+              range.selectNodeContents(line);
+              const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 && rect.height > 0);
+              const rangeRect = rects.reduce((bounds, rect) => ({
+                left: Math.min(bounds.left, rect.left),
+                top: Math.min(bounds.top, rect.top),
+                right: Math.max(bounds.right, rect.right),
+                bottom: Math.max(bounds.bottom, rect.bottom)
+              }), { left: Infinity, top: Infinity, right: -Infinity, bottom: -Infinity });
+              return { text: line.textContent, rectCount: rects.length, rangeRect };
+            }),
+            translation: document.getElementById('quoteTranslation').textContent,
+            source: document.getElementById('quoteSource').textContent,
+            explanation: document.getElementById('quoteExplanation').textContent
+          };
+        });
+        expect(state.display).toBe(quote.translation.replace(/[，。]/g, ''));
+        expect(state.accessible).toBe(quote.translation);
+        expect(state.lines.length).toBeGreaterThanOrEqual(1);
+        expect(state.lines.length).toBeLessThanOrEqual(3);
+        expect(state.lines.every((line) => line.rectCount === 1 && [...line.text].length > 1
+          && line.rangeRect.left >= state.quoteRect.left - state.edgeTolerance
+          && line.rangeRect.top >= state.quoteRect.top - state.edgeTolerance
+          && line.rangeRect.right <= state.quoteRect.right + state.edgeTolerance
+          && line.rangeRect.bottom <= state.quoteRect.bottom + state.edgeTolerance)).toBe(true);
+        expect(state.translation).toBe(quote.original);
+        expect(state.source).toBe(`${quote.source} / ${quote.group}`);
+        expect(state.explanation).toBe(quote.explanation);
+        viewportLineGroups.push(state.lines.map((line) => line.text));
+        const ariaSnapshot = await page.locator('#quoteText').ariaSnapshot();
+        expect(ariaSnapshot.split(quote.translation)).toHaveLength(2);
+      }
+      await expect(page.locator('.quote-mark--open')).toHaveText('“');
+      await expect(page.locator('.quote-mark--close')).toHaveText('”');
+      const quoteMarkGeometry = await page.evaluate(() => {
+        const inner = document.querySelector('.quote-inner').getBoundingClientRect();
+        const open = document.querySelector('.quote-mark--open').getBoundingClientRect();
+        const close = document.querySelector('.quote-mark--close').getBoundingClientRect();
+        return { leftInset: open.left - inner.left, rightInset: inner.right - close.right, openWidth: open.width, closeWidth: close.width, openTransform: getComputedStyle(document.querySelector('.quote-mark--open')).transform, closeTransform: getComputedStyle(document.querySelector('.quote-mark--close')).transform };
+      });
+      expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
+      expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
+      expect(quoteMarkGeometry.openTransform).toBe('none');
+      expect(quoteMarkGeometry.closeTransform).toBe('none');
 
-    await page.locator('[data-quote-index="1"]').click();
-    await page.locator('[data-quote-index="6"]').click();
-    await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe('quote-07');
-    await expect(page.locator('#quoteTranslation')).toHaveText(quotes[6].original);
-    await expect(page.locator('#quoteSource')).toHaveText(`${quotes[6].source} / ${quotes[6].group}`);
-    await expect(page.locator('#quoteExplanation')).toHaveText(quotes[6].explanation);
-    await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.locator('[data-quote-index="7"]').click();
-    await expect(page.locator('#quoteText')).toHaveAttribute('data-quote-id', 'quote-08');
-    await expect(page.locator('#quoteText')).not.toHaveClass(/is-switching/);
+      await page.locator('[data-quote-index="1"]').click();
+      await page.locator('[data-quote-index="6"]').click();
+      await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe('quote-07');
+      await expect(page.locator('#quoteText')).toHaveAttribute('aria-label', quotes[6].translation);
+      await expect(page.locator('#quoteTranslation')).toHaveText(quotes[6].original);
+      await expect(page.locator('#quoteSource')).toHaveText(`${quotes[6].source} / ${quotes[6].group}`);
+      await expect(page.locator('#quoteExplanation')).toHaveText(quotes[6].explanation);
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await page.locator('[data-quote-index="7"]').click();
+      await expect(page.locator('#quoteText')).toHaveAttribute('data-quote-id', 'quote-08');
+      await expect(page.locator('#quoteText')).toHaveAttribute('aria-label', quotes[7].translation);
+      await expect(page.locator('#quoteTranslation')).toHaveText(quotes[7].original);
+      await expect(page.locator('#quoteSource')).toHaveText(`${quotes[7].source} / ${quotes[7].group}`);
+      await expect(page.locator('#quoteExplanation')).toHaveText(quotes[7].explanation);
+      await expect(page.locator('#quoteText')).not.toHaveClass(/is-switching/);
+      return viewportLineGroups;
+    };
+    const baselineQuoteLineGroups = await checkQuoteViewport(viewports[0]);
+    for (const viewport of viewports.slice(1)) {
+      await expect(checkQuoteViewport(viewport)).resolves.toEqual(baselineQuoteLineGroups);
+    }
     await expectDiagnosticsClean(diagnostics);
   });
 

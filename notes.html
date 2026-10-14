@@ -122,22 +122,28 @@
       .note-reveal { opacity: 1; transform: none; }
     }
     /* systematic typography */
+    :root {
+      --archive-hero-size: clamp(4rem, 7.2vw, 8.4rem);
+      --archive-hero-leading: .92;
+      --archive-hero-tracking: -.06em;
+      --archive-body-measure: 30rem;
+      --archive-chapter-size: clamp(3rem, 5.8vw, 4.8rem);
+    }
     .title-line { display: block; white-space: normal; }
-    .notes-hero { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .75fr); gap: clamp(2rem, 7vw, 7rem); }
-    .notes-hero > div { min-width: 0; }
-    .notes-hero h1 { max-width: none; font-size: clamp(4rem, 7.2vw, 8.4rem); line-height: .92; letter-spacing: -.06em; }
-    .notes-hero p { max-width: 30rem; line-height: 1.65; }
     .note-content h1, .note-content h2, .note-content h3 { text-wrap: balance; }
     .note-content h1 .title-group, .note-content h2 .title-group, .note-content h3 .title-group { display: inline; }
-    .note-content h1 .title-group { white-space: nowrap; }
-    .note-content h1 .title-group--parenthetical, .note-content h2 .title-group--parenthetical, .note-content h3 .title-group--parenthetical { white-space: nowrap; }
     @media (min-width: 901px) {
       .title-line { white-space: nowrap; }
+      .notes-hero { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .75fr); gap: clamp(2rem, 7vw, 7rem); }
+      .notes-hero > div { min-width: 0; }
+      .notes-hero h1 { max-width: none; font-size: var(--archive-hero-size); line-height: var(--archive-hero-leading); letter-spacing: var(--archive-hero-tracking); }
+      .notes-hero p { max-width: var(--archive-body-measure); line-height: 1.65; }
+      .note-content h1 .title-group, .note-content h1 .title-group--parenthetical, .note-content h2 .title-group--parenthetical, .note-content h3 .title-group--parenthetical { white-space: nowrap; }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
       .notes-hero { grid-template-columns: minmax(0, 1fr) minmax(18rem, .72fr); gap: 2rem; }
       .notes-hero h1 { font-size: clamp(4rem, 7.5vw, 6.8rem); }
-      .note-content h1 { font-size: clamp(3rem, 5.8vw, 4.8rem); }
+      .note-content h1 { font-size: var(--archive-chapter-size); }
     }
   </style>
 </head>

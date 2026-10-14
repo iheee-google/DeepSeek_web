@@ -902,26 +902,35 @@
       .rule-panel[data-rule-panel].is-switching { opacity: 1; transform: none; }
     }
     /* systematic typography */
+    :root {
+      --archive-display-size: clamp(2.4rem, 5vw, 5.2rem);
+      --archive-display-leading: .98;
+      --archive-display-tracking: -.045em;
+      --archive-intro-measure: 30rem;
+      --archive-portal-size: clamp(2.5rem, 5vw, 5.4rem);
+      --archive-quote-size: clamp(2.1rem, 4vw, 4.2rem);
+      --archive-quote-measure: 58rem;
+    }
     .title-line { display: block; white-space: normal; }
-    .section-header, .timeline-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(20rem, .65fr); align-items: end; gap: clamp(2rem, 6vw, 6rem); }
-    .section-header > :first-child, .timeline-head > :first-child { min-width: 0; }
-    .section-title { max-width: none; font-size: clamp(2.4rem, 5vw, 5.2rem); line-height: .98; letter-spacing: -.045em; }
-    .section-intro, .timeline-caption { width: 100%; max-width: 30rem; }
-    .notes-portal-card { grid-template-columns: minmax(0, 1.35fr) minmax(16rem, .65fr); }
-    .notes-portal-card > div:first-child, .notes-portal-card > div:last-child { min-width: 0; }
-    .notes-portal-card h2 { max-width: none; font-size: clamp(2.5rem, 5vw, 5.4rem); line-height: .98; letter-spacing: -.045em; }
-    .history-section .section-header { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, .8fr); }
-    .history-section .section-title { max-width: none; font-size: clamp(2.4rem, 4.4vw, 4.8rem); line-height: 1; }
-    .finale h2 { max-width: none; line-height: .9; }
-    .quote-inner { grid-template-columns: minmax(4rem, .7fr) minmax(0, 5fr) minmax(4rem, .7fr); gap: clamp(1rem, 3vw, 3rem); }
-    .quote-mark { display: block; width: 1em; font-size: clamp(4.5rem, 7vw, 8rem); line-height: 1; transform: none !important; }
-    .quote-mark--open { align-self: start; justify-self: start; }
-    .quote-mark--close { align-self: end; justify-self: end; text-align: right; }
-    .quote-block blockquote { max-width: 58rem; font-size: clamp(2.1rem, 4vw, 4.8rem); line-height: 1.08; letter-spacing: -.04em; }
     .quote-display, .quote-line { display: block; }
     .quote-line { white-space: normal; }
     @media (min-width: 901px) {
       .title-line, .quote-line { white-space: nowrap; }
+      .section-header, .timeline-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(20rem, .65fr); align-items: end; gap: clamp(2rem, 6vw, 6rem); }
+      .section-header > :first-child, .timeline-head > :first-child { min-width: 0; }
+      .section-title { max-width: none; font-size: var(--archive-display-size); line-height: var(--archive-display-leading); letter-spacing: var(--archive-display-tracking); }
+      .section-intro, .timeline-caption { width: 100%; max-width: var(--archive-intro-measure); }
+      .notes-portal-card { grid-template-columns: minmax(0, 1.35fr) minmax(16rem, .65fr); }
+      .notes-portal-card > div:first-child, .notes-portal-card > div:last-child { min-width: 0; }
+      .notes-portal-card h2 { max-width: none; font-size: var(--archive-portal-size); line-height: var(--archive-display-leading); letter-spacing: var(--archive-display-tracking); }
+      .history-section .section-header { grid-template-columns: minmax(0, 1.2fr) minmax(17rem, .8fr); }
+      .history-section .section-title { max-width: none; font-size: clamp(2.4rem, 4.4vw, 4.8rem); line-height: 1; }
+      .finale h2 { max-width: none; line-height: .9; }
+      .quote-inner { grid-template-columns: minmax(4rem, .7fr) minmax(0, 5fr) minmax(4rem, .7fr); gap: clamp(1rem, 3vw, 3rem); }
+      .quote-mark { display: block; width: 1em; font-size: clamp(4.5rem, 7vw, 8rem); line-height: 1; transform: none !important; }
+      .quote-mark--open { align-self: start; justify-self: start; }
+      .quote-mark--close { align-self: end; justify-self: end; text-align: right; }
+      .quote-block blockquote { max-width: var(--archive-quote-measure); font-size: var(--archive-quote-size); line-height: 1.08; letter-spacing: -.04em; }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
       .section-header, .timeline-head, .history-section .section-header { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -1194,8 +1203,8 @@
       'quote-03': [6],
       'quote-04': [9],
       'quote-05': [10],
-      'quote-06': [10],
-      'quote-07': [7],
+      'quote-06': [10, 18],
+      'quote-07': [6],
       'quote-08': [],
       'quote-09': []
     });
