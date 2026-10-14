@@ -133,6 +133,28 @@
     .note-content h1, .note-content h2, .note-content h3 { text-wrap: balance; }
     .note-content h1 .title-group, .note-content h2 .title-group, .note-content h3 .title-group { display: inline; }
     @media (min-width: 901px) {
+      :root {
+        --archive-ui-nav-size: clamp(.88rem, .82rem + .16vw, 1rem);
+        --archive-ui-toc-size: clamp(.9rem, .84rem + .14vw, 1rem);
+        --archive-ui-toc-sub-size: clamp(.82rem, .78rem + .12vw, .92rem);
+        --archive-ui-action-size: clamp(.82rem, .78rem + .12vw, .9rem);
+        --archive-ui-meta-size: clamp(.76rem, .72rem + .12vw, .86rem);
+        --archive-ui-micro-size: clamp(.7rem, .66rem + .08vw, .78rem);
+      }
+      .notes-header { min-height: 5.2rem; padding-block: .95rem; }
+      .brand-copy strong { font-size: .9rem; }
+      .brand-copy span { font-size: var(--archive-ui-micro-size); }
+      .notes-nav { font-size: var(--archive-ui-nav-size); }
+      .notes-nav a { padding-block: .9rem; }
+      .notes-return { padding: .72rem 1rem; font-size: var(--archive-ui-action-size); }
+      .notes-kicker,
+      .note-toc-head { font-size: var(--archive-ui-micro-size); }
+      .notes-stats span,
+      .note-toolbar-meta { font-size: var(--archive-ui-meta-size); }
+      .note-toolbar a { font-size: var(--archive-ui-action-size); }
+      .note-toc a { padding-block: .45rem; font-size: var(--archive-ui-toc-size); line-height: 1.55; }
+      .note-toc a[data-depth="3"] { font-size: var(--archive-ui-toc-sub-size); }
+      .note-sidebar { top: 6.8rem; }
       .title-line { white-space: nowrap; }
       .notes-hero { grid-template-columns: minmax(0, 1.25fr) minmax(19rem, .75fr); gap: clamp(2rem, 7vw, 7rem); }
       .notes-hero > div { min-width: 0; }

@@ -583,6 +583,48 @@ test.describe('柯里昂档案桌面端', () => {
       && line.rangeRect.right <= Math.min(line.titleRect.right, line.parentRect.right) + 1
       && line.rangeRect.bottom <= line.parentRect.bottom + line.edgeTolerance
       && line.characters > 1;
+    const homeFontRoles = [
+      { label: '首页主导航', selector: '.top-nav a', minimum: 13.5 },
+      { label: '首页操作按钮', selector: '.button', minimum: 13 },
+      { label: '时间轴标签', selector: '.timeline-item small', minimum: 12 },
+      { label: '时间轴操作入口', selector: '.timeline-item p', minimum: 13 },
+      { label: '引文来源', selector: '.quote-source', minimum: 12 },
+      { label: '引文索引', selector: '.quote-index-button', minimum: 12 },
+      { label: '人物辅助标签', selector: '.character-body small', minimum: 11 },
+      { label: '人物辅助说明', selector: '.character-body p', minimum: 13 },
+      { label: '符号辅助说明', selector: '.motif p', minimum: 13 },
+      { label: '全文入口统计', selector: '.notes-portal-meta span', minimum: 12 },
+      { label: '首页页脚', selector: '.site-footer', minimum: 12 }
+    ];
+    const notesFontRoles = [
+      { label: '全文品牌标题', selector: '.brand-copy strong', minimum: 14 },
+      { label: '全文品牌副标题', selector: '.brand-copy span', minimum: 11 },
+      { label: '全文主导航', selector: '.notes-nav a', minimum: 14 },
+      { label: '全文返回入口', selector: '.notes-return', minimum: 13 },
+      { label: '全文页 kicker', selector: '.notes-kicker', minimum: 11 },
+      { label: '目录标题', selector: '.note-toc-head', minimum: 11 },
+      { label: '目录一级条目', selector: '.note-toc a[data-depth="2"]', minimum: 14 },
+      { label: '目录三级条目', selector: '.note-toc a[data-depth="3"]', minimum: 13 },
+      { label: '全文工具栏元信息', selector: '.note-toolbar-meta', minimum: 12 },
+      { label: '全文继续阅读入口', selector: '.note-toolbar a', minimum: 13 },
+      { label: '全文统计标签', selector: '.notes-stats span', minimum: 12 }
+    ];
+    const measureFontRoles = async (roles) => page.evaluate((definitions) => definitions.map(({ label, selector, minimum }) => {
+      const nodes = [...document.querySelectorAll(selector)];
+      return {
+        label,
+        selector,
+        minimum,
+        count: nodes.length,
+        sizes: nodes.map((node) => Number.parseFloat(getComputedStyle(node).fontSize))
+      };
+    }), roles);
+    const assertFontRoles = (results, viewportWidth) => {
+      results.forEach((result) => {
+        expect(result.count, `${viewportWidth} ${result.label} selector`).toBeGreaterThan(0);
+        expect(result.sizes.every((size) => size >= result.minimum), `${viewportWidth} ${result.label} font size`).toBe(true);
+      });
+    };
 
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
@@ -611,6 +653,7 @@ test.describe('柯里昂档案桌面端', () => {
       expect(homeEnvironment.dpr).toBeGreaterThan(0);
       expect(homeEnvironment.fonts).toBe('loaded');
       expect(homeEnvironment.declaredFont).toBeTruthy();
+      assertFontRoles(await measureFontRoles(homeFontRoles), viewport.width);
       const quoteIndexLabelLines = await page.locator('.quote-index-label').evaluateAll((labels) => labels.map((label) => {
         const lines = new Map();
         const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
@@ -673,7 +716,42 @@ test.describe('柯里昂档案桌面端', () => {
       expect(notesEnvironment.dpr).toBeGreaterThan(0);
       expect(notesEnvironment.fonts).toBe('loaded');
       expect(notesEnvironment.declaredFont).toBeTruthy();
-      test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify(notesEnvironment)}` });
+      assertFontRoles(await measureFontRoles(notesFontRoles), viewport.width);
+      const notesHeaderGeometry = await page.evaluate(() => {
+        const regions = ['.brand', '.notes-nav', '.notes-return'].map((selector) => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return { selector, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom };
+        });
+        const overlaps = [];
+        for (let index = 0; index < regions.length; index += 1) {
+          for (let next = index + 1; next < regions.length; next += 1) {
+            const current = regions[index];
+            const other = regions[next];
+            if (current.left < other.right - 1 && current.right > other.left + 1 && current.top < other.bottom - 1 && current.bottom > other.top + 1) {
+              overlaps.push(`${current.selector}:${other.selector}`);
+            }
+          }
+        }
+        return { overlaps, regions };
+      });
+      expect(notesHeaderGeometry.overlaps, `${viewport.width} notes header overlap`).toEqual([]);
+      const tocGeometry = await page.locator('#noteToc').evaluate((toc) => {
+        const links = [...toc.querySelectorAll('a')];
+        toc.scrollTop = toc.scrollHeight;
+        const rail = toc.getBoundingClientRect();
+        const last = links.at(-1)?.getBoundingClientRect();
+        return {
+          linkCount: links.length,
+          scrollHeight: toc.scrollHeight,
+          clientHeight: toc.clientHeight,
+          reachedEnd: toc.scrollTop + toc.clientHeight >= toc.scrollHeight - 1,
+          lastLinkInside: Boolean(last && last.bottom <= rail.bottom + 1)
+        };
+      });
+      expect(tocGeometry.linkCount, `${viewport.width} notes toc link count`).toBeGreaterThan(44);
+      expect(tocGeometry.reachedEnd, `${viewport.width} notes toc reaches end`).toBe(true);
+      expect(tocGeometry.lastLinkInside, `${viewport.width} notes toc last link`).toBe(true);
+      test.info().annotations.push({ type: 'viewport-baseline', description: `notes ${JSON.stringify({ ...notesEnvironment, toc: tocGeometry, header: notesHeaderGeometry })}` });
     }
 
     const quotes = await page.evaluate(() => window.CORLEONE_ARCHIVE.quotes.map(({ id, translation, original, source, group, explanation }) => ({ id, translation, original, source, group, explanation })));

@@ -917,6 +917,45 @@
     .quote-display, .quote-line { display: block; }
     .quote-line { white-space: normal; }
     @media (min-width: 901px) {
+      :root {
+        --archive-ui-nav-size: clamp(.76rem, .76rem + .18vw, 1rem);
+        --archive-ui-action-size: clamp(.78rem, .74rem + .12vw, .9rem);
+        --archive-ui-meta-size: clamp(.72rem, .68rem + .12vw, .84rem);
+        --archive-ui-micro-size: clamp(.66rem, .62rem + .08vw, .76rem);
+        --archive-ui-support-size: clamp(.8rem, .76rem + .12vw, .9rem);
+      }
+      .brand-copy strong { font-size: .9rem; }
+      .brand-copy span { font-size: var(--archive-ui-micro-size); }
+      .top-nav a { font-size: var(--archive-ui-nav-size); }
+      .button { font-size: var(--archive-ui-action-size); }
+      .note-stats,
+      .timeline-item small,
+      .timeline-work,
+      .quote-source,
+      .quote-index-button,
+      .character-body small,
+      .history-card-meta span:last-child,
+      .notes-portal-meta span,
+      .site-footer,
+      .finale-bottom,
+      .search-meta,
+      .search-result span,
+      .chapter-count,
+      .chapter-footer,
+      .archive-map-foot { font-size: var(--archive-ui-meta-size); }
+      .timeline-item p,
+      .filter-button,
+      .note-nav button { font-size: var(--archive-ui-action-size); }
+      .character-body p,
+      .character-card--roster .character-body p,
+      .motif p,
+      .reader-detail strong { font-size: var(--archive-ui-support-size); }
+      .search-result small,
+      .chapter-tag,
+      .chapter-body small,
+      .history-intro > a,
+      .rule-tab-copy small,
+      .reader-detail small { font-size: var(--archive-ui-micro-size); }
       .title-line, .quote-line { white-space: nowrap; }
       .section-header, .timeline-head { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(20rem, .65fr); align-items: end; gap: clamp(2rem, 6vw, 6rem); }
       .section-header > :first-child, .timeline-head > :first-child { min-width: 0; }
