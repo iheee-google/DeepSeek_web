@@ -273,6 +273,10 @@
       let personConfirmPreviousOverflow = '';
       let personConfirmPreviousScrollY = 0;
       let personConfirmState = 'closed';
+      let noteHashJumpTimer;
+      let noteReturnRestoreFrame;
+      let noteReturnRestoreToken = 0;
+      let noteReturnRestoreDeadline = 0;
 
       function setNotesBackgroundInert(isInert) {
         notesBackground.forEach((element) => { element.inert = isInert; });
@@ -381,28 +385,66 @@
         window.history.replaceState(Object.keys(nextState).length ? nextState : null, '', window.location.href);
       }
 
+      function cancelNoteReturnRestore({ clearState = false } = {}) {
+        noteReturnRestoreToken += 1;
+        cancelAnimationFrame(noteReturnRestoreFrame);
+        noteReturnRestoreFrame = undefined;
+        noteReturnRestoreDeadline = 0;
+        if (clearState) clearSavedNoteReturnPosition();
+      }
+
+      function cancelPendingNoteNavigation({ clearState = false } = {}) {
+        clearTimeout(noteHashJumpTimer);
+        noteHashJumpTimer = undefined;
+        cancelNoteReturnRestore({ clearState });
+      }
+
       function restoreSavedNoteReturnPosition() {
+        cancelNoteReturnRestore();
         const saved = getSavedNoteReturnPosition();
         if (!saved || saved.hash !== window.location.hash) return false;
+        clearTimeout(noteHashJumpTimer);
+        noteHashJumpTimer = undefined;
+        const token = ++noteReturnRestoreToken;
+        noteReturnRestoreDeadline = performance.now() + 4000;
         let previous = null;
         let stableSamples = 0;
         const sample = () => {
-          const current = Math.round(window.scrollY);
-          stableSamples = current === previous ? stableSamples + 1 : 0;
-          previous = current;
           const currentSaved = getSavedNoteReturnPosition();
-          if (!currentSaved || currentSaved.hash !== saved.hash || currentSaved.scrollY !== saved.scrollY) return;
-          if (stableSamples >= 3 && document.fonts.status === 'loaded') {
+          if (token !== noteReturnRestoreToken || window.location.hash !== saved.hash || !currentSaved || currentSaved.hash !== saved.hash || currentSaved.scrollY !== saved.scrollY) return;
+          const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
+          const rect = anchor?.getBoundingClientRect();
+          const computed = anchor ? getComputedStyle(anchor) : null;
+          const imagesBeforeAnchor = anchor ? [...noteContent.querySelectorAll('img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
+          const imagesReady = imagesBeforeAnchor.every((image) => image.complete && image.naturalWidth > 0);
+          if (anchor && Number.isFinite(saved.anchorViewportTop) && rect) {
+            const correctedScrollY = Math.max(0, window.scrollY + rect.top - saved.anchorViewportTop);
+            if (Math.abs(correctedScrollY - window.scrollY) > 0.5) window.scrollTo({ top: correctedScrollY, left: 0, behavior: 'auto' });
+          } else if (!anchor) {
             window.scrollTo({ top: saved.scrollY, left: 0, behavior: 'auto' });
-            window.requestAnimationFrame(() => {
-              const finalState = getSavedNoteReturnPosition();
-              if (finalState?.hash === saved.hash && finalState.scrollY === saved.scrollY) clearSavedNoteReturnPosition();
+          }
+          const current = Math.round(window.scrollY);
+          const signature = [current, rect?.top, rect?.left, rect?.width, rect?.height, computed?.opacity, computed?.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
+          stableSamples = signature === previous ? stableSamples + 1 : 0;
+          previous = signature;
+          const expired = performance.now() >= noteReturnRestoreDeadline;
+          if ((stableSamples >= 3 && document.fonts.status === 'loaded' && imagesReady) || expired) {
+            if (!anchor) window.scrollTo({ top: saved.scrollY, left: 0, behavior: 'auto' });
+            noteReturnRestoreFrame = window.requestAnimationFrame(() => {
+              if (token === noteReturnRestoreToken && window.location.hash === saved.hash) {
+                const finalState = getSavedNoteReturnPosition();
+                if (finalState?.hash === saved.hash && finalState.scrollY === saved.scrollY) clearSavedNoteReturnPosition();
+              }
+              if (token === noteReturnRestoreToken) {
+                noteReturnRestoreFrame = undefined;
+                noteReturnRestoreDeadline = 0;
+              }
             });
             return;
           }
-          window.requestAnimationFrame(sample);
+          noteReturnRestoreFrame = window.requestAnimationFrame(sample);
         };
-        window.requestAnimationFrame(sample);
+        noteReturnRestoreFrame = window.requestAnimationFrame(sample);
         return true;
       }
 
@@ -456,7 +498,14 @@
         personConfirmState = 'navigating';
         personConfirmGo.disabled = true;
         const currentState = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
-        window.history.replaceState({ ...currentState, noteCharacterReturn: { hash: window.location.hash, scrollY: personConfirmPreviousScrollY } }, '', window.location.href);
+        const anchor = personConfirmTrigger?.closest('[id]');
+        const anchorRect = anchor?.getBoundingClientRect();
+        window.history.replaceState({ ...currentState, noteCharacterReturn: {
+          hash: window.location.hash,
+          scrollY: personConfirmPreviousScrollY,
+          anchorId: anchor?.id || '',
+          anchorViewportTop: anchorRect?.top
+        } }, '', window.location.href);
         window.location.href = `index.html?person=${encodeURIComponent(personConfirmTarget.id)}#characters`;
       });
       document.addEventListener('keydown', (event) => {
@@ -481,6 +530,10 @@
           if (personConfirmState !== 'closed' || !personConfirm.hidden) finishPersonConfirm(false);
           restoreSavedNoteReturnPosition();
         }));
+      });
+      window.addEventListener('pagehide', () => cancelPendingNoteNavigation());
+      ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach((eventName) => {
+        window.addEventListener(eventName, () => cancelPendingNoteNavigation({ clearState: true }), { capture: true, passive: eventName !== 'keydown' });
       });
 
       document.getElementById('notesChapterCount').textContent = archive.meta.chapterCount;
@@ -557,20 +610,25 @@
       }
 
       function jumpToHash() {
+        clearTimeout(noteHashJumpTimer);
+        noteHashJumpTimer = undefined;
         const id = decodedHash();
         if (!id) return;
-        window.setTimeout(() => {
+        if (getSavedNoteReturnPosition()?.hash === window.location.hash) return;
+        noteHashJumpTimer = window.setTimeout(() => {
+          noteHashJumpTimer = undefined;
           const target = document.getElementById(id);
-          if (!target) return;
-          if (getSavedNoteReturnPosition()?.hash !== window.location.hash) {
-            target.scrollIntoView({ behavior: 'auto', block: 'start' });
-          }
+          if (!target || getSavedNoteReturnPosition()?.hash === window.location.hash) return;
+          target.scrollIntoView({ behavior: 'auto', block: 'start' });
           target.classList.add('search-hit');
           window.setTimeout(() => target.classList.remove('search-hit'), 1700);
           window.requestAnimationFrame(updateTocFromGeometry);
         }, reduceMotion ? 0 : 180);
       }
-      window.addEventListener('hashchange', jumpToHash);
+      window.addEventListener('hashchange', () => {
+        cancelPendingNoteNavigation({ clearState: true });
+        jumpToHash();
+      });
       jumpToHash();
       updateTocFromGeometry();
       document.querySelector('.back-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' }));

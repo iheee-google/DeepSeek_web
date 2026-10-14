@@ -463,6 +463,18 @@ test.describe('柯里昂档案桌面端', () => {
 
   test('首页搜索会激活模块并把正文结果送入全文页', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
+    await page.addInitScript(() => {
+      const key = 'desktop-smoke-search-hit-targets';
+      const watch = () => new MutationObserver((records) => {
+        const targets = new Set(JSON.parse(sessionStorage.getItem(key) || '[]'));
+        records.forEach((record) => {
+          if (record.attributeName === 'class' && record.target.classList.contains('search-hit') && record.target.id) targets.add(record.target.id);
+        });
+        sessionStorage.setItem(key, JSON.stringify([...targets]));
+      }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['class'] });
+      if (document.documentElement) watch();
+      else document.addEventListener('DOMContentLoaded', watch, { once: true });
+    });
     await page.goto('/', { waitUntil: 'networkidle' });
 
     const chapterData = await page.evaluate(() => {
@@ -471,9 +483,11 @@ test.describe('柯里昂档案桌面端', () => {
     });
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill(chapterData.title);
-    await page.locator(`[data-search-index="${chapterData.index}"]`).click();
-    await expect(page).toHaveURL(new RegExp(`notes\\.html#${chapterData.target}$`));
-    await expect(page.locator(`#${chapterData.target}`)).toHaveClass(/search-hit/);
+    await Promise.all([
+      page.waitForURL(new RegExp(`notes\\.html#${chapterData.target}$`)),
+      page.locator(`[data-search-index="${chapterData.index}"]`).click()
+    ]);
+    await expect.poll(() => page.evaluate((target) => JSON.parse(sessionStorage.getItem('desktop-smoke-search-hit-targets') || '[]').includes(target), chapterData.target)).toBe(true);
     await page.goto('/', { waitUntil: 'networkidle' });
 
     const ruleData = await page.evaluate(() => ({ id: window.CORLEONE_ARCHIVE.rules[1].id, title: window.CORLEONE_ARCHIVE.rules[1].title, index: window.CORLEONE_ARCHIVE.search.findIndex((item) => item.kind === 'rule' && item.id === window.CORLEONE_ARCHIVE.rules[1].id) }));
@@ -531,9 +545,11 @@ test.describe('柯里昂档案桌面端', () => {
     expect(passageTarget).toBeTruthy();
     await page.locator('#searchToggle').click();
     await page.locator('#searchInput').fill('托马西诺庇护');
-    await page.locator('.search-result').first().click();
-    await expect(page).toHaveURL(new RegExp(`notes\\.html#${passageTarget}$`));
-    await expect(page.locator(`#${passageTarget}`)).toHaveClass(/search-hit/);
+    await Promise.all([
+      page.waitForURL(new RegExp(`notes\\.html#${passageTarget}$`)),
+      page.locator('.search-result').first().click()
+    ]);
+    await expect.poll(() => page.evaluate((target) => JSON.parse(sessionStorage.getItem('desktop-smoke-search-hit-targets') || '[]').includes(target), passageTarget)).toBe(true);
     await expect.poll(() => page.locator(`#${passageTarget}`).evaluate((node) => node.getBoundingClientRect().top >= document.querySelector('.notes-header').getBoundingClientRect().bottom)).toBe(true);
     await expectDiagnosticsClean(diagnostics);
   });
@@ -1201,6 +1217,14 @@ test.describe('柯里昂档案桌面端', () => {
 
   test('人物深链安全处理无效参数并支持返回全文', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
+    await page.addInitScript(() => {
+      window.addEventListener('pageshow', (event) => {
+        const key = 'character-link-normal-pageshow-events';
+        const events = JSON.parse(sessionStorage.getItem(key) || '[]');
+        events.push({ path: location.pathname, persisted: event.persisted });
+        sessionStorage.setItem(key, JSON.stringify(events));
+      });
+    });
     await page.goto('/index.html?person=unknown&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?person=unknown&keep=1#characters$/);
@@ -1210,7 +1234,7 @@ test.describe('柯里昂档案桌面端', () => {
     const targetId = await firstPerson27Mention.evaluate((node) => node.closest('[id]')?.id);
     expect(targetId).toBeTruthy();
     await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
-    const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve, reject) => {
+    const waitForSettledTarget = (id = targetId) => page.evaluate((id) => new Promise((resolve, reject) => {
       let previous = '';
       let stableSamples = 0;
       const started = performance.now();
@@ -1228,13 +1252,34 @@ test.describe('柯里昂档案桌面端', () => {
         requestAnimationFrame(sample);
       };
       requestAnimationFrame(sample);
-    }), targetId);
+    }), id);
     expect(await waitForSettledTarget()).toBe(true);
-    const trigger = page.locator(`#${targetId} .person-mention[data-person="person-27"]`).first();
+    const hashScrollY = await page.evaluate(() => Math.round(window.scrollY));
+    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
+      let previous = null;
+      let stableSamples = 0;
+      const started = performance.now();
+      const sample = () => {
+        const current = Math.round(window.scrollY);
+        stableSamples = current === previous ? stableSamples + 1 : 0;
+        previous = current;
+        if (stableSamples >= 3 && document.fonts.status === 'loaded') { resolve(current); return; }
+        if (performance.now() - started > 4000) { reject(new Error('返回前滚动位置未稳定')); return; }
+        requestAnimationFrame(sample);
+      };
+      requestAnimationFrame(sample);
+    }));
+    const trigger = page.locator('.person-mention[data-person="person-27"]').last();
+    const returnAnchorId = await trigger.evaluate((node) => node.closest('[id]')?.id);
+    expect(returnAnchorId).toBeTruthy();
+    await trigger.scrollIntoViewIfNeeded();
+    expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
+    const scrollBefore = await waitForStableScroll();
+    expect(Math.abs(scrollBefore - hashScrollY)).toBeGreaterThan(120);
     const noteAnchorBefore = await page.evaluate((id) => {
       const rect = document.getElementById(id).getBoundingClientRect();
-      return { documentTop: window.scrollY + rect.top, viewportTop: rect.top };
-    }, targetId);
+      return { viewportTop: rect.top };
+    }, returnAnchorId);
     const noteOverflowBefore = await page.evaluate(() => document.body.style.overflow);
     const mentionCountBefore = await page.locator('.person-mention').count();
     const box = await trigger.boundingBox();
@@ -1245,20 +1290,32 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
     await page.goBack({ waitUntil: 'networkidle' });
     await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-    expect(await waitForSettledTarget()).toBe(true);
+    await expect.poll(() => page.evaluate(() => {
+      const events = JSON.parse(sessionStorage.getItem('character-link-normal-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
+      return events.at(-1)?.persisted;
+    })).toBe(false);
+    expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
     await expect(page.locator('#personConfirm')).toBeHidden();
     expect(await page.locator('[inert]').count()).toBe(0);
     expect(await page.evaluate(() => document.body.style.overflow)).toBe(noteOverflowBefore);
     expect(await page.locator('.person-mention').count()).toBe(mentionCountBefore);
     const noteAnchorAfter = await page.evaluate((id) => {
       const rect = document.getElementById(id).getBoundingClientRect();
-      return { documentTop: window.scrollY + rect.top, viewportTop: rect.top, viewportBottom: rect.bottom };
-    }, targetId);
-    expect(Math.abs(noteAnchorAfter.documentTop - noteAnchorBefore.documentTop)).toBeLessThan(4);
+      return { viewportTop: rect.top, viewportBottom: rect.bottom };
+    }, returnAnchorId);
     expect(Math.abs(noteAnchorAfter.viewportTop - noteAnchorBefore.viewportTop)).toBeLessThan(4);
     const notesHeaderBottom = await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom);
     expect(noteAnchorAfter.viewportTop).toBeGreaterThanOrEqual(notesHeaderBottom - 1);
     expect(noteAnchorAfter.viewportBottom).toBeLessThanOrEqual(900);
+    const alternateHash = await page.locator('h2[id]').nth(2).getAttribute('id');
+    await page.evaluate((id) => {
+      const state = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
+      window.history.replaceState({ ...state, noteCharacterReturn: { hash: window.location.hash, scrollY: 0 } }, '', window.location.href);
+      window.dispatchEvent(new Event('pageshow'));
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => { window.location.hash = id; }));
+    }, alternateHash);
+    await expect(page).toHaveURL(new RegExp(`notes\\.html#${alternateHash}$`));
+    await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
     await page.goto('/index.html?person=person-01&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?keep=1#characters$/);
@@ -1294,7 +1351,7 @@ test.describe('柯里昂档案桌面端', () => {
       const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
       expect(targetId).toBeTruthy();
       await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
-      const waitForSettledTarget = () => page.evaluate((id) => new Promise((resolve, reject) => {
+      const waitForSettledTarget = (id = targetId) => page.evaluate((id) => new Promise((resolve, reject) => {
         let previous = '';
         let stableSamples = 0;
         const started = performance.now();
@@ -1312,13 +1369,35 @@ test.describe('柯里昂档案桌面端', () => {
           requestAnimationFrame(sample);
         };
         requestAnimationFrame(sample);
-      }), targetId);
+      }), id);
       expect(await waitForSettledTarget()).toBe(true);
+      const hashScrollY = await page.evaluate(() => Math.round(window.scrollY));
+      const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
+        let previous = null;
+        let stableSamples = 0;
+        const started = performance.now();
+        const sample = () => {
+          const current = Math.round(window.scrollY);
+          stableSamples = current === previous ? stableSamples + 1 : 0;
+          previous = current;
+          if (stableSamples >= 3 && document.fonts.status === 'loaded') { resolve(current); return; }
+          if (performance.now() - started > 4000) { reject(new Error('BFCache 返回前滚动位置未稳定')); return; }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }));
+      const returnTrigger = page.locator('.person-mention[data-person="person-27"]').last();
+      const returnAnchorId = await returnTrigger.evaluate((node) => node.closest('[id]')?.id);
+      expect(returnAnchorId).toBeTruthy();
+      await returnTrigger.scrollIntoViewIfNeeded();
+      expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
+      const scrollBefore = await waitForStableScroll();
+      expect(Math.abs(scrollBefore - hashScrollY)).toBeGreaterThan(120);
       const anchorBefore = await page.evaluate((id) => {
         const rect = document.getElementById(id).getBoundingClientRect();
-        return { documentTop: scrollY + rect.top, viewportTop: rect.top };
-      }, targetId);
-      const box = await trigger.boundingBox();
+        return { viewportTop: rect.top };
+      }, returnAnchorId);
+      const box = await returnTrigger.boundingBox();
       if (!box) throw new Error('BFCache 人物标注不可见');
       await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
       await page.locator('#personConfirmGo').click();
@@ -1326,17 +1405,19 @@ test.describe('柯里昂档案桌面端', () => {
       await expect(page.locator('#reader')).toHaveClass(/is-open/);
       await page.goBack({ waitUntil: 'networkidle' });
       await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-      await expect.poll(() => page.evaluate(() => JSON.parse(sessionStorage.getItem('character-link-pageshow-events') || '[]').some((event) => event.path === '/notes.html' && event.persisted))).toBe(true);
+      await expect.poll(() => page.evaluate(() => {
+        const events = JSON.parse(sessionStorage.getItem('character-link-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
+        return events.at(-1)?.persisted;
+      })).toBe(true);
       await page.waitForFunction(() => {
         const dialog = document.getElementById('personConfirm');
         return dialog?.hidden && !document.querySelector('[inert]') && document.body.style.overflow === '';
       });
-      expect(await waitForSettledTarget()).toBe(true);
+      expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
       const anchorAfter = await page.evaluate((id) => {
         const rect = document.getElementById(id).getBoundingClientRect();
-        return { documentTop: scrollY + rect.top, viewportTop: rect.top, viewportBottom: rect.bottom };
-      }, targetId);
-      expect(Math.abs(anchorAfter.documentTop - anchorBefore.documentTop)).toBeLessThan(4);
+        return { viewportTop: rect.top, viewportBottom: rect.bottom };
+      }, returnAnchorId);
       expect(Math.abs(anchorAfter.viewportTop - anchorBefore.viewportTop)).toBeLessThan(4);
       expect(anchorAfter.viewportTop).toBeGreaterThanOrEqual(await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom) - 1);
       expect(anchorAfter.viewportBottom).toBeLessThanOrEqual(900);

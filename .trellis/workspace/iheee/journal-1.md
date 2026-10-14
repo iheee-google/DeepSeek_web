@@ -117,3 +117,9 @@
 - 确认跳转前把当前 hash/滚动位置写入历史条目的临时 `history.state`，普通返回和真实 BFCache `pageshow.persisted=true` 均等待滚动稳定后恢复并清理弹窗状态；不使用持久化存储。
 - 验证：生产构建、内容构建、发布白名单、脚本和两页内联脚本语法、`git diff --check` 通过；Playwright 11/11 通过。1920×1080、1440×900、1024×900 均为 DPR 1、字体 loaded、237 个标注、无横向溢出和页面/控制台错误；三种视口均重新查看了非空弹窗/人物卡截图，390px 仅作为既有历史回归。
 - BFCache 测试使用 Chromium 新 headless 模式移除默认禁用参数，不再启动可见黑屏窗口。当前实现尚未推送远程；Cloudflare 仍由 GitHub `main` 的 Workers Builds 自动部署，不执行手动 Wrangler 发布。
+
+## 2026-10-14 · 角色跳转返回锚点与最终回归修正
+
+- 按 advisor 复核修正 `notes.html`：返回恢复绑定真实正文锚点的 viewport 顶部位置，等待字体、前置图片和 reveal 稳定；hash 改变、用户交互和页面离开会取消恢复；没有临时返回 state 时不再误取消普通 hash/search 高亮。
+- `tests/desktop-smoke.spec.js` 的普通返回和真实 BFCache 返回均先滚动到非 hash 起点的正文位置，分别确认 `pageshow.persisted=false/true`、弹窗/inert/滚动锁清理、固定顶栏遮挡和 viewport 锚点恢复；搜索高亮由测试侧 MutationObserver 记录实际出现，避免 1.7 秒过渡造成假失败。
+- 在 1920×1080、1440×900、1024×900 无界面 Chromium 下重新检查 237 个标注、稳定确认弹窗和人物卡截图；DPR 1、字体 loaded、无页面/控制台/请求错误。完整 Playwright 11/11 通过，未启动可见浏览器，也未推送远程。
