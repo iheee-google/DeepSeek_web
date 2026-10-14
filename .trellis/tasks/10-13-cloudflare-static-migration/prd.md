@@ -42,7 +42,7 @@
 ## Acceptance Criteria
 
 - [x] `npm run build` 在当前依赖环境中成功，并生成最新 archive 数据与 `dist/`；构建输出为 10 章、44 人物、14 时间节点、12 符号、80 张影像。
-- [x] 在当前 `HEAD` 的临时干净检出中执行 `npm ci --ignore-scripts --include=dev` 后再次通过 `npm run build` 和发布目录校验。
+- [x] 从提交 `4c27099` 进行纯 `git archive` 临时干净检出（未叠加工作区文件），执行 `npm ci --ignore-scripts --include=dev` 后再次通过 `npm run build` 和发布目录校验。
 - [x] `dist/` 内容清单符合 allowlist：包含 `index.html`、`notes.html`、`assets/`、`_redirects`、`_headers`，不包含 `content/`、`scripts/`、`.trellis/`、测试、包配置或 `.git`。
 - [x] `wrangler.jsonc` 指向 `./dist`，设置 `html_handling: "none"`；`npx wrangler@4 deploy --dry-run` 读取 99 个资源并退出，没有 Astro 配置注入或二次构建。
 - [x] `_headers` 包含 CSP、`X-Frame-Options`、`X-Content-Type-Options`、`Referrer-Policy` 和 `Permissions-Policy` 声明。
