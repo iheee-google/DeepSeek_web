@@ -737,38 +737,38 @@ test.describe('柯里昂档案桌面端', () => {
         expect(state.translation).toBe(quote.original);
         expect(state.source).toBe(`${quote.source} / ${quote.group}`);
         expect(state.explanation).toBe(quote.explanation);
-        viewportLineGroups.push(state.lines.map((line) => line.text));
         const ariaSnapshot = await page.locator('#quoteText').ariaSnapshot();
         expect(ariaSnapshot.split(quote.translation)).toHaveLength(2);
+        await expect(page.locator('.quote-mark--open')).toHaveText('“');
+        await expect(page.locator('.quote-mark--close')).toHaveText('”');
+        const quoteMarkGeometry = await page.evaluate(() => {
+          const main = document.querySelector('.quote-main').getBoundingClientRect();
+          const quote = document.querySelector('#quoteText').getBoundingClientRect();
+          const openNode = document.querySelector('.quote-mark--open');
+          const closeNode = document.querySelector('.quote-mark--close');
+          const open = openNode.getBoundingClientRect();
+          const close = closeNode.getBoundingClientRect();
+          const center = (rect) => rect.top + rect.height / 2;
+          return {
+            leftInset: open.left - main.left,
+            rightInset: main.right - close.right,
+            openWidth: open.width,
+            closeWidth: close.width,
+            openCenter: center(open),
+            closeCenter: center(close),
+            quoteCenter: center(quote),
+            openTransform: getComputedStyle(openNode).transform,
+            closeTransform: getComputedStyle(closeNode).transform
+          };
+        });
+        expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
+        expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
+        expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.closeCenter)).toBeLessThan(1);
+        expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.quoteCenter)).toBeLessThan(1);
+        expect(quoteMarkGeometry.openTransform).toBe('none');
+        expect(quoteMarkGeometry.closeTransform).toBe('none');
+        viewportLineGroups.push(state.lines.map((line) => line.text));
       }
-      await expect(page.locator('.quote-mark--open')).toHaveText('“');
-      await expect(page.locator('.quote-mark--close')).toHaveText('”');
-      const quoteMarkGeometry = await page.evaluate(() => {
-        const main = document.querySelector('.quote-main').getBoundingClientRect();
-        const quote = document.querySelector('#quoteText').getBoundingClientRect();
-        const openNode = document.querySelector('.quote-mark--open');
-        const closeNode = document.querySelector('.quote-mark--close');
-        const open = openNode.getBoundingClientRect();
-        const close = closeNode.getBoundingClientRect();
-        const center = (rect) => rect.top + rect.height / 2;
-        return {
-          leftInset: open.left - main.left,
-          rightInset: main.right - close.right,
-          openWidth: open.width,
-          closeWidth: close.width,
-          openCenter: center(open),
-          closeCenter: center(close),
-          quoteCenter: center(quote),
-          openTransform: getComputedStyle(openNode).transform,
-          closeTransform: getComputedStyle(closeNode).transform
-        };
-      });
-      expect(Math.abs(quoteMarkGeometry.leftInset - quoteMarkGeometry.rightInset)).toBeLessThan(1);
-      expect(Math.abs(quoteMarkGeometry.openWidth - quoteMarkGeometry.closeWidth)).toBeLessThan(1);
-      expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.closeCenter)).toBeLessThan(1);
-      expect(Math.abs(quoteMarkGeometry.openCenter - quoteMarkGeometry.quoteCenter)).toBeLessThan(1);
-      expect(quoteMarkGeometry.openTransform).toBe('none');
-      expect(quoteMarkGeometry.closeTransform).toBe('none');
 
       await page.locator('[data-quote-index="1"]').click();
       await page.locator('[data-quote-index="6"]').click();
