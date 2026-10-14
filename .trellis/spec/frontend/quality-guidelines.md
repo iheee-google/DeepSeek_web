@@ -74,6 +74,14 @@ The supplied design references are inspiration only—beautifului.dev, beui.dev,
 
 Images must preserve their natural aspect ratio. New zoom or modal behavior must test anchor stability, close/reopen races, nested Escape handling, and full-screen fallback where relevant. Avoid fixed-height grids that leave an empty column when a panel is collapsed.
 
+## Desktop Typography and Quote Display
+
+- Desktop display line groups are established at the `1920×1080` baseline. At `1440×900` and `1024×900`, adjust the container or display size without recomputing a quote's semantic line groups; validate the same stable-ID line-group arrays in all three viewports.
+- Restrict `white-space: nowrap` to intentional desktop `.title-line` and `.quote-line` groups under the existing `min-width: 901px` boundary. Never apply it globally to Chinese body text, metadata, lists, tables, or arbitrary headings; narrow layouts must regain natural wrapping.
+- The homepage quote contract is structural: `.quote-main` contains the accessible `#quoteText` and paired decorative `.quote-mark--open`/`.quote-mark--close`, while translation, source, explanation, and controls remain in `.quote-details`. Use literal `“` and `”`; both marks are `aria-hidden`, and `#quoteText` exposes the complete Chinese source through its `aria-label` exactly once.
+- Quote switching must settle before geometry assertions: wait for `#quoteText` to lose its transition transform, then use `getBoundingClientRect()` to check equal left/right insets, equal mark box widths, and both mark centers against the main quote center for every stable quote ID. Review both a one-line and a two-line quote at each desktop viewport.
+- Quote presentation may remove only approved decorative Chinese commas/full stops in `showQuote()`'s display mapping. Source Markdown, generated archive data, full-text notes, English originals, search text, and accessible quote labels remain unchanged.
+
 ## Preview Security Boundary
 
 Use `npm run preview`, which calls `scripts/serve-preview.cjs`. The service must continue to:
