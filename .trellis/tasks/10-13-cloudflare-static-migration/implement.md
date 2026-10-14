@@ -8,7 +8,9 @@
 4. 在 `package.json` 增加 `build` 与 `verify:deploy` 脚本；在 `.gitignore` 忽略 `dist/`；新增 assets-only `wrangler.jsonc` 指向 `./dist`，并设置 `html_handling: "none"` 保持 `/notes.html` 路由。
 5. 在本地执行 `npm run build`，检查生成数据数量、发布目录文件清单和 `_headers` 内容。
 6. 在本地执行 `npm run verify:deploy` 与 `npx wrangler@4 deploy --dry-run`；确认 dry-run 只读取 `dist/`，不注入 Astro 配置、不进行二次构建；确认 `npm run build` 自身也会自动阻断不合规发布目录。
-7. 从当前 `HEAD` 导出临时干净检出，执行 `npm ci --ignore-scripts --include=dev`、`npm run build` 和 `npm run verify:deploy`，记录干净依赖环境结果；不修改当前工作区依赖树。\n8. 启动 `wrangler dev --local` 做本地生产产物 smoke：检查 `/`、`/notes.html`、`/assets/data/archive.js` 的 200 响应与安全头，并确认 `/content/...`、`/scripts/...`、`/_headers` 不公开；测试结束后只停止本次启动的本地进程。\n9. 运行现有验证：
+7. 从当前 `HEAD` 导出临时干净检出，执行 `npm ci --ignore-scripts --include=dev`、`npm run build` 和 `npm run verify:deploy`，记录干净依赖环境结果；不修改当前工作区依赖树。
+8. 启动 `wrangler dev --local` 做本地生产产物 smoke：检查 `/`、`/notes.html`、`/assets/data/archive.js` 的 200 响应与安全头，并确认 `/content/...`、`/scripts/...`、`/_headers` 不公开；测试结束后只停止本次启动的本地进程。
+9. 运行现有验证：
    - `node --check scripts/build-content.cjs`
    - `node --check scripts/build-deploy.cjs`
    - `node --check scripts/verify-deploy.cjs`
