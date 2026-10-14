@@ -656,6 +656,17 @@ test.describe('柯里昂档案桌面端', () => {
     }
 
     const quotes = await page.evaluate(() => window.CORLEONE_ARCHIVE.quotes.map(({ id, translation, original, source, group, explanation }) => ({ id, translation, original, source, group, explanation })));
+    const expectedQuoteLineGroups = {
+      'quote-01': ['我会给他一个他无法拒绝的条件'],
+      'quote-02': ['一个不抽时间陪伴家人的男人', '永远算不上真正的男人'],
+      'quote-03': ['亲近你的朋友', '但要更亲近你的敌人'],
+      'quote-04': ['永远不要恨你的敌人', '那会影响你的判断'],
+      'quote-05': ['伟大的人并非生来伟大', '而是在成长中造就伟大'],
+      'quote-06': ['当我以为我已经抽身了', '他们又把我硬生生拽了回去！'],
+      'quote-07': ['金融是一把枪', '政治则是知晓何时扣动扳机'],
+      'quote-08': ['他们越富有就越危险'],
+      'quote-09': ['我们比全美钢铁公司还要大']
+    };
     const checkQuoteViewport = async (viewport) => {
       await page.emulateMedia({ reducedMotion: 'no-preference' });
       await page.setViewportSize(viewport);
@@ -668,12 +679,12 @@ test.describe('柯里昂档案桌面端', () => {
         await expect.poll(() => page.locator('#quoteText').getAttribute('data-quote-id')).toBe(quote.id);
         const state = await page.locator('#quoteText').evaluate((node) => {
           const quoteRect = node.getBoundingClientRect();
-          const edgeTolerance = parseFloat(getComputedStyle(node).fontSize) * .15 + 1;
+          const verticalTolerance = parseFloat(getComputedStyle(node).fontSize) * .15 + 1;
           return {
             display: node.textContent.replace(/\s+/g, ''),
             accessible: node.getAttribute('aria-label'),
             quoteRect: { left: quoteRect.left, top: quoteRect.top, right: quoteRect.right, bottom: quoteRect.bottom },
-            edgeTolerance,
+            verticalTolerance,
             lines: [...node.querySelectorAll('.quote-line')].map((line) => {
               const range = document.createRange();
               range.selectNodeContents(line);
@@ -695,11 +706,12 @@ test.describe('柯里昂档案桌面端', () => {
         expect(state.accessible).toBe(quote.translation);
         expect(state.lines.length).toBeGreaterThanOrEqual(1);
         expect(state.lines.length).toBeLessThanOrEqual(3);
+        expect(state.lines.map((line) => line.text)).toEqual(expectedQuoteLineGroups[quote.id]);
         expect(state.lines.every((line) => line.rectCount === 1 && [...line.text].length > 1
-          && line.rangeRect.left >= state.quoteRect.left - state.edgeTolerance
-          && line.rangeRect.top >= state.quoteRect.top - state.edgeTolerance
-          && line.rangeRect.right <= state.quoteRect.right + state.edgeTolerance
-          && line.rangeRect.bottom <= state.quoteRect.bottom + state.edgeTolerance)).toBe(true);
+          && line.rangeRect.left >= state.quoteRect.left - 1
+          && line.rangeRect.top >= state.quoteRect.top - state.verticalTolerance
+          && line.rangeRect.right <= state.quoteRect.right + 1
+          && line.rangeRect.bottom <= state.quoteRect.bottom + state.verticalTolerance)).toBe(true);
         expect(state.translation).toBe(quote.original);
         expect(state.source).toBe(`${quote.source} / ${quote.group}`);
         expect(state.explanation).toBe(quote.explanation);
