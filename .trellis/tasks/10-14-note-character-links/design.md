@@ -14,6 +14,18 @@
 
 正式浏览器验收沿用当前档案桌面范围：`1920×1080`、`1440×900`、`1024×900`；已有 `390×844` 图片查看器回归继续运行，但不构成移动端交付。
 
+## Research references
+
+本次实际读取并只提取交互原则的公开页面：
+
+- https://ui.shadcn.com/docs/components/radix/hover-card
+- https://ui.shadcn.com/docs/components/radix/dialog
+- https://ui.shadcn.com/docs/components/radix/alert-dialog
+- https://transitions.dev/transitions/panel-reveal/
+- https://beui.dev/components/motion
+
+这些页面不是运行时依赖，也不复制其代码。
+
 ## Mapping contract
 
 ### Source of truth
@@ -28,13 +40,13 @@
 4. 将规则映射到解析出的 `person.id`，输出例如 `mentions` 或等价字段；`person-27` 的两个中文/英文人物名全部明确指向同一个共享卡片 ID。
 5. 保持 `person.html`、`person.text`、章节 HTML 和搜索文本不变；只有人物元数据增加映射字段。
 
-别名匹配使用最长优先和非重叠匹配，但最长优先只是同一人物内部的消歧工具，不能替代显式映射校验。泛称、单独姓氏、演员名和无法唯一归属的短称不进入规则表。
+别名匹配使用最长优先和非重叠匹配，但最长优先只是同一人物内部的消歧工具，不能替代显式映射校验。泛称、单独姓氏、演员名和无法唯一归属的短称不进入规则表。英文别名还必须满足 ASCII 字母/数字词边界，避免把 `Don Vito` 匹配进更长的英文单词或复合名；中文名称按完整 Unicode 字符串匹配。构建阶段输出每个别名的出现上下文供核对；如果同一别名在不同语境可能指向不同人物，则移除该别名或加入明确的排除上下文，不能因全局唯一就自动标注所有出现。`person-43` 的历史称谓等容易产生同名语境的名称必须经过反例检查。
 
 ## Notes-page data flow
 
 1. `notes.html` 将现有 `archive.sections[].html` 注入 `#noteContent`。
-2. 在标题分组和现有 reveal/TOC 初始化的合适位置，遍历允许的文本容器（正文段落、列表项、引用、表格单元格，以及角色档案 `h4` 标题）。使用 `TreeWalker` 处理文本节点，不对完整 HTML 字符串做正则替换。
-3. 跳过 `a`、`button`、`code`、`pre`、图片替代文本、脚本/样式节点和已经标注的节点；保留已有链接、块 ID、heading 结构和文本顺序。
+2. 在标题分组和现有 reveal/TOC 初始化的合适位置，遍历允许的文本容器（正文段落、列表项、引用、表格单元格，以及角色档案 `h4` 标题）。使用一次 `TreeWalker` 处理文本节点，不对完整 HTML 字符串做正则替换；根节点设置初始化标记，重复调用不得再次包裹。
+3. 跳过 `a`、`button`、`code`、`pre`、图片替代文字、脚本/样式节点和已经标注的节点；保留已有链接、块 ID、heading 结构和文本顺序。跨越两个兄弟文本节点的名称不强行合并或重建内联结构，保持未标注并由测试覆盖。
 4. 将匹配片段替换为原生 `button.person-mention`，设置 `data-person`、稳定的 `data-mention` 和描述性 `aria-label`。按钮样式只增加轻量下划线/颜色/hover/focus 反馈，继承正文排版，不把整段正文改成链接或强制单行。
 5. 原文 `textContent` 保持一致，搜索仍使用未装饰的 `archive` 文本；按钮只改变展示层和交互层。
 
@@ -44,21 +56,22 @@
 
 - `role="dialog"`、`aria-modal="true"`、标题和说明通过 `aria-labelledby`/`aria-describedby` 关联。
 - 内容显示当前角色名称、提示“前往首页查看角色介绍”，以及“继续阅读”和“查看角色介绍”两个明确操作。
-- 打开时记录触发按钮和当前滚动状态，设置页面不可操作状态，焦点进入取消按钮或确认按钮；Tab 在弹窗内循环。
-- 点击遮罩、关闭、取消和 Escape 关闭弹窗，移除状态并将焦点恢复到原角色标注；不改变阅读位置。
-- 正常模式使用 `opacity`、`transform`、必要的轻微 `blur` 做面板进出场；`prefers-reduced-motion` 下立即切换最终状态。过渡期间禁止重复打开或重复导航。
+- 打开时记录触发按钮和当前滚动状态，初始焦点固定到“继续阅读”；将全文 header、main 和 back-top 控件设为 `inert`，保存并恢复原有滚动锁样式。Tab 在弹窗内循环，焦点转移使用 `focus({ preventScroll: true })`。
+- 点击遮罩、关闭、取消和 Escape 关闭弹窗，移除 inert/滚动锁并将焦点恢复到原角色标注；不改变阅读位置。关闭回调必须取消待执行的退出计时器。
+- 正常模式使用 `opacity`、`transform`、必要的轻微 `blur` 做面板进出场；`prefers-reduced-motion` 下立即切换最终状态。过渡期间禁止重复打开或重复导航；连续关闭后立即再次打开必须只保留一个有效状态。
+- Escape 处理要与图片查看器互斥：弹窗打开时背景 inert，弹窗先消费 Escape，不让同一事件关闭其他层。
 - 确认操作只接受已存在于 `archive.people` 的人物 ID，跳转到 `index.html?person=<encoded-id>#characters`。
 
 该弹窗是站内导航确认，不使用具有破坏性操作语义的警告文案；交互借鉴 shadcn Dialog/Alert Dialog 的结构化标题、说明和取消/继续动作。
 
 ## Homepage deep-link flow
 
-`index.html` 在 `renderCharacters()` 完成后读取 `URLSearchParams`：
+`index.html` 当前在脚本末尾依次调用 `renderRules()`、`renderTimeline()`、`renderQuotes()`、`renderCharacters()`、`renderHistory()` 和 `renderMotifs()`，没有额外的 JS hash 消费器；深链初始化需与这条顺序协调：
 
-1. 只接受与 `archive.people` 精确相等的 `person` ID，拒绝空值、未知值和格式异常。
-2. 找到对应卡片后，以即时或等待可见的方式滚动至 `#characters`/卡片，避免平滑滚动与弹窗打开竞态。
-3. 打开已有 `morphPerson()` 角色介绍，不复制卡片内容、不新增第二套人物弹窗。
-4. 成功消费参数后可用 `history.replaceState` 保留 `#characters` 并移除一次性 query，防止刷新重复打开；无效参数则保持普通首页且不抛错。
+1. 只接受与 `archive.people` 精确相等的 `person` ID，拒绝空值、未知值和格式异常；不把 query 字符串直接拼入选择器。
+2. 等所有相关初始化完成后，确认目标卡片存在、未被 filter 隐藏、已完成 reveal 绑定且有稳定几何，再以即时滚动至 `#characters`/卡片，避免平滑滚动与弹窗打开竞态。
+3. 打开已有 `morphPerson()` 角色介绍，不复制卡片内容、不新增第二套人物弹窗；关闭该卡片后焦点回到目标卡片。
+4. 成功消费参数后只用 `history.replaceState` 删除 `person`，保留其他 query 参数和 `#characters`；无效参数则保持普通首页且不抛错。
 5. 人物弹窗中的“完整正文”链接继续使用现有 `notes.html#chapter-06-part-*` 目标。
 
 ## Compatibility and accessibility
