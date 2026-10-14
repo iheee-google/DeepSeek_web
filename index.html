@@ -931,6 +931,8 @@
       .quote-mark--open { align-self: start; justify-self: start; }
       .quote-mark--close { align-self: end; justify-self: end; text-align: right; }
       .quote-block blockquote { max-width: var(--archive-quote-measure); font-size: var(--archive-quote-size); line-height: 1.08; letter-spacing: -.04em; }
+      .quote-index-label { text-wrap: balance; }
+      .quote-index-label .quote-index-phrase { white-space: nowrap; }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
       .section-header, .timeline-head, .history-section .section-header { grid-template-columns: 1fr; gap: 1.25rem; }
@@ -1550,7 +1552,11 @@
     }
 
     function renderQuotes() {
-      document.getElementById('quoteIndex').innerHTML = quotes.map((quote, index) => `<button type="button" id="${quote.id}" class="quote-index-button ${index === 0 ? 'is-active' : ''}" data-quote-index="${index}" title="${escapeHtml(quote.translation || quote.original)}"><span class="quote-index-number">${String(index + 1).padStart(2, '0')}</span><span class="quote-index-label">${escapeHtml(quote.translation || quote.original)}</span></button>`).join('');
+      document.getElementById('quoteIndex').innerHTML = quotes.map((quote, index) => {
+        const label = escapeHtml(quote.translation || quote.original);
+        const labelMarkup = quote.id === 'quote-06' ? label.replace('他们', '<span class="quote-index-phrase">他们</span>') : label;
+        return `<button type="button" id="${quote.id}" class="quote-index-button ${index === 0 ? 'is-active' : ''}" data-quote-index="${index}" title="${escapeHtml(quote.translation || quote.original)}"><span class="quote-index-number">${String(index + 1).padStart(2, '0')}</span><span class="quote-index-label">${labelMarkup}</span></button>`;
+      }).join('');
       document.querySelectorAll('[data-quote-index]').forEach((button) => button.addEventListener('click', () => showQuote(Number(button.dataset.quoteIndex))));
       showQuote(0, false);
     }

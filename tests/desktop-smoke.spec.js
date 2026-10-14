@@ -611,6 +611,27 @@ test.describe('柯里昂档案桌面端', () => {
       expect(homeEnvironment.dpr).toBeGreaterThan(0);
       expect(homeEnvironment.fonts).toBe('loaded');
       expect(homeEnvironment.declaredFont).toBeTruthy();
+      const quoteIndexLabelLines = await page.locator('.quote-index-label').evaluateAll((labels) => labels.map((label) => {
+        const lines = new Map();
+        const walker = document.createTreeWalker(label, NodeFilter.SHOW_TEXT);
+        const range = document.createRange();
+        let node;
+        while ((node = walker.nextNode())) {
+          for (let index = 0; index < node.length; index += 1) {
+            if (/\s/.test(node.data[index])) continue;
+            range.setStart(node, index);
+            range.setEnd(node, index + 1);
+            const rect = [...range.getClientRects()].find((item) => item.width > 0 && item.height > 0);
+            if (!rect) continue;
+            const key = Math.round(rect.top * 10) / 10;
+            if (!lines.has(key)) lines.set(key, []);
+            lines.get(key).push(node.data[index]);
+          }
+        }
+        return [...lines.values()].map((line) => line.join(''));
+      }));
+      expect(quoteIndexLabelLines.every((lines) => lines.length <= 2 && lines.every((line) => [...line].length > 1)), `${viewport.width} quote index label geometry`).toBe(true);
+      expect(quoteIndexLabelLines[5].at(-1), `${viewport.width} quote-06 index label ending`).not.toBe('去！');
       test.info().annotations.push({ type: 'viewport-baseline', description: `home ${JSON.stringify(homeEnvironment)}` });
       await page.goto('/notes.html', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
