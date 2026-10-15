@@ -11,12 +11,11 @@
     trigger: null,
     closeTimer: null,
     closeSequence: 0,
+    fullscreenExitPromise: null,
     scale: 1
   };
 
   const icon = (name) => `<i data-lucide="${name}"></i>`;
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
   function hydrateIcons() {
     window.lucide?.createIcons({ attrs: { 'aria-hidden': 'true' } });
   }
@@ -240,7 +239,9 @@
     const source = sourceFor(image);
     if (!source) return;
     ensureViewer();
-    state.closeSequence += 1;
+    const token = ++state.closeSequence;
+    const pendingFullscreenExit = state.fullscreenExitPromise;
+    state.fullscreenExitPromise = null;
     if (state.closeTimer) {
       window.clearTimeout(state.closeTimer);
       state.closeTimer = null;
@@ -262,45 +263,50 @@
     state.stage.scrollLeft = 0;
     state.panel.classList.remove('is-simulated-fullscreen');
     updateFullscreenButton();
-    if (!state.dialog.open) state.dialog.showModal();
-    document.body.classList.add('image-viewer-open');
-    requestAnimationFrame(() => {
-      syncImageLayout();
-      state.stage.focus({ preventScroll: true });
-    });
+    const showViewer = () => {
+      if (token !== state.closeSequence) return;
+      if (!state.dialog.open) state.dialog.showModal();
+      document.body.classList.add('image-viewer-open');
+      requestAnimationFrame(() => {
+        if (token !== state.closeSequence || !state.dialog.open) return;
+        syncImageLayout();
+        state.stage.focus({ preventScroll: true });
+      });
+    };
+    if (pendingFullscreenExit) pendingFullscreenExit.then(showViewer, showViewer);
+    else showViewer();
   }
 
   function closeViewer() {
-    if (!state.dialog?.open || state.dialog.classList.contains('is-closing')) return;
+    if (!state.dialog?.open) return;
     const token = ++state.closeSequence;
-    const exitPromise = document.fullscreenElement === state.panel ? document.exitFullscreen?.() : null;
-    const trigger = state.trigger;
-    let closeFinished = false;
-    let fullscreenExited = !exitPromise;
-    const restoreFocus = () => {
-      if (!closeFinished || !fullscreenExited || token !== state.closeSequence || !trigger?.isConnected) return;
-      window.setTimeout(() => {
-        if (token === state.closeSequence && trigger.isConnected) trigger.focus({ preventScroll: true });
-      }, reduceMotion.matches ? 0 : 40);
-    };
-    const finishFullscreenExit = () => {
-      fullscreenExited = true;
-      restoreFocus();
-    };
-    if (exitPromise?.then) exitPromise.then(finishFullscreenExit, finishFullscreenExit);
-    state.panel.classList.remove('is-simulated-fullscreen');
-    state.dialog.classList.add('is-closing');
-    state.trigger = null;
-    const finishClose = () => {
-      if (token !== state.closeSequence) return;
+    if (state.closeTimer) {
+      window.clearTimeout(state.closeTimer);
       state.closeTimer = null;
-      state.dialog.classList.remove('is-closing');
-      if (state.dialog.open) state.dialog.close();
-      document.body.classList.remove('image-viewer-open');
-      closeFinished = true;
-      restoreFocus();
+    }
+    const trigger = state.trigger;
+    state.trigger = null;
+    state.panel.classList.remove('is-simulated-fullscreen', 'is-closing');
+    if (document.fullscreenElement === state.panel) {
+      try {
+        const exitPromise = document.exitFullscreen?.();
+        state.fullscreenExitPromise = Promise.resolve(exitPromise).catch(() => {}).finally(() => {
+          if (token === state.closeSequence) state.fullscreenExitPromise = null;
+        });
+      } catch {
+        // 全屏退出失败时仍完成图片查看器自身的关闭状态。
+        state.fullscreenExitPromise = null;
+      }
+    }
+    if (state.dialog.open) state.dialog.close();
+    document.body.classList.remove('image-viewer-open');
+    const restoreTriggerFocus = () => {
+      if (token === state.closeSequence && trigger?.isConnected) trigger.focus({ preventScroll: true });
     };
-    state.closeTimer = window.setTimeout(finishClose, reduceMotion.matches ? 0 : 280);
+    window.requestAnimationFrame(restoreTriggerFocus);
+    if (state.fullscreenExitPromise) {
+      state.fullscreenExitPromise.finally(() => window.requestAnimationFrame(restoreTriggerFocus));
+    }
   }
 
   function isViewerImage(image) {
@@ -332,7 +338,7 @@
   document.addEventListener('keydown', (event) => {
     if (state.dialog?.open && event.key === 'Escape') {
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       closeViewer();
       return;
     }

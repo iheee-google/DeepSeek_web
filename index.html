@@ -1183,6 +1183,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"><i data-lucide="check"></i><span id="toastText">已切换</span></div>
 
   <script src="assets/data/archive.js"></script>
+  <script src="assets/js/person-reader.js"></script>
   <script src="assets/js/image-viewer.js"></script>
   <script>
     const archive = window.CORLEONE_ARCHIVE;
@@ -1191,16 +1192,12 @@
     document.getElementById('portalImageCount').textContent = archive.meta.imageCount;
 
     function readerHtml(data) {
-      let html = data.html;
-      if (!html) {
+      let fallbackHtml = '';
+      if (!data.html) {
         const section = archive.sections.find((item) => item.id === data.fullTarget);
-        html = section?.html || `<p>${escapeHtml(data.body || '')}</p>`;
+        fallbackHtml = section?.html || `<p>${escapeHtml(data.body || '')}</p>`;
       }
-      const fragment = document.createElement('div');
-      fragment.innerHTML = html;
-      fragment.querySelector('h2')?.remove();
-      fragment.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
-      return fragment.innerHTML;
+      return window.CorleonePersonReader.renderHtml(data, fallbackHtml);
     }
 
     const quotes = archive.quotes;

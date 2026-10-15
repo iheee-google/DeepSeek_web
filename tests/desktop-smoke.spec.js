@@ -1,5 +1,4 @@
 const { test, expect } = require('@playwright/test');
-const { chromium } = require('playwright');
 const { resolvePublicPath } = require('../scripts/serve-preview.cjs');
 
 function collectDiagnostics(page) {
@@ -20,53 +19,6 @@ async function expectDiagnosticsClean(diagnostics) {
   expect(diagnostics.consoleErrors).toEqual([]);
   expect(diagnostics.pageErrors).toEqual([]);
   expect(diagnostics.failedResponses).toEqual([]);
-}
-
-function installNoteReturnDiagnostics() {
-  window.__noteReturnRestoreDiagnostics = null;
-  window.__noteReturnPageshowAt = null;
-  window.addEventListener('pageshow', () => {
-    if (location.pathname === '/notes.html') window.__noteReturnPageshowAt = performance.now();
-  });
-  const originalReplaceState = history.replaceState;
-  history.replaceState = function(nextState, title, url) {
-    const previousState = history.state;
-    const result = originalReplaceState.apply(this, arguments);
-    if (location.pathname === '/notes.html' && previousState?.noteCharacterReturn && !nextState?.noteCharacterReturn) {
-      const saved = previousState.noteCharacterReturn;
-      const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
-      const rect = anchor?.getBoundingClientRect();
-      const computed = anchor ? getComputedStyle(anchor) : null;
-      const imagesBeforeAnchor = anchor ? [...document.querySelectorAll('#noteContent img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
-      const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => {
-        const rect = image.getBoundingClientRect();
-        return rect.height === 0 && (!image.complete || image.naturalWidth <= 0);
-      });
-      window.__noteReturnRestoreDiagnostics = {
-        elapsed: window.__noteReturnPageshowAt == null ? null : performance.now() - window.__noteReturnPageshowAt,
-        fonts: document.fonts.status,
-        revealReady: !anchor || (computed?.opacity === '1' && computed?.transform === 'none'),
-        viewportTop: rect?.top ?? null,
-        viewportBottom: rect?.bottom ?? null,
-        pendingLayoutImages: layoutSensitiveImages.filter((image) => !image.complete || image.naturalWidth <= 0).length,
-        pendingLayoutImageDetails: layoutSensitiveImages.filter((image) => !image.complete || image.naturalWidth <= 0).map((image) => ({ src: image.currentSrc || image.src, height: image.getBoundingClientRect().height, complete: image.complete, naturalWidth: image.naturalWidth }))
-      };
-    }
-    return result;
-  };
-}
-
-async function expectNoteReturnRestoreSettled(page) {
-  await expect.poll(() => page.evaluate(() => window.__noteReturnRestoreDiagnostics)).toBeTruthy();
-  const diagnostics = await page.evaluate(() => window.__noteReturnRestoreDiagnostics);
-  expect(diagnostics, `正文恢复未提前稳定：${JSON.stringify(diagnostics)}`).not.toBeNull();
-  expect(diagnostics.elapsed, `正文恢复耗尽期限：${JSON.stringify(diagnostics)}`).toBeLessThan(3500);
-  expect(diagnostics.fonts, `正文恢复字体未稳定：${JSON.stringify(diagnostics)}`).toBe('loaded');
-  expect(diagnostics.revealReady, `正文恢复 reveal 未稳定：${JSON.stringify(diagnostics)}`).toBe(true);
-  expect(Number.isFinite(diagnostics.viewportTop), `正文恢复缺少 viewport 顶部：${JSON.stringify(diagnostics)}`).toBe(true);
-  expect(Number.isFinite(diagnostics.viewportBottom), `正文恢复缺少 viewport 底部：${JSON.stringify(diagnostics)}`).toBe(true);
-  expect(diagnostics.pendingLayoutImages, `仍有影响布局的图片未稳定：${JSON.stringify(diagnostics)}`).toBe(0);
-  return diagnostics;
 }
 
 test.describe('柯里昂档案桌面端', () => {
@@ -124,11 +76,27 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
     await poster.click({ force: true });
-    await page.locator('[data-viewer-action="close"]').click();
-    await expect(page.locator('#corleoneImageViewer')).toHaveClass(/is-closing/);
+    const closeState = await page.evaluate(() => {
+      window.__viewerCloseStart = performance.now();
+      document.querySelector('[data-viewer-action="close"]').click();
+      return new Promise((resolve) => requestAnimationFrame(() => resolve({
+        elapsed: performance.now() - window.__viewerCloseStart,
+        open: document.querySelector('#corleoneImageViewer')?.open,
+        locked: document.body.classList.contains('image-viewer-open'),
+        closing: document.querySelector('#corleoneImageViewer')?.classList.contains('is-closing')
+      })));
+    });
+    expect(closeState.elapsed).toBeLessThan(200);
+    expect(closeState.open).toBe(false);
+    expect(closeState.locked).toBe(false);
+    expect(closeState.closing).toBe(false);
     await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelector('.hero-poster img')));
     await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveClass(/is-closing/);
+    await page.evaluate(() => document.querySelector('#corleoneImageViewer').click());
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelector('.hero-poster img')));
+    await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
 
@@ -1155,7 +1123,7 @@ test.describe('柯里昂档案桌面端', () => {
     await expectDiagnosticsClean(diagnostics);
   });
 
-  test('全文角色名称标注保真并通过确认框跳转人物档案', async ({ page }) => {
+  test('全文角色标注保真、简称映射并在当前页打开人物卡', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.goto('/notes.html', { waitUntil: 'networkidle' });
     const expectedText = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.map((section) => {
@@ -1163,8 +1131,7 @@ test.describe('柯里昂档案桌面端', () => {
       template.innerHTML = section.html;
       return template.content.textContent;
     }).join(''));
-    const actualText = await page.locator('#noteContent').textContent();
-    expect(actualText).toBe(expectedText);
+    expect(await page.locator('#noteContent').textContent()).toBe(expectedText);
 
     const expectedLinks = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.flatMap((section) => {
       const template = document.createElement('template');
@@ -1177,8 +1144,16 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('.person-mention')).not.toHaveCount(0);
     await expect(page.locator('#chapter-06-part-49 .person-mention')).not.toHaveCount(0);
     await expect(page.locator('.person-mention[data-person="person-01"]').filter({ hasText: 'Don Vito' })).toHaveCount(1);
-    await expect(page.locator('#chapter-09-block-008 .person-mention')).toHaveCount(0);
-    expect(await page.locator('.person-mention').evaluateAll((buttons) => !buttons.some((button) => ['柯里昂', '教父'].includes(button.textContent)))).toBe(true);
+    await expect(page.locator('#chapter-09-block-008 .person-mention[data-person="person-43"]')).toHaveCount(0);
+    await expect(page.locator('#chapter-04-block-008 .person-mention[data-person="person-15"]')).toHaveCount(0);
+    await expect(page.locator('#chapter-06-block-329 .person-mention[data-person="person-15"]')).toHaveCount(0);
+    for (const [name, personId] of [['维托', 'person-01'], ['索洛佐', 'person-23'], ['康妮', 'person-06'], ['麦克', 'person-02'], ['巴西尼', 'person-25'], ['塔塔基利亚', 'person-26'], ['沃尔茨', 'person-28'], ['扎萨', 'person-38'], ['阿托贝洛', 'person-39'], ['莫斯卡', 'person-44']]) {
+      const locator = page.locator('.person-mention').filter({ hasText: new RegExp(`^${name}$`) });
+      await expect(locator.first()).toHaveAttribute('data-person', personId);
+    }
+    expect(await page.locator('.person-mention').evaluateAll((buttons) => !buttons.some((button) => ['柯里昂', '教父', '汤姆逊', '约翰尼'].includes(button.textContent)))).toBe(true);
+    await expect(page.locator('.person-mention').filter({ hasText: /^麦克拉斯基$/ }).first()).toHaveAttribute('data-person', 'person-24');
+    await expect(page.locator('.person-mention').filter({ hasText: /^凯恩斯齐格$/ }).first()).toHaveAttribute('data-person', 'person-42');
     expect(await page.locator('.person-mention[data-person="person-27"]').evaluateAll((buttons) => {
       const names = new Set(buttons.map((button) => button.textContent));
       return names.has('维克多·斯特拉奇') && names.has('卡迈恩·库尼奥');
@@ -1187,6 +1162,14 @@ test.describe('柯里昂档案桌面端', () => {
       const mentions = buttons.map((button) => button.getAttribute('data-mention'));
       return new Set(mentions).size === mentions.length && buttons.every((button) => button.textContent === button.getAttribute('aria-label').replace(/^查看/, '').replace(/的人物介绍$/, ''));
     })).toBe(true);
+    const style = await page.locator('.person-mention').filter({ hasText: /^维托$/ }).first().evaluate((button) => {
+      const computed = getComputedStyle(button);
+      return { color: computed.color, background: computed.backgroundColor, decoration: computed.textDecorationLine, border: computed.borderBottomWidth };
+    });
+    expect(style.decoration).toContain('underline');
+    expect(Number.parseFloat(style.border)).toBeGreaterThanOrEqual(1);
+    expect(style.background).not.toBe('rgba(0, 0, 0, 0)');
+
     const expectedIds = await page.evaluate(() => window.CORLEONE_ARCHIVE.sections.flatMap((section) => {
       const template = document.createElement('template');
       template.innerHTML = section.html;
@@ -1196,465 +1179,91 @@ test.describe('柯里昂档案桌面端', () => {
     expect(new Set(currentIds).size).toBe(currentIds.length);
     expect(currentIds.filter((id) => expectedIds.includes(id))).toEqual(expectedIds);
 
-    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
+    const trigger = page.locator('.person-mention[data-person="person-01"]').filter({ hasText: /^维托$/ }).first();
+    await trigger.scrollIntoViewIfNeeded();
+    const waitForStableTrigger = () => trigger.evaluate((element) => new Promise((resolve, reject) => {
       let previous = null;
       let stableSamples = 0;
       const started = performance.now();
       const sample = () => {
-        const current = Math.round(window.scrollY);
+        const current = Math.round(element.getBoundingClientRect().top * 100) / 100;
         stableSamples = current === previous ? stableSamples + 1 : 0;
         previous = current;
-        if (stableSamples >= 3) { resolve(current); return; }
-        if (performance.now() - started > 4000) { reject(new Error('滚动位置未稳定')); return; }
-        window.requestAnimationFrame(sample);
+        if (stableSamples >= 4) { resolve(current); return; }
+        if (performance.now() - started > 4000) { reject(new Error('人物标注几何未稳定')); return; }
+        requestAnimationFrame(sample);
       };
       sample();
     }));
-    const trigger = page.locator('.person-mention[data-person="person-01"]').first();
-    const mouseClick = async (locator) => {
-      const box = await locator.boundingBox();
-      if (!box) throw new Error('人物标注不可见');
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    };
-    await trigger.scrollIntoViewIfNeeded();
-    const scrollBefore = await waitForStableScroll();
-    await mouseClick(trigger);
-    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#personConfirmName')).toHaveText(await trigger.textContent());
-    await expect(page.locator('#personConfirmCancel')).toBeFocused();
+    await waitForStableTrigger();
+    const before = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: element.getBoundingClientRect().top }));
+    const triggerBox = await trigger.boundingBox();
+    if (!triggerBox) throw new Error('人物标注不可见');
+    await page.mouse.click(triggerBox.x + triggerBox.width / 2, triggerBox.y + triggerBox.height / 2);
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
+    await expect(page.locator('#personDetailBody')).not.toBeEmpty();
+    await expect(page).toHaveURL(before.href);
+    expect(await page.evaluate(() => history.length)).toBe(before.length);
+    expect(await page.evaluate(() => {
+      const template = document.createElement('template');
+      const person = window.CORLEONE_ARCHIVE.people.find((item) => item.id === 'person-01');
+      template.innerHTML = person.html;
+      template.content.querySelector('h2')?.remove();
+      return template.content.textContent;
+    })).toBe(await page.locator('#personDetailBody').textContent());
+    await expect(page.locator('#personDetailClose')).toHaveCount(0);
+    await expect(page.locator('.person-detail-close')).toBeFocused();
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => Boolean(document.activeElement?.closest('#personDetail')))).toBe(true);
     await page.keyboard.press('Shift+Tab');
-    await expect(page.locator('.person-confirm-close')).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#personConfirmCancel')).toBeFocused();
-    await page.keyboard.press('Tab');
-    await expect(page.locator('#personConfirmGo')).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('#personConfirm')).toBeHidden();
-    await expect(trigger).toBeFocused();
-    const scrollAfter = await waitForStableScroll();
-    expect(Math.abs(scrollAfter - scrollBefore)).toBeLessThan(2);
+    await expect(page.locator('.person-detail-close')).toBeFocused();
 
-    await trigger.focus();
-    await trigger.press('Space');
-    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
-    await page.locator('#personConfirmCancel').click();
-    await expect(page.locator('#personConfirm')).toBeHidden();
+    const detailImage = page.locator('#personDetailBody img').first();
+    if (await detailImage.count()) {
+      await detailImage.click();
+      await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+      await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    }
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
-    await trigger.focus();
+    await waitForStableTrigger();
+    const after = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: element.getBoundingClientRect().top }));
+    expect(after).toEqual(before);
     await trigger.press('Enter');
-    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
-    await page.locator('.person-confirm-backdrop').click({ position: { x: 4, y: 4 } });
-    await expect(page.locator('#personConfirm')).toBeHidden();
-    await mouseClick(trigger);
-    await page.locator('.person-confirm-close').click();
-    await page.evaluate(() => document.querySelector('.person-mention[data-person="person-01"]').click());
-    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#personConfirm')).toHaveCount(1);
-    await page.locator('#personConfirmCancel').click();
-    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
-    await mouseClick(trigger);
-    await page.locator('#personConfirmGo').click();
-    await expect(page).toHaveURL(/index\.html#characters$/);
-    await expect(page.locator('#reader')).toHaveClass(/is-open/);
-    await expect(page.locator('#readerTitleMain')).toContainText('维托·柯里昂');
-    await expect(page.locator('#readerFullLink')).toHaveAttribute('href', /notes\.html#chapter-06-/);
+    await trigger.press('Space');
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await page.locator('.person-detail-backdrop').click({ position: { x: 4, y: 4 } });
+    await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(trigger).toBeFocused();
+    await trigger.press('Enter');
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await page.locator('.person-detail-close').click();
+    await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(trigger).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
   });
 
-  test('人物深链安全处理无效参数并支持返回全文', async ({ page }) => {
+  test('首页人物深链仍安全处理未知参数并支持合法兼容 URL', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
-    await page.addInitScript(() => {
-      window.addEventListener('pageshow', (event) => {
-        const key = 'character-link-normal-pageshow-events';
-        const events = JSON.parse(sessionStorage.getItem(key) || '[]');
-        events.push({ path: location.pathname, persisted: event.persisted });
-        sessionStorage.setItem(key, JSON.stringify(events));
-      });
-    });
-    await page.addInitScript(installNoteReturnDiagnostics);
     await page.goto('/index.html?person=unknown&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?person=unknown&keep=1#characters$/);
-
-    await page.goto('/notes.html', { waitUntil: 'networkidle' });
-    const firstPerson27Mention = page.locator('.person-mention[data-person="person-27"]').first();
-    const targetId = await firstPerson27Mention.evaluate((node) => node.closest('[id]')?.id);
-    expect(targetId).toBeTruthy();
-    await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
-    const waitForSettledTarget = (id = targetId) => page.evaluate((id) => new Promise((resolve, reject) => {
-      let previous = '';
-      let stableSamples = 0;
-      const started = performance.now();
-      const sample = () => {
-        const target = document.getElementById(id);
-        if (!target) { reject(new Error(`找不到正文锚点：${id}`)); return; }
-        const computed = getComputedStyle(target);
-        const rect = target.getBoundingClientRect();
-        const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
-        const ready = computed.opacity === '1' && computed.transform === 'none';
-        stableSamples = ready && signature === previous ? stableSamples + 1 : 0;
-        previous = signature;
-        if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(ready); return; }
-        if (performance.now() - started > 4000) { reject(new Error(`正文锚点未稳定：${id}`)); return; }
-        requestAnimationFrame(sample);
-      };
-      requestAnimationFrame(sample);
-    }), id);
-    expect(await waitForSettledTarget()).toBe(true);
-    const hashScrollY = await page.evaluate(() => Math.round(window.scrollY));
-    const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
-      let previous = null;
-      let stableSamples = 0;
-      const started = performance.now();
-      const sample = () => {
-        const current = Math.round(window.scrollY);
-        stableSamples = current === previous ? stableSamples + 1 : 0;
-        previous = current;
-        if (stableSamples >= 3 && document.fonts.status === 'loaded') { resolve(current); return; }
-        if (performance.now() - started > 4000) { reject(new Error('返回前滚动位置未稳定')); return; }
-        requestAnimationFrame(sample);
-      };
-      requestAnimationFrame(sample);
-    }));
-    const trigger = page.locator('.person-mention[data-person="person-27"]').last();
-    const returnAnchorId = await trigger.evaluate((node) => node.closest('[id]')?.id);
-    expect(returnAnchorId).toBeTruthy();
-    await trigger.scrollIntoViewIfNeeded();
-    expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
-    const scrollBefore = await waitForStableScroll();
-    expect(Math.abs(scrollBefore - hashScrollY)).toBeGreaterThan(120);
-    const noteAnchorBefore = await page.evaluate((id) => {
-      const rect = document.getElementById(id).getBoundingClientRect();
-      return { viewportTop: rect.top };
-    }, returnAnchorId);
-    const noteOverflowBefore = await page.evaluate(() => document.body.style.overflow);
-    const mentionCountBefore = await page.locator('.person-mention').count();
-    const box = await trigger.boundingBox();
-    if (!box) throw new Error('共享人物标注不可见');
-    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-    await page.locator('#personConfirmGo').click();
-    await expect(page).toHaveURL(/index\.html#characters$/);
-    await expect(page.locator('#reader')).toHaveClass(/is-open/);
-    await page.goBack({ waitUntil: 'networkidle' });
-    await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-    await expect.poll(() => page.evaluate(() => {
-      const events = JSON.parse(sessionStorage.getItem('character-link-normal-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
-      return events.at(-1)?.persisted;
-    })).toBe(false);
-    await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
-    await expectNoteReturnRestoreSettled(page);
-    const pendingLazyImagesBeforeAnchor = await page.evaluate((id) => {
-      const anchor = document.getElementById(id);
-      return [...document.querySelectorAll('#noteContent img')].filter((image) => anchor && (image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) && image.loading === 'lazy' && !image.complete).length;
-    }, returnAnchorId);
-    expect(pendingLazyImagesBeforeAnchor).toBeGreaterThan(0);
-    expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
-    await expect(page.locator('#personConfirm')).toBeHidden();
-    expect(await page.locator('[inert]').count()).toBe(0);
-    expect(await page.evaluate(() => document.body.style.overflow)).toBe(noteOverflowBefore);
-    expect(await page.locator('.person-mention').count()).toBe(mentionCountBefore);
-    const noteAnchorAfter = await page.evaluate((id) => {
-      const rect = document.getElementById(id).getBoundingClientRect();
-      return { viewportTop: rect.top, viewportBottom: rect.bottom };
-    }, returnAnchorId);
-    expect(Math.abs(noteAnchorAfter.viewportTop - noteAnchorBefore.viewportTop)).toBeLessThan(4);
-    const notesHeaderBottom = await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom);
-    expect(noteAnchorAfter.viewportTop).toBeGreaterThanOrEqual(notesHeaderBottom - 1);
-    expect(noteAnchorAfter.viewportBottom).toBeLessThanOrEqual(900);
-    const alternateHash = await page.locator('h2[id]').nth(2).getAttribute('id');
-    await page.evaluate((id) => {
-      const state = window.history.state && typeof window.history.state === 'object' ? window.history.state : {};
-      window.history.replaceState({ ...state, noteCharacterReturn: { hash: window.location.hash, scrollY: 0 } }, '', window.location.href);
-      window.dispatchEvent(new Event('pageshow'));
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => { window.location.hash = id; }));
-    }, alternateHash);
-    await expect(page).toHaveURL(new RegExp(`notes\\.html#${alternateHash}$`));
-    await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
-    await page.evaluate((id) => new Promise((resolve, reject) => {
-      let previous = '';
-      let stableSamples = 0;
-      const started = performance.now();
-      const sample = () => {
-        const target = document.getElementById(id);
-        const header = document.querySelector('.notes-header');
-        if (!target || !header) { reject(new Error(`hash 取消后找不到目标：${id}`)); return; }
-        const rect = target.getBoundingClientRect();
-        const headerBottom = header.getBoundingClientRect().bottom;
-        const inViewport = rect.top >= headerBottom - 1 && rect.bottom <= window.innerHeight;
-        const signature = `${Math.round(window.scrollY)}|${rect.top.toFixed(2)}|${rect.bottom.toFixed(2)}`;
-        stableSamples = inViewport && signature === previous ? stableSamples + 1 : 0;
-        previous = signature;
-        if (stableSamples >= 5) { resolve(true); return; }
-        if (performance.now() - started > 4000) { reject(new Error('hash 改变后目标未保持在 viewport，或旧恢复仍影响滚动')); return; }
-        requestAnimationFrame(sample);
-      };
-      requestAnimationFrame(sample);
-    }), alternateHash);
-    const alternateScrollBefore = await waitForStableScroll();
-    await page.mouse.wheel(0, 320);
-    const alternateScrollAfter = await waitForStableScroll();
-    expect(alternateScrollAfter - alternateScrollBefore).toBeGreaterThan(40);
-    await expect.poll(() => page.evaluate((expected) => Math.abs(window.scrollY - expected) < 4, alternateScrollAfter)).toBe(true);
     await page.goto('/index.html?person=person-01&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?keep=1#characters$/);
+    await expect(page.locator('#readerTitleMain')).toContainText('维托·柯里昂');
     await page.locator('#readerClose').click();
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
     await expect(page.locator('#characters [data-person="person-01"]')).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
-  });
-
-  test('启用 BFCache 的 Chromium 返回全文后清理人物确认状态', async () => {
-    const enabledBrowser = await chromium.launch({ headless: false, args: ['--headless=new'], ignoreDefaultArgs: ['--disable-back-forward-cache'] });
-    const context = await enabledBrowser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: 'http://127.0.0.1:4173' });
-    const page = await context.newPage();
-    const diagnostics = collectDiagnostics(page);
-    try {
-      await page.route('**/*', async (route) => {
-        if (route.request().resourceType() !== 'document') return route.continue();
-        const response = await route.fetch();
-        const headers = { ...response.headers() };
-        delete headers['cache-control'];
-        await route.fulfill({ status: response.status(), headers, body: await response.body() });
-      });
-      await page.addInitScript(() => {
-        window.addEventListener('pageshow', (event) => {
-          const key = 'character-link-pageshow-events';
-          const events = JSON.parse(sessionStorage.getItem(key) || '[]');
-          events.push({ path: location.pathname, persisted: event.persisted });
-          sessionStorage.setItem(key, JSON.stringify(events));
-        });
-      });
-      await page.addInitScript(installNoteReturnDiagnostics);
-      await page.goto('/notes.html', { waitUntil: 'networkidle' });
-      const trigger = page.locator('.person-mention[data-person="person-27"]').first();
-      const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
-      expect(targetId).toBeTruthy();
-      await page.goto(`/notes.html#${targetId}`, { waitUntil: 'networkidle' });
-      const waitForSettledTarget = (id = targetId) => page.evaluate((id) => new Promise((resolve, reject) => {
-        let previous = '';
-        let stableSamples = 0;
-        const started = performance.now();
-        const sample = () => {
-          const target = document.getElementById(id);
-          if (!target) { reject(new Error(`找不到 BFCache 正文锚点：${id}`)); return; }
-          const rect = target.getBoundingClientRect();
-          const computed = getComputedStyle(target);
-          const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
-          const ready = computed.opacity === '1' && computed.transform === 'none';
-          stableSamples = ready && signature === previous ? stableSamples + 1 : 0;
-          previous = signature;
-          if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(true); return; }
-          if (performance.now() - started > 4000) { reject(new Error(`BFCache 正文锚点未稳定：${id}`)); return; }
-          requestAnimationFrame(sample);
-        };
-        requestAnimationFrame(sample);
-      }), id);
-      expect(await waitForSettledTarget()).toBe(true);
-      const hashScrollY = await page.evaluate(() => Math.round(window.scrollY));
-      const waitForStableScroll = () => page.evaluate(() => new Promise((resolve, reject) => {
-        let previous = null;
-        let stableSamples = 0;
-        const started = performance.now();
-        const sample = () => {
-          const current = Math.round(window.scrollY);
-          stableSamples = current === previous ? stableSamples + 1 : 0;
-          previous = current;
-          if (stableSamples >= 3 && document.fonts.status === 'loaded') { resolve(current); return; }
-          if (performance.now() - started > 4000) { reject(new Error('BFCache 返回前滚动位置未稳定')); return; }
-          requestAnimationFrame(sample);
-        };
-        requestAnimationFrame(sample);
-      }));
-      const returnTrigger = page.locator('.person-mention[data-person="person-27"]').last();
-      const returnAnchorId = await returnTrigger.evaluate((node) => node.closest('[id]')?.id);
-      expect(returnAnchorId).toBeTruthy();
-      await returnTrigger.scrollIntoViewIfNeeded();
-      expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
-      const scrollBefore = await waitForStableScroll();
-      expect(Math.abs(scrollBefore - hashScrollY)).toBeGreaterThan(120);
-      const anchorBefore = await page.evaluate((id) => {
-        const rect = document.getElementById(id).getBoundingClientRect();
-        return { viewportTop: rect.top };
-      }, returnAnchorId);
-      const box = await returnTrigger.boundingBox();
-      if (!box) throw new Error('BFCache 人物标注不可见');
-      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
-      await page.locator('#personConfirmGo').click();
-      await expect(page).toHaveURL(/index\.html#characters$/);
-      await expect(page.locator('#reader')).toHaveClass(/is-open/);
-      await page.goBack({ waitUntil: 'networkidle' });
-      await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-      await expect.poll(() => page.evaluate(() => {
-        const events = JSON.parse(sessionStorage.getItem('character-link-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
-        return events.at(-1)?.persisted;
-      })).toBe(true);
-      await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
-      await expectNoteReturnRestoreSettled(page);
-      await page.waitForFunction(() => {
-        const dialog = document.getElementById('personConfirm');
-        return dialog?.hidden && !document.querySelector('[inert]') && document.body.style.overflow === '';
-      });
-      expect(await waitForSettledTarget(returnAnchorId)).toBe(true);
-      const anchorAfter = await page.evaluate((id) => {
-        const rect = document.getElementById(id).getBoundingClientRect();
-        return { viewportTop: rect.top, viewportBottom: rect.bottom };
-      }, returnAnchorId);
-      expect(Math.abs(anchorAfter.viewportTop - anchorBefore.viewportTop)).toBeLessThan(4);
-      expect(anchorAfter.viewportTop).toBeGreaterThanOrEqual(await page.locator('.notes-header').evaluate((element) => element.getBoundingClientRect().bottom) - 1);
-      expect(anchorAfter.viewportBottom).toBeLessThanOrEqual(900);
-      expect(await page.locator('.person-mention').count()).toBeGreaterThan(0);
-      await expectDiagnosticsClean(diagnostics);
-    } finally {
-      await context.close();
-      await enabledBrowser.close();
-    }
-  });
-
-  test('延迟锚点前海报响应不改变返回阅读锚点', async () => {
-    const enabledBrowser = await chromium.launch({ args: ['--disable-back-forward-cache'] });
-    const context = await enabledBrowser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: 'http://127.0.0.1:4173' });
-    const page = await context.newPage();
-    const diagnostics = collectDiagnostics(page);
-    let posterRequestSeen = false;
-    let posterResponseStatus = null;
-    let posterResponseFulfilled = false;
-    let releasePoster;
-    const posterResponseGate = new Promise((resolve) => { releasePoster = resolve; });
-    try {
-      await page.route('**/*', async (route) => {
-        if (route.request().resourceType() !== 'document') return route.continue();
-        const response = await route.fetch();
-        const headers = { ...response.headers() };
-        delete headers['cache-control'];
-        await route.fulfill({ status: response.status(), headers, body: await response.body() });
-      });
-      await page.addInitScript(() => {
-        window.addEventListener('pageshow', (event) => {
-          const key = 'character-link-delayed-poster-pageshow-events';
-          const events = JSON.parse(sessionStorage.getItem(key) || '[]');
-          events.push({ path: location.pathname, persisted: event.persisted });
-          sessionStorage.setItem(key, JSON.stringify(events));
-        });
-      });
-      await page.addInitScript(() => {
-        const flag = 'character-link-delay-poster-on-return';
-        window.addEventListener('pageshow', () => {
-          if (location.pathname !== '/notes.html' || sessionStorage.getItem(flag) !== '1') return;
-          const applyDelay = () => {
-            const image = document.querySelector('#noteContent img[src*="godfather1.jpg"]');
-            if (!image || image.dataset.delayedPosterTest) return;
-            const replacement = image.cloneNode(false);
-            replacement.dataset.delayedPosterTest = 'true';
-            replacement.loading = 'eager';
-            const url = new URL(image.src);
-            url.searchParams.set('delayed-test', '1');
-            replacement.src = url.href;
-            image.replaceWith(replacement);
-          };
-          const observer = new MutationObserver(applyDelay);
-          observer.observe(document.documentElement, { childList: true, subtree: true });
-          applyDelay();
-        });
-      });
-      await page.addInitScript(installNoteReturnDiagnostics);
-      await page.goto('/notes.html', { waitUntil: 'networkidle' });
-      await page.route((url) => url.pathname.endsWith('/assets/posters/godfather1.jpg') && url.searchParams.get('delayed-test') === '1', async (route) => {
-        posterRequestSeen = true;
-        await posterResponseGate;
-        const response = await route.fetch();
-        const status = response.status();
-        await route.fulfill({ response });
-        posterResponseStatus = status;
-        posterResponseFulfilled = true;
-      });
-      const poster = page.locator('#noteContent img[src*="godfather1.jpg"]').first();
-      const trigger = page.locator('.person-mention[data-person="person-27"]').last();
-      const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
-      expect(targetId).toBeTruthy();
-      await page.evaluate((id) => { window.location.hash = id; }, targetId);
-      await trigger.scrollIntoViewIfNeeded();
-      await page.evaluate((id) => new Promise((resolve, reject) => {
-        let previous = '';
-        let stableSamples = 0;
-        const started = performance.now();
-        const sample = () => {
-          const target = document.getElementById(id);
-          if (!target) { reject(new Error(`延迟海报测试找不到锚点：${id}`)); return; }
-          const rect = target.getBoundingClientRect();
-          const computed = getComputedStyle(target);
-          const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
-          stableSamples = computed.opacity === '1' && computed.transform === 'none' && signature === previous ? stableSamples + 1 : 0;
-          previous = signature;
-          if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(true); return; }
-          if (performance.now() - started > 4000) { reject(new Error('延迟海报测试锚点未稳定')); return; }
-          requestAnimationFrame(sample);
-        };
-        requestAnimationFrame(sample);
-      }), targetId);
-      const anchorBefore = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
-      const triggerBox = await trigger.boundingBox();
-      if (!triggerBox) throw new Error('延迟海报测试人物标注不可见');
-      await page.evaluate(() => sessionStorage.setItem('character-link-delay-poster-on-return', '1'));
-      await page.mouse.click(triggerBox.x + triggerBox.width / 2, triggerBox.y + triggerBox.height / 2);
-      await page.locator('#personConfirmGo').click();
-      await expect(page).toHaveURL(/index\.html#characters$/);
-      await expect(page.locator('#reader')).toHaveClass(/is-open/);
-      await page.goBack({ waitUntil: 'domcontentloaded' });
-      await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
-      await expect.poll(() => poster.getAttribute('data-delayed-poster-test')).toBe('true');
-      await expect.poll(() => posterRequestSeen).toBe(true);
-      await expect.poll(() => page.evaluate(() => {
-        const events = JSON.parse(sessionStorage.getItem('character-link-delayed-poster-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
-        return events.at(-1)?.persisted;
-      })).toBe(false);
-      await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
-      await expectNoteReturnRestoreSettled(page);
-      const delayedImageBeforeRelease = await poster.evaluate((image) => {
-        const rect = image.getBoundingClientRect();
-        return { complete: image.complete, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, currentSrc: image.currentSrc, width: rect.width, height: rect.height };
-      });
-      expect(delayedImageBeforeRelease.complete).toBe(false);
-      expect(delayedImageBeforeRelease.naturalWidth).toBe(0);
-      expect(delayedImageBeforeRelease.naturalHeight).toBe(0);
-      expect(delayedImageBeforeRelease.currentSrc).toBe('');
-      expect(await poster.getAttribute('src')).toContain('delayed-test=1');
-      expect(delayedImageBeforeRelease.height).toBeGreaterThan(0);
-      expect(Math.abs(delayedImageBeforeRelease.height / delayedImageBeforeRelease.width - 1136 / 800)).toBeLessThan(0.01);
-      const anchorAfterRestore = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
-      expect(Math.abs(anchorAfterRestore - anchorBefore)).toBeLessThan(4);
-      expect(posterResponseStatus).toBeNull();
-      expect(posterResponseFulfilled).toBe(false);
-      releasePoster();
-      await expect.poll(() => posterResponseStatus).toBe(200);
-      await expect.poll(() => posterResponseFulfilled).toBe(true);
-      await expect.poll(() => poster.evaluate((image) => image.complete && image.currentSrc.includes('delayed-test=1') && image.naturalWidth === 800 && image.naturalHeight === 1136)).toBe(true);
-      await poster.evaluate((image) => image.decode());
-      await page.evaluate(({ id, expected }) => new Promise((resolve, reject) => {
-        let previous = '';
-        let stableSamples = 0;
-        const started = performance.now();
-        const sample = () => {
-          const target = document.getElementById(id);
-          const rect = target?.getBoundingClientRect();
-          const signature = rect ? [rect.top, rect.left, rect.width, rect.height].map((value) => value.toFixed(2)).join('|') : '';
-          stableSamples = rect && signature === previous ? stableSamples + 1 : 0;
-          previous = signature;
-          if (stableSamples >= 5 && rect && Math.abs(rect.top - expected) < 4) { resolve(true); return; }
-          if (performance.now() - started > 4000) { reject(new Error(`释放海报后锚点未稳定：${JSON.stringify({ rect, expected })}`)); return; }
-          requestAnimationFrame(sample);
-        };
-        requestAnimationFrame(sample);
-      }), { id: targetId, expected: anchorAfterRestore });
-      const anchorAfterRelease = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
-      expect(Math.abs(anchorAfterRelease - anchorAfterRestore)).toBeLessThan(4);
-      await expectDiagnosticsClean(diagnostics);
-    } finally {
-      releasePoster();
-      await context.close();
-      await enabledBrowser.close();
-    }
   });
 
   test('角色名称标注跳过跨节点与受保护内容并支持减弱动效', async ({ page }) => {
@@ -1691,9 +1300,10 @@ test.describe('柯里昂档案桌面端', () => {
     await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
     await expect(page.locator('.person-mention')).toHaveCount(mentionCount);
     await page.locator('#mention-fixture-plain .person-mention').click();
-    await expect(page.locator('#personConfirm')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
     await page.keyboard.press('Escape');
-    await expect(page.locator('#personConfirm')).toBeHidden();
+    await expect(page.locator('#personDetail')).toBeHidden();
     await expectDiagnosticsClean(diagnostics);
   });
 });

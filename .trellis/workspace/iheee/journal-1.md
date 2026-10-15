@@ -124,3 +124,10 @@
 - `tests/desktop-smoke.spec.js` 的普通返回和真实 BFCache 返回均先滚动到非 hash 起点的正文位置，分别确认 `pageshow.persisted=false/true`、弹窗/inert/滚动锁清理、固定顶栏遮挡和 viewport 锚点恢复；搜索高亮由测试侧 MutationObserver 记录实际出现，避免 1.7 秒过渡造成假失败。
 - 在 1920×1080、1440×900、1024×900 无界面 Chromium 下重新检查 237 个标注、稳定确认弹窗和人物卡截图；DPR 1、字体 loaded、无页面/控制台/请求错误。完整 Playwright 11/11 通过，未启动可见浏览器，也未推送远程。
 - 按最终复审进一步收紧恢复：只缓存锚点之前没有稳定尺寸预留、实际可能改变高度的待加载图片；三张全文海报按 `800×1136`、`800×1140`、`800×1199` 真实比例预留，屏外 lazy 图片保持未加载也不会阻塞。稳定完成要求字体、reveal 最终态、几何和缓存图片集合均就绪，4 秒期限只停止并清理未收敛 state。测试记录 `pageshow → state 消费` 耗时与终止几何，增加普通返回中用全新 `<img>` 节点挂起真实海报响应的独立反例：释放并确认 `fulfill()`、`complete`、`currentSrc`、`800×1136` 固有尺寸和 `decode()` 后，再以连续稳定几何比较同一 viewport 锚点；先确认 state 已消费，再检查连续稳定 viewport 锚点，并验证 hash 改变后旧恢复不再覆盖滚动；普通返回与真实 BFCache 定向回归均通过。最终完整 Playwright 为 12/12，相关提交为 `4880331`、`65be817`，未推送远程。
+
+## 2026-10-15 · 强化角色标注、同页人物卡与图片关闭
+
+- 用户确认采用点击即开卡：全文 `.person-mention` 不再经过确认弹窗或首页跳转，直接在 `notes.html` 打开由 `archive.people` 驱动的人物详情；关闭、遮罩、Escape、Tab 和键盘激活均恢复原阅读锚点与触发焦点，URL/hash/history 不变。新增 `assets/js/person-reader.js` 复用首页与全文页的人物正文清理逻辑。
+- 受控映射完成全量上下文审计：新增并验证维托、老维托、索洛佐、麦克、汤姆、凯、康妮等简称及其他人物常用名；保护麦克拉斯基、汤姆逊、凯恩斯齐格、吕凯西、帕特里克，排除罗科的圣罗科语境、卡洛和莉乔的歧义块，并保留 person-27 共享卡与 person-43 历史同名排除。
+- `.person-mention` 默认态使用角色强调色、2px 底线/下划线和浅暖底，焦点使用高对比 ring；图片查看器关闭不再等待 280ms，下一帧清理 dialog、body 锁和 closing 状态，异步全屏退出由序列号保护，嵌套 Escape 不穿透人物层。
+- 验证：`npm run build:content`、`npm run build`、`npm run verify:deploy`、脚本语法检查、`git diff --check`、Trellis 校验和完整 Playwright 10/10 通过；同页人物卡专项回归在正式 `1920×1080`、`1440×900`、`1024×900` 视口均通过，DPR 1、字体 loaded、无页面/控制台/请求错误。未推送远程。

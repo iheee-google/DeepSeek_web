@@ -1,0 +1,6 @@
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"原生 HTML/JavaScript 标注按钮、同页人物详情层、焦点管理、Escape 分层和本地数据渲染边界"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"人物详情/关闭状态、背景 inert、滚动锁和旧 timer 清理契约"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"生成器人物简称元数据、稳定 person ID、archive 数据契约和 HTML 清理边界"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"桌面视口、reduced-motion、图片查看器关闭、Playwright、构建和预览边界验收"}
+{"file":".trellis/spec/guides/code-reuse-thinking-guide.md","reason":"评估首页人物正文渲染逻辑是否需要最小共享抽取，避免跨路由复制人物内容"}
+{"file":".trellis/spec/guides/cross-layer-thinking-guide.md","reason":"追踪 Markdown/生成器/archive/notes/index/共享查看器/测试的数据和状态边界"}

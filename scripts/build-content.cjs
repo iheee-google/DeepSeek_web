@@ -123,51 +123,51 @@ function extractHeadingList(markdown, prefix) {
 }
 
 const PERSON_MENTION_RULES = [
-  ['person-01', '维托·柯里昂 (Vito Corleone / Don Vito)', ['维托·柯里昂', 'Vito Corleone', 'Don Vito']],
-  ['person-02', '麦克·柯里昂 (Michael Corleone / Don Michael)', ['麦克·柯里昂', 'Michael Corleone', 'Don Michael']],
+  ['person-01', '维托·柯里昂 (Vito Corleone / Don Vito)', ['维托·柯里昂', 'Vito Corleone', 'Don Vito'], [], [{ name: '老维托' }, { name: '维托' }, { name: 'Vito' }]],
+  ['person-02', '麦克·柯里昂 (Michael Corleone / Don Michael)', ['麦克·柯里昂', 'Michael Corleone', 'Don Michael'], [], [{ name: '麦克', protect: ['麦克拉斯基', '麦克莱伦', '麦克白'] }, { name: 'Mike' }]],
   ['person-03', '桑尼·柯里昂 (Santino "Sonny" Corleone)', ['桑尼·柯里昂', '桑尼', 'Santino "Sonny" Corleone']],
-  ['person-04', '弗雷多·柯里昂 (Fredo Corleone)', ['弗雷多·柯里昂', 'Fredo Corleone']],
-  ['person-05', '汤姆·哈根 (Tom Hagen)', ['汤姆·哈根', 'Tom Hagen']],
-  ['person-06', '康妮·柯里昂 (Connie Corleone)', ['康妮·柯里昂', 'Connie Corleone']],
-  ['person-07', '文森特·曼奇尼 / 柯里昂 (Vincent Mancini / Vincent Corleone)', ['文森特·曼奇尼', 'Vincent Mancini', 'Vincent Corleone']],
-  ['person-08', '玛丽·柯里昂 (Mary Corleone)', ['玛丽·柯里昂', 'Mary Corleone']],
-  ['person-09', '安东尼·柯里昂 (Anthony Corleone)', ['安东尼·柯里昂', 'Anthony Corleone']],
-  ['person-10', '卡梅拉·柯里昂 / 柯里昂太太 (Carmella Corleone)', ['卡梅拉·柯里昂', '柯里昂太太', 'Carmella Corleone']],
-  ['person-11', '彼得·克莱门扎 (Peter Clemenza)', ['彼得·克莱门扎', 'Peter Clemenza']],
-  ['person-12', '萨尔瓦托雷·泰西欧 (Salvatore Tessio)', ['萨尔瓦托雷·泰西欧', 'Salvatore Tessio']],
-  ['person-13', '卢卡·布拉西 (Luca Brasi)', ['卢卡·布拉西', 'Luca Brasi']],
-  ['person-14', '阿尔·内里 (Al Neri)', ['阿尔·内里', 'Al Neri']],
-  ['person-15', '罗科·兰波内 (Rocco Lampone)', ['罗科·兰波内', 'Rocco Lampone']],
-  ['person-16', '弗兰克·潘坦捷利 / 弗兰基 (Frank Pentangeli)', ['弗兰克·潘坦捷利', '弗兰基', 'Frank Pentangeli']],
-  ['person-17', '凯·亚当斯 (Kay Adams-Corleone)', ['凯·亚当斯', 'Kay Adams-Corleone']],
-  ['person-18', '阿波洛尼亚·维特利 (Apollonia Vitelli-Corleone)', ['阿波洛尼亚·维特利', 'Apollonia Vitelli-Corleone']],
-  ['person-19', '卡洛·里齐 (Carlo Rizzi)', ['卡洛·里齐', 'Carlo Rizzi']],
+  ['person-04', '弗雷多·柯里昂 (Fredo Corleone)', ['弗雷多·柯里昂', 'Fredo Corleone'], [], [{ name: '弗雷多' }]],
+  ['person-05', '汤姆·哈根 (Tom Hagen)', ['汤姆·哈根', 'Tom Hagen'], [], [{ name: '汤姆', protect: ['汤姆逊', '汤姆·罗奎尔'] }]],
+  ['person-06', '康妮·柯里昂 (Connie Corleone)', ['康妮·柯里昂', 'Connie Corleone'], [], [{ name: '康妮' }]],
+  ['person-07', '文森特·曼奇尼 / 柯里昂 (Vincent Mancini / Vincent Corleone)', ['文森特·曼奇尼', 'Vincent Mancini', 'Vincent Corleone'], [], [{ name: '文森特' }]],
+  ['person-08', '玛丽·柯里昂 (Mary Corleone)', ['玛丽·柯里昂', 'Mary Corleone'], [], [{ name: '玛丽' }]],
+  ['person-09', '安东尼·柯里昂 (Anthony Corleone)', ['安东尼·柯里昂', 'Anthony Corleone'], [], [{ name: '安东尼' }]],
+  ['person-10', '卡梅拉·柯里昂 / 柯里昂太太 (Carmella Corleone)', ['卡梅拉·柯里昂', '柯里昂太太', 'Carmella Corleone'], [], [{ name: '卡梅拉' }]],
+  ['person-11', '彼得·克莱门扎 (Peter Clemenza)', ['彼得·克莱门扎', 'Peter Clemenza'], [], [{ name: '彼得' }, { name: '克莱门扎' }]],
+  ['person-12', '萨尔瓦托雷·泰西欧 (Salvatore Tessio)', ['萨尔瓦托雷·泰西欧', 'Salvatore Tessio'], [], [{ name: '泰西欧' }]],
+  ['person-13', '卢卡·布拉西 (Luca Brasi)', ['卢卡·布拉西', 'Luca Brasi'], [], [{ name: '卢卡' }]],
+  ['person-14', '阿尔·内里 (Al Neri)', ['阿尔·内里', 'Al Neri'], [], [{ name: '内里' }]],
+  ['person-15', '罗科·兰波内 (Rocco Lampone)', ['罗科·兰波内', 'Rocco Lampone'], [{ blockId: 'chapter-04-block-008', text: '罗科' }, { blockId: 'chapter-06-block-329', text: '罗科' }], [{ name: '罗科' }]],
+  ['person-16', '弗兰克·潘坦捷利 / 弗兰基 (Frank Pentangeli)', ['弗兰克·潘坦捷利', '弗兰基', 'Frank Pentangeli'], [], [{ name: '潘坦捷利' }]],
+  ['person-17', '凯·亚当斯 (Kay Adams-Corleone)', ['凯·亚当斯', 'Kay Adams-Corleone'], [], [{ name: '凯', protect: ['凯恩斯齐格', '吕凯西'] }]],
+  ['person-18', '阿波洛尼亚·维特利 (Apollonia Vitelli-Corleone)', ['阿波洛尼亚·维特利', 'Apollonia Vitelli-Corleone'], [], [{ name: '阿波洛尼亚' }]],
+  ['person-19', '卡洛·里齐 (Carlo Rizzi)', ['卡洛·里齐', 'Carlo Rizzi'], [{ blockId: 'chapter-05-block-027', text: '卡洛' }, { blockId: 'chapter-06-block-392', text: '卡洛' }], [{ name: '卡洛', protect: ['卡洛·甘比诺'] }]],
   ['person-20', '约翰尼·芳丹 (Johnny Fontane)', ['约翰尼·芳丹', 'Johnny Fontane']],
-  ['person-21', '露西·曼奇尼 (Lucy Mancini)', ['露西·曼奇尼', 'Lucy Mancini']],
-  ['person-22', '阿梅里戈·本纳瑟拉 (Amerigo Bonasera)', ['阿梅里戈·本纳瑟拉', 'Amerigo Bonasera']],
-  ['person-23', '维吉尔·索洛佐 / “土耳其人” (Virgil "The Turk" Sollozzo)', ['维吉尔·索洛佐', '土耳其人', 'Virgil "The Turk" Sollozzo']],
-  ['person-24', '马克·麦克拉斯基警长 (Captain Mark McCluskey)', ['马克·麦克拉斯基警长', '马克·麦克拉斯基', 'Captain Mark McCluskey']],
-  ['person-25', '埃米利奥·巴西尼 (Emilio Barzini)', ['埃米利奥·巴西尼', 'Emilio Barzini']],
-  ['person-26', '菲利普·塔塔基利亚 (Philip Tattaglia)', ['菲利普·塔塔基利亚', 'Philip Tattaglia']],
-  ['person-27', '维克多·斯特拉奇 (Victor Stracci) 与 卡迈恩·库尼奥 (Carmine Cuneo)', ['维克多·斯特拉奇', 'Victor Stracci', '卡迈恩·库尼奥', 'Carmine Cuneo']],
-  ['person-28', '杰克·沃尔茨 (Jack Woltz)', ['杰克·沃尔茨', 'Jack Woltz']],
-  ['person-29', '保利·加托 (Paulie Gatto)', ['保利·加托', 'Paulie Gatto']],
+  ['person-21', '露西·曼奇尼 (Lucy Mancini)', ['露西·曼奇尼', 'Lucy Mancini'], [], [{ name: '露西' }]],
+  ['person-22', '阿梅里戈·本纳瑟拉 (Amerigo Bonasera)', ['阿梅里戈·本纳瑟拉', 'Amerigo Bonasera'], [], [{ name: '阿梅里戈' }]],
+  ['person-23', '维吉尔·索洛佐 / “土耳其人” (Virgil "The Turk" Sollozzo)', ['维吉尔·索洛佐', '土耳其人', 'Virgil "The Turk" Sollozzo'], [], [{ name: '索洛佐' }]],
+  ['person-24', '马克·麦克拉斯基警长 (Captain Mark McCluskey)', ['马克·麦克拉斯基警长', '马克·麦克拉斯基', 'Captain Mark McCluskey'], [], [{ name: '麦克拉斯基' }]],
+  ['person-25', '埃米利奥·巴西尼 (Emilio Barzini)', ['埃米利奥·巴西尼', 'Emilio Barzini'], [], [{ name: '埃米利奥' }, { name: '巴西尼' }]],
+  ['person-26', '菲利普·塔塔基利亚 (Philip Tattaglia)', ['菲利普·塔塔基利亚', 'Philip Tattaglia'], [], [{ name: '菲利普' }, { name: '塔塔基利亚' }]],
+  ['person-27', '维克多·斯特拉奇 (Victor Stracci) 与 卡迈恩·库尼奥 (Carmine Cuneo)', ['维克多·斯特拉奇', 'Victor Stracci', '卡迈恩·库尼奥', 'Carmine Cuneo'], [], [{ name: '卡迈恩' }, { name: '斯特拉奇' }, { name: '库尼奥' }]],
+  ['person-28', '杰克·沃尔茨 (Jack Woltz)', ['杰克·沃尔茨', 'Jack Woltz'], [], [{ name: '杰克' }, { name: '沃尔茨' }]],
+  ['person-29', '保利·加托 (Paulie Gatto)', ['保利·加托', 'Paulie Gatto'], [], [{ name: '保利' }]],
   ['person-30', '莫·格林 (Moe Greene)', ['莫·格林', 'Moe Greene']],
-  ['person-31', '海曼·罗斯 (Hyman Roth)', ['海曼·罗斯', 'Hyman Roth']],
-  ['person-32', '强尼·欧拉 (Johnny Ola)', ['强尼·欧拉', 'Johnny Ola']],
+  ['person-31', '海曼·罗斯 (Hyman Roth)', ['海曼·罗斯', 'Hyman Roth'], [], [{ name: '海曼' }]],
+  ['person-32', '强尼·欧拉 (Johnny Ola)', ['强尼·欧拉', 'Johnny Ola'], [], [{ name: '强尼' }]],
   ['person-33', '范努奇 (Don Fanucci)', ['范努奇', 'Don Fanucci']],
   ['person-34', '奇乔老教父 (Don Ciccio)', ['奇乔老教父', '奇乔', 'Don Ciccio']],
   ['person-35', '法布里奇奥 (Fabrizio)', ['法布里奇奥', 'Fabrizio']],
-  ['person-36', '唐·托马西诺 (Don Tommasino)', ['唐·托马西诺', 'Don Tommasino']],
-  ['person-37', '帕特·吉尔里参议员 (Senator Pat Geary)', ['帕特·吉尔里参议员', '帕特·吉尔里', 'Senator Pat Geary']],
-  ['person-38', '乔伊·扎萨 (Joey Zasa)', ['乔伊·扎萨', 'Joey Zasa']],
-  ['person-39', '多尼·阿托贝洛 (Don Altobello)', ['多尼·阿托贝洛', 'Don Altobello']],
-  ['person-40', '莉乔·吕凯西 (Don Licio Lucchesi)', ['莉乔·吕凯西', 'Don Licio Lucchesi']],
+  ['person-36', '唐·托马西诺 (Don Tommasino)', ['唐·托马西诺', 'Don Tommasino'], [], [{ name: '托马西诺' }]],
+  ['person-37', '帕特·吉尔里参议员 (Senator Pat Geary)', ['帕特·吉尔里参议员', '帕特·吉尔里', 'Senator Pat Geary'], [], [{ name: '帕特', protect: ['帕特里克'] }]],
+  ['person-38', '乔伊·扎萨 (Joey Zasa)', ['乔伊·扎萨', 'Joey Zasa'], [], [{ name: '乔伊' }, { name: '扎萨' }]],
+  ['person-39', '多尼·阿托贝洛 (Don Altobello)', ['多尼·阿托贝洛', 'Don Altobello'], [], [{ name: '多尼' }, { name: '阿托贝洛' }]],
+  ['person-40', '莉乔·吕凯西 (Don Licio Lucchesi)', ['莉乔·吕凯西', 'Don Licio Lucchesi'], [{ blockId: 'chapter-06-block-394', text: '莉乔' }], [{ name: '莉乔' }]],
   ['person-41', '吉尔代大主教 (Archbishop Gilday)', ['吉尔代大主教', 'Archbishop Gilday']],
-  ['person-42', '弗雷德里克·凯恩斯齐格 (Frederick Keinszig)', ['弗雷德里克·凯恩斯齐格', 'Frederick Keinszig']],
-  ['person-43', '兰贝托枢机 / 教皇若望·保禄一世 (Cardinal Lamberto)', ['兰贝托枢机', '教皇若望·保禄一世', 'Cardinal Lamberto'], [{ blockId: 'chapter-09-block-008', text: '教皇若望·保禄一世' }]],
-  ['person-44', '蒙泰莱普雷的莫斯卡 (Mosca of Montelepre)', ['蒙泰莱普雷的莫斯卡', 'Mosca of Montelepre']]
-].map(([id, title, names, exclusions = []]) => ({ id, title, names, exclusions }));
+  ['person-42', '弗雷德里克·凯恩斯齐格 (Frederick Keinszig)', ['弗雷德里克·凯恩斯齐格', 'Frederick Keinszig'], [], [{ name: '凯恩斯齐格' }]],
+  ['person-43', '兰贝托枢机 / 教皇若望·保禄一世 (Cardinal Lamberto)', ['兰贝托枢机', '教皇若望·保禄一世', 'Cardinal Lamberto'], [{ blockId: 'chapter-09-block-008', text: '教皇若望·保禄一世' }], [{ name: '兰贝托' }]],
+  ['person-44', '蒙泰莱普雷的莫斯卡 (Mosca of Montelepre)', ['蒙泰莱普雷的莫斯卡', 'Mosca of Montelepre'], [], [{ name: '莫斯卡' }]]
+].map(([id, title, names, exclusions = [], aliases = []]) => ({ id, title, names, exclusions, aliases }));
 
 function validatePersonMentionRules(people) {
   if (people.length !== PERSON_MENTION_RULES.length) {
@@ -175,30 +175,46 @@ function validatePersonMentionRules(people) {
   }
   const rulesById = new Map(PERSON_MENTION_RULES.map((rule) => [rule.id, rule]));
   const aliases = new Map();
+  const aliasEntries = [];
   people.forEach((person) => {
     const rule = rulesById.get(person.id);
     if (!rule || rule.title !== person.title) {
       throw new Error(`人物名称映射与标题不匹配：${person.id} / ${person.title}`);
     }
-    const names = [...new Set(rule.names.map((name) => String(name).trim()))].filter(Boolean);
-    if (!names.length) throw new Error(`人物名称映射为空：${person.id}`);
-    names.forEach((name) => {
-      const existing = aliases.get(name);
-      if (existing && existing !== person.id) throw new Error(`人物名称别名冲突：${name} / ${existing} / ${person.id}`);
-      if (['教父', 'Godfather', 'Don'].includes(name)) throw new Error(`人物名称别名过于宽泛：${person.id} / ${name}`);
-      if (person.actor && name === person.actor) throw new Error(`人物名称与演员名重合：${person.id} / ${name}`);
-      aliases.set(name, person.id);
-    });
-    const entries = [...aliases.entries()];
-    entries.forEach(([name, personId], index) => {
-      entries.slice(index + 1).forEach(([otherName, otherPersonId]) => {
-        if (personId !== otherPersonId && (name.includes(otherName) || otherName.includes(name))) {
-          throw new Error(`人物名称别名重叠：${name} / ${otherName}`);
-        }
+    const specsByName = new Map();
+    [...rule.names.map((name) => ({ name })), ...(rule.aliases || [])].forEach((rawSpec) => {
+      const name = String(rawSpec.name || rawSpec).trim();
+      if (!name) return;
+      const protect = [...new Set((rawSpec.protect || []).map((value) => String(value).trim()))].filter(Boolean);
+      const existingSpec = specsByName.get(name);
+      specsByName.set(name, {
+        name,
+        protect: [...new Set([...(existingSpec?.protect || []), ...protect])]
       });
     });
-    person.mentions = names.sort((a, b) => b.length - a.length || a.localeCompare(b));
+    const specs = [...specsByName.values()];
+    if (!specs.length) throw new Error(`人物名称映射为空：${person.id}`);
+    specs.forEach((spec) => {
+      const existing = aliases.get(spec.name);
+      if (existing && existing !== person.id) throw new Error(`人物名称别名冲突：${spec.name} / ${existing} / ${person.id}`);
+      if (['教父', 'Godfather', 'Don'].includes(spec.name)) throw new Error(`人物名称别名过于宽泛：${person.id} / ${spec.name}`);
+      if (person.actor && spec.name === person.actor) throw new Error(`人物名称与演员名重合：${person.id} / ${spec.name}`);
+      aliases.set(spec.name, person.id);
+      aliasEntries.push({ ...spec, personId: person.id });
+    });
+    person.mentions = specs.map((spec) => spec.name).sort((a, b) => b.length - a.length || a.localeCompare(b));
+    person.mentionAliases = specs.map(({ name, protect }) => ({ name, protect }));
     person.mentionExclusions = rule.exclusions;
+  });
+  aliasEntries.forEach((entry, index) => {
+    aliasEntries.slice(index + 1).forEach((otherEntry) => {
+      if (entry.personId === otherEntry.personId || !(entry.name.includes(otherEntry.name) || otherEntry.name.includes(entry.name))) return;
+      const shorter = entry.name.length <= otherEntry.name.length ? entry : otherEntry;
+      const longer = shorter === entry ? otherEntry : entry;
+      if (!shorter.protect.some((protectedName) => longer.name.includes(protectedName))) {
+        throw new Error(`人物名称别名重叠且缺少保护词：${shorter.name} / ${longer.name}`);
+      }
+    });
   });
   const configuredIds = new Set(PERSON_MENTION_RULES.map((rule) => rule.id));
   if (configuredIds.size !== people.length || people.some((person) => !configuredIds.has(person.id))) {

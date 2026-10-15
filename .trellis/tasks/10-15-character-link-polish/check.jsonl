@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"验证标注默认可见性、文本保真、同页详情、图片关闭即时状态和正式桌面回归"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"验证语义按钮、dialog ARIA、焦点恢复、同页人物卡和嵌套 Escape"}
+{"file":".trellis/spec/frontend/state-management.md","reason":"验证 modal 状态、滚动锁、inert、旧 timer 和 fullscreen 清理的一致性"}
+{"file":".trellis/spec/frontend/type-safety.md","reason":"验证简称保护规则、archive 字段契约、稳定 ID 和受控 HTML 消费"}
