@@ -146,6 +146,6 @@
 
 ## 2026-10-15 · 最终顾问验收闭环
 
-- 将人物详情竞态的第二触发器收紧为同一可见正文区域的“麦克”；正常与 reduced-motion 都在同一个 `evaluate` 中确认旧层 `is-closing && !hidden`，立即打开新人物，等待新层 `is-open`、关闭按钮焦点和新正文，再关闭并核对 `aria-hidden`、inert、滚动锁和触发焦点。提交为 `d4a3017`。
+- 将人物详情竞态的第二触发器收紧为同一正文块的“麦克”；正常与 reduced-motion 分别使用同段 `维托/麦克` 和 fixture `Don Vito/麦克`，都在同一个 `evaluate` 中确认旧层 `is-closing && !hidden`，立即打开新人物，等待新层 `is-open`、面板 opacity/transform、关闭按钮焦点和完整新正文，再关闭并核对 `aria-hidden`、inert、滚动锁和触发焦点。提交为 `d4a3017`、`802df90`。
 - 证据脚本在 `1920×1080`、`1440×900`、`1024×900` 分别记录实际 viewport、DPR 1、`document.fonts.status=loaded`、无横向溢出、无 console/page/request 错误；等待正文 reveal 和人物详情 opacity/transform 稳定后重新生成并人工检查标注、完整人物详情、嵌套图片关闭后三组截图。
-- 角色专项与完整 `npm test` 最终均为 10/10；此前一次搜索高亮观察的偶发失败经单项重跑和完整重跑通过，未修改搜索实现或放宽断言。
+- 角色专项与最终完整 `npm test` 均为 10/10；此前一次搜索高亮观察失败经单项重跑和完整重跑通过，未修改搜索实现或放宽断言。`node --check tests/desktop-smoke.spec.js` 与 `git diff --check` 通过。
