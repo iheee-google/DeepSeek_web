@@ -330,35 +330,76 @@
       function annotatePersonMentions() {
         if (noteContent.dataset.personMentionsReady === 'true') return;
         const specs = personMentionSpecs().sort((a, b) => b.name.length - a.name.length || a.person.id.localeCompare(b.person.id) || a.name.localeCompare(b.name));
+        const containerSelector = 'p, li, blockquote, th, td, h4';
+        const hardBoundarySelector = 'a, button, code, pre, script, style, textarea, select';
         const walker = document.createTreeWalker(noteContent, NodeFilter.SHOW_TEXT);
         const textNodes = [];
+        const containers = [];
+        const seenContainers = new Set();
         let node;
-        while ((node = walker.nextNode())) textNodes.push(node);
-        textNodes.forEach((textNode, nodeIndex) => {
-          const parent = textNode.parentElement;
-          const container = parent?.closest('p, li, blockquote, th, td, h4');
-          if (!container || parent.closest('a, button, code, pre, script, style, textarea, select, strong, em')) return;
-          const blockElement = parent.closest('[data-note-block]');
+        while ((node = walker.nextNode())) {
+          textNodes.push(node);
+          const container = node.parentElement?.closest(containerSelector);
+          if (container && !seenContainers.has(container)) {
+            seenContainers.add(container);
+            containers.push(container);
+          }
+        }
+        const nodeIndexes = new Map(textNodes.map((textNode, index) => [textNode, index]));
+        containers.forEach((container) => {
+          const blockElement = container.closest('[data-note-block]');
           const blockId = blockElement?.id || blockElement?.dataset.noteBlock || '';
-          const matches = findMentionMatches(textNode.data, specs, blockId);
-          if (!matches.length || !textNode.parentNode) return;
-          const anchor = blockElement?.id || parent.closest('[id]')?.id || 'note-content';
-          const fragment = document.createDocumentFragment();
-          let last = 0;
-          matches.forEach(({ start, end, spec }, matchIndex) => {
-            if (start > last) fragment.append(document.createTextNode(textNode.data.slice(last, start)));
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'person-mention';
-            button.dataset.person = spec.person.id;
-            button.dataset.mention = `${spec.person.id}:${anchor}:${nodeIndex}:${matchIndex}:${start}`;
-            button.setAttribute('aria-label', `查看${spec.name}的人物介绍`);
-            button.textContent = spec.name;
-            fragment.append(button);
-            last = end;
+          const anchor = blockElement?.id || container.closest('[id]')?.id || 'note-content';
+          const runs = [];
+          const runWalker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+          let currentRun;
+          let textNode;
+          const flushRun = () => {
+            if (currentRun?.text) runs.push(currentRun);
+            currentRun = undefined;
+          };
+          while ((textNode = runWalker.nextNode())) {
+            const parent = textNode.parentElement;
+            if (!parent || parent.closest(containerSelector) !== container) continue;
+            if (parent.closest(hardBoundarySelector)) {
+              flushRun();
+              continue;
+            }
+            if (!currentRun) currentRun = { text: '', segments: [] };
+            const start = currentRun.text.length;
+            currentRun.text += textNode.data;
+            currentRun.segments.push({ node: textNode, start, end: start + textNode.data.length, eligible: !parent.closest('strong, em') });
+          }
+          flushRun();
+          const matchesByNode = new Map();
+          runs.forEach((run) => {
+            findMentionMatches(run.text, specs, blockId).forEach((match) => {
+              const segment = run.segments.find((candidate) => match.start >= candidate.start && match.end <= candidate.end);
+              if (!segment?.eligible) return;
+              const nodeMatches = matchesByNode.get(segment.node) || [];
+              nodeMatches.push({ start: match.start - segment.start, end: match.end - segment.start, spec: match.spec });
+              matchesByNode.set(segment.node, nodeMatches);
+            });
           });
-          if (last < textNode.data.length) fragment.append(document.createTextNode(textNode.data.slice(last)));
-          textNode.parentNode.replaceChild(fragment, textNode);
+          matchesByNode.forEach((matches, textNode) => {
+            if (!textNode.parentNode) return;
+            const fragment = document.createDocumentFragment();
+            let last = 0;
+            matches.forEach(({ start, end, spec }, matchIndex) => {
+              if (start > last) fragment.append(document.createTextNode(textNode.data.slice(last, start)));
+              const button = document.createElement('button');
+              button.type = 'button';
+              button.className = 'person-mention';
+              button.dataset.person = spec.person.id;
+              button.dataset.mention = `${spec.person.id}:${anchor}:${nodeIndexes.get(textNode)}:${matchIndex}:${start}`;
+              button.setAttribute('aria-label', `查看${spec.name}的人物介绍`);
+              button.textContent = spec.name;
+              fragment.append(button);
+              last = end;
+            });
+            if (last < textNode.data.length) fragment.append(document.createTextNode(textNode.data.slice(last)));
+            textNode.parentNode.replaceChild(fragment, textNode);
+          });
         });
         noteContent.dataset.personMentionsReady = 'true';
       }
@@ -434,17 +475,9 @@
         });
       }
 
-      let personDetailPointerSnapshot = null;
-      noteContent.addEventListener('pointerdown', (event) => {
-        const trigger = event.target.closest('.person-mention');
-        if (trigger) personDetailPointerSnapshot = { trigger, scrollY: window.scrollY };
-      }, true);
       noteContent.addEventListener('click', (event) => {
         const trigger = event.target.closest('.person-mention');
-        if (!trigger) return;
-        const snapshot = personDetailPointerSnapshot?.trigger === trigger ? personDetailPointerSnapshot : null;
-        personDetailPointerSnapshot = null;
-        openPersonDetail(trigger, snapshot?.scrollY ?? window.scrollY);
+        if (trigger) openPersonDetail(trigger, window.scrollY);
       });
       personDetail.querySelectorAll('[data-close-person-detail]').forEach((element) => element.addEventListener('click', () => closePersonDetail()));
       document.addEventListener('keydown', (event) => {

@@ -70,6 +70,8 @@
 - 新增 `assets/js/person-reader.js` 作为首页与全文页共用的人物正文清理渲染边界；首页既有人物卡仍使用原数据和交互。
 - `assets/js/image-viewer.js` 的逻辑关闭已与全屏异步退出解耦：下一帧清理 dialog、滚动锁和关闭状态，序列号阻断旧回调，Escape 使用 immediate propagation 防止穿透到人物层。
 - 测试已覆盖 44 人物映射、简称反例和历史排除、正文/链接/稳定 ID 保真、三种桌面视口的同页人物详情、Tab/Escape/遮罩/关闭按钮、嵌套图片 Escape、reduced-motion 以及图片查看器下一帧关闭。
+- 顾问复审后补强了连续语义文本的跨 `strong`/`em` 保护：维托里奥·杜塞、亚历克斯·罗科、文森佐·潘坦捷利、巴西尼/斯特拉奇/库尼奥的演员、兄长和家族语境均有块级或保护词回归；移除了未经必要性证明的 pointerdown 滚动快照。
+- 图片查看器新增延迟 fullscreen 退出、拒绝 fullscreen 退出和关闭后立即重开回归；应用层关闭状态不等待 Promise，旧异步回调不重新打开查看器。
 
 ## Validation matrix
 

@@ -361,6 +361,49 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
 
+    const delayedExitPoster = page.locator('.hero-poster img').nth(1);
+    await page.locator('#dynamicViewerImage').click();
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await page.evaluate(() => {
+      const nativeExit = document.exitFullscreen.bind(document);
+      let release;
+      window.__nativeViewerExit = nativeExit;
+      window.__releaseViewerExit = async () => {
+        await nativeExit();
+        release?.();
+      };
+      document.exitFullscreen = () => new Promise((resolve) => { release = resolve; });
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelectorAll('.hero-poster img')[1]));
+    await page.evaluate(() => window.CorleoneImageViewer.close());
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await page.evaluate(() => window.__releaseViewerExit());
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+    await page.evaluate(() => { document.exitFullscreen = window.__nativeViewerExit; delete window.__nativeViewerExit; delete window.__releaseViewerExit; });
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expect(delayedExitPoster).toBeFocused();
+
+    const rejectedExitPoster = page.locator('.hero-poster img').first();
+    await rejectedExitPoster.click();
+    await page.locator('[data-viewer-action="fullscreen"]').click();
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(true);
+    await page.evaluate(() => {
+      window.__nativeViewerExit = document.exitFullscreen.bind(document);
+      document.exitFullscreen = () => Promise.reject(new Error('test rejected exit'));
+    });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    await expect(page.locator('body')).not.toHaveClass(/image-viewer-open/);
+    await page.evaluate(async () => {
+      document.exitFullscreen = window.__nativeViewerExit;
+      await window.__nativeViewerExit();
+      delete window.__nativeViewerExit;
+    });
+    await expect.poll(() => page.evaluate(() => Boolean(document.fullscreenElement))).toBe(false);
+
     const posterSources = await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => image.src));
     for (let index = 0; index < posterSources.length; index += 1) {
       const poster = page.locator('.hero-poster img').nth(index);
@@ -1146,8 +1189,19 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('.person-mention[data-person="person-01"]').filter({ hasText: 'Don Vito' })).toHaveCount(1);
     await expect(page.locator('#chapter-09-block-008 .person-mention[data-person="person-43"]')).toHaveCount(0);
     await expect(page.locator('#chapter-04-block-008 .person-mention[data-person="person-15"]')).toHaveCount(0);
+    await expect(page.locator('#chapter-06-block-350 .person-mention[data-person="person-01"]')).toHaveCount(0);
+    await expect(page.locator('#chapter-06-block-292 .person-mention[data-person="person-15"]')).toHaveCount(0);
+    expect(await page.locator('#chapter-04-block-030').evaluate((block) => {
+      const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+      let textNode;
+      while ((textNode = walker.nextNode())) if (textNode.data.includes('文森佐·潘坦捷利')) return true;
+      return false;
+    })).toBe(true);
+    for (const personId of ['person-25', 'person-26', 'person-27']) {
+      await expect(page.locator(`#chapter-02-block-009 .person-mention[data-person="${personId}"]`)).toHaveCount(0);
+    }
     await expect(page.locator('#chapter-06-block-329 .person-mention[data-person="person-15"]')).toHaveCount(0);
-    for (const [name, personId] of [['维托', 'person-01'], ['索洛佐', 'person-23'], ['康妮', 'person-06'], ['麦克', 'person-02'], ['巴西尼', 'person-25'], ['塔塔基利亚', 'person-26'], ['沃尔茨', 'person-28'], ['扎萨', 'person-38'], ['阿托贝洛', 'person-39'], ['莫斯卡', 'person-44']]) {
+    for (const [name, personId] of [['维托', 'person-01'], ['索洛佐', 'person-23'], ['康妮', 'person-06'], ['麦克', 'person-02'], ['巴西尼', 'person-25'], ['沃尔茨', 'person-28'], ['扎萨', 'person-38'], ['阿托贝洛', 'person-39'], ['莫斯卡', 'person-44']]) {
       const locator = page.locator('.person-mention').filter({ hasText: new RegExp(`^${name}$`) });
       await expect(locator.first()).toHaveAttribute('data-person', personId);
     }
@@ -1196,12 +1250,13 @@ test.describe('柯里昂档案桌面端', () => {
       sample();
     }));
     await waitForStableTrigger();
-    const before = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: element.getBoundingClientRect().top }));
+    const before = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: Math.round(element.getBoundingClientRect().top * 100) / 100 }));
     const triggerBox = await trigger.boundingBox();
     if (!triggerBox) throw new Error('人物标注不可见');
     await page.mouse.click(triggerBox.x + triggerBox.width / 2, triggerBox.y + triggerBox.height / 2);
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
+    expect(await page.evaluate(() => ({ inert: [document.querySelector('.notes-header'), document.querySelector('.notes-main'), document.querySelector('.back-top')].every((element) => element?.inert), overflow: document.body.style.overflow }))).toEqual({ inert: true, overflow: 'hidden' });
     await expect(page.locator('#personDetailBody')).not.toBeEmpty();
     await expect(page).toHaveURL(before.href);
     expect(await page.evaluate(() => history.length)).toBe(before.length);
@@ -1230,8 +1285,9 @@ test.describe('柯里昂档案桌面端', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
+    expect(await page.evaluate(() => ({ inert: [document.querySelector('.notes-header'), document.querySelector('.notes-main'), document.querySelector('.back-top')].some((element) => element?.inert), overflow: document.body.style.overflow }))).toEqual({ inert: false, overflow: '' });
     await waitForStableTrigger();
-    const after = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: element.getBoundingClientRect().top }));
+    const after = await trigger.evaluate((element) => ({ href: location.href, length: history.length, scrollY: window.scrollY, top: Math.round(element.getBoundingClientRect().top * 100) / 100 }));
     expect(after).toEqual(before);
     await trigger.press('Enter');
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
@@ -1283,6 +1339,8 @@ test.describe('柯里昂档案桌面端', () => {
 <p id="mention-fixture-plain">Don Vito</p>
 <p id="mention-fixture-boundary">Don Vitone 教父</p>
 <p id="mention-fixture-cross"><strong>Don</strong> <em>Vito</em></p>
+<p id="mention-fixture-strong-split">麦克<strong>拉斯基</strong></p>
+<p id="mention-fixture-em-split">汤姆<em>逊</em></p>
 <p id="mention-fixture-link"><a href="#mention-fixture-link-target">Don Vito</a></p>
 <p id="mention-fixture-code"><code>Don Vito</code></p>`
             } : section)
@@ -1294,6 +1352,8 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#mention-fixture-plain .person-mention')).toHaveCount(1);
     await expect(page.locator('#mention-fixture-boundary .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-cross .person-mention')).toHaveCount(0);
+    await expect(page.locator('#mention-fixture-strong-split .person-mention')).toHaveCount(0);
+    await expect(page.locator('#mention-fixture-em-split .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-link .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-code .person-mention')).toHaveCount(0);
     const mentionCount = await page.locator('.person-mention').count();

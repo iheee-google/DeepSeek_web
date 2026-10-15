@@ -241,7 +241,6 @@
     ensureViewer();
     const token = ++state.closeSequence;
     const pendingFullscreenExit = state.fullscreenExitPromise;
-    state.fullscreenExitPromise = null;
     if (state.closeTimer) {
       window.clearTimeout(state.closeTimer);
       state.closeTimer = null;
@@ -273,12 +272,15 @@
         state.stage.focus({ preventScroll: true });
       });
     };
-    if (pendingFullscreenExit) pendingFullscreenExit.then(showViewer, showViewer);
-    else showViewer();
+    if (pendingFullscreenExit) {
+      pendingFullscreenExit.finally(() => {
+        if (state.fullscreenExitPromise === pendingFullscreenExit) state.fullscreenExitPromise = null;
+      }).then(showViewer, showViewer);
+    } else showViewer();
   }
 
   function closeViewer() {
-    if (!state.dialog?.open) return;
+    if (!state.dialog || (!state.dialog.open && !state.trigger)) return;
     const token = ++state.closeSequence;
     if (state.closeTimer) {
       window.clearTimeout(state.closeTimer);
@@ -287,7 +289,7 @@
     const trigger = state.trigger;
     state.trigger = null;
     state.panel.classList.remove('is-simulated-fullscreen', 'is-closing');
-    if (document.fullscreenElement === state.panel) {
+    if (document.fullscreenElement === state.panel && !state.fullscreenExitPromise) {
       try {
         const exitPromise = document.exitFullscreen?.();
         state.fullscreenExitPromise = Promise.resolve(exitPromise).catch(() => {}).finally(() => {
