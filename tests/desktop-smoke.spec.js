@@ -1309,12 +1309,12 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
 
-    const rapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
+    const rapidTrigger = page.locator('.person-mention[data-person="person-02"]').filter({ hasText: /^麦克$/ }).first();
     await trigger.press('Enter');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
     const raceState = await page.evaluate(() => {
       const findMention = (personId, text) => [...document.querySelectorAll(`.person-mention[data-person="${personId}"]`)].find((element) => element.textContent === text);
-      const second = findMention('person-23', '索洛佐');
+      const second = findMention('person-02', '麦克');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
       const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
       second?.click();
@@ -1322,10 +1322,14 @@ test.describe('柯里昂档案桌面端', () => {
     });
     expect(raceState).toEqual({ closing: true, hidden: false });
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
-    await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
+    await expect(page.locator('#personDetail')).toHaveClass(/is-open/);
+    await expect(page.locator('#personDetailTitle')).toContainText('麦克·柯里昂');
+    await expect(page.locator('.person-detail-close')).toBeFocused();
     expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: true, overflow: 'hidden' });
     await page.keyboard.press('Escape');
     await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'true');
+    expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: false, overflow: '' });
     await expect(rapidTrigger).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
   });
@@ -1391,20 +1395,24 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#mention-fixture-plain .person-mention').click();
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
-    const reducedRapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
+    const reducedRapidTrigger = page.locator('.person-mention[data-person="person-02"]').filter({ hasText: /^麦克$/ }).first();
     const reducedRaceState = await page.evaluate(() => {
-      const second = [...document.querySelectorAll('.person-mention[data-person="person-23"]')].find((element) => element.textContent === '索洛佐');
+      const second = [...document.querySelectorAll('.person-mention[data-person="person-02"]')].find((element) => element.textContent === '麦克');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
       const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
       second?.click();
       return beforeReopen;
     });
     expect(reducedRaceState).toEqual({ closing: true, hidden: false });
-    await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
+    await expect(page.locator('#personDetailTitle')).toContainText('麦克·柯里昂');
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personDetail')).toHaveClass(/is-open/);
+    await expect(page.locator('.person-detail-close')).toBeFocused();
     expect(await page.locator('.notes-main').evaluate((element) => element.inert)).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'true');
+    expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: false, overflow: '' });
     await expect(reducedRapidTrigger).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
   });
