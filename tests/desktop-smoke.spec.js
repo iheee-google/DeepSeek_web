@@ -40,8 +40,7 @@ function installNoteReturnDiagnostics() {
       const imagesBeforeAnchor = anchor ? [...document.querySelectorAll('#noteContent img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
       const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => {
         const rect = image.getBoundingClientRect();
-        const nearViewport = rect.bottom >= -window.innerHeight && rect.top <= window.innerHeight * 2;
-        return nearViewport && (rect.height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
+        return rect.height === 0 && (!image.complete || image.naturalWidth <= 0);
       });
       window.__noteReturnRestoreDiagnostics = {
         elapsed: window.__noteReturnPageshowAt == null ? null : performance.now() - window.__noteReturnPageshowAt,
@@ -1508,6 +1507,119 @@ test.describe('柯里昂档案桌面端', () => {
       expect(await page.locator('.person-mention').count()).toBeGreaterThan(0);
       await expectDiagnosticsClean(diagnostics);
     } finally {
+      await context.close();
+      await enabledBrowser.close();
+    }
+  });
+
+  test('延迟锚点前海报响应不改变返回阅读锚点', async () => {
+    const enabledBrowser = await chromium.launch({ args: ['--disable-back-forward-cache'] });
+    const context = await enabledBrowser.newContext({ viewport: { width: 1440, height: 900 }, baseURL: 'http://127.0.0.1:4173' });
+    const page = await context.newPage();
+    const diagnostics = collectDiagnostics(page);
+    let posterRequestSeen = false;
+    let posterResponseStatus = null;
+    let releasePoster;
+    const posterResponseGate = new Promise((resolve) => { releasePoster = resolve; });
+    try {
+      await page.route('**/*', async (route) => {
+        if (route.request().resourceType() !== 'document') return route.continue();
+        const response = await route.fetch();
+        const headers = { ...response.headers() };
+        delete headers['cache-control'];
+        await route.fulfill({ status: response.status(), headers, body: await response.body() });
+      });
+      await page.addInitScript(() => {
+        window.addEventListener('pageshow', (event) => {
+          const key = 'character-link-delayed-poster-pageshow-events';
+          const events = JSON.parse(sessionStorage.getItem(key) || '[]');
+          events.push({ path: location.pathname, persisted: event.persisted });
+          sessionStorage.setItem(key, JSON.stringify(events));
+        });
+      });
+      await page.addInitScript(() => {
+        const flag = 'character-link-delay-poster-on-return';
+        window.addEventListener('pageshow', () => {
+          if (location.pathname !== '/notes.html' || sessionStorage.getItem(flag) !== '1') return;
+          const applyDelay = () => {
+            const image = document.querySelector('#noteContent img[src*="godfather1.jpg"]');
+            if (!image || image.dataset.delayedPosterTest) return;
+            image.dataset.delayedPosterTest = 'true';
+            image.loading = 'eager';
+            const url = new URL(image.src);
+            url.searchParams.set('delayed-test', '1');
+            image.src = url.href;
+          };
+          const observer = new MutationObserver(applyDelay);
+          observer.observe(document.documentElement, { childList: true, subtree: true });
+          applyDelay();
+        });
+      });
+      await page.addInitScript(installNoteReturnDiagnostics);
+      await page.goto('/notes.html', { waitUntil: 'networkidle' });
+      await page.route((url) => url.pathname.endsWith('/assets/posters/godfather1.jpg') && url.searchParams.get('delayed-test') === '1', async (route) => {
+        posterRequestSeen = true;
+        await posterResponseGate;
+        const response = await route.fetch();
+        posterResponseStatus = response.status();
+        await route.fulfill({ response });
+      });
+      const poster = page.locator('#noteContent img[src*="godfather1.jpg"]').first();
+      const trigger = page.locator('.person-mention[data-person="person-27"]').last();
+      const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
+      expect(targetId).toBeTruthy();
+      await page.evaluate((id) => { window.location.hash = id; }, targetId);
+      await trigger.scrollIntoViewIfNeeded();
+      await page.evaluate((id) => new Promise((resolve, reject) => {
+        let previous = '';
+        let stableSamples = 0;
+        const started = performance.now();
+        const sample = () => {
+          const target = document.getElementById(id);
+          if (!target) { reject(new Error(`延迟海报测试找不到锚点：${id}`)); return; }
+          const rect = target.getBoundingClientRect();
+          const computed = getComputedStyle(target);
+          const signature = [rect.top, rect.left, rect.width, rect.height, computed.opacity, computed.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
+          stableSamples = computed.opacity === '1' && computed.transform === 'none' && signature === previous ? stableSamples + 1 : 0;
+          previous = signature;
+          if (stableSamples >= 5 && document.fonts.status === 'loaded') { resolve(true); return; }
+          if (performance.now() - started > 4000) { reject(new Error('延迟海报测试锚点未稳定')); return; }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }), targetId);
+      const anchorBefore = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
+      const triggerBox = await trigger.boundingBox();
+      if (!triggerBox) throw new Error('延迟海报测试人物标注不可见');
+      await page.evaluate(() => sessionStorage.setItem('character-link-delay-poster-on-return', '1'));
+      await page.mouse.click(triggerBox.x + triggerBox.width / 2, triggerBox.y + triggerBox.height / 2);
+      await page.locator('#personConfirmGo').click();
+      await expect(page).toHaveURL(/index\.html#characters$/);
+      await expect(page.locator('#reader')).toHaveClass(/is-open/);
+      await page.goBack({ waitUntil: 'domcontentloaded' });
+      await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
+      await expect.poll(() => poster.getAttribute('data-delayed-poster-test')).toBe('true');
+      await expect.poll(() => posterRequestSeen).toBe(true);
+      await expect.poll(() => page.evaluate(() => {
+        const events = JSON.parse(sessionStorage.getItem('character-link-delayed-poster-pageshow-events') || '[]').filter((event) => event.path === '/notes.html');
+        return events.at(-1)?.persisted;
+      })).toBe(false);
+      await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
+      await expectNoteReturnRestoreSettled(page);
+      const anchorAfterRestore = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
+      expect(Math.abs(anchorAfterRestore - anchorBefore)).toBeLessThan(4);
+      releasePoster();
+      await expect.poll(() => posterResponseStatus).toBe(200);
+      await expect.poll(() => poster.evaluate((image) => image.naturalWidth > 0)).toBe(true);
+      await expect.poll(() => page.evaluate(({ id, expected }) => {
+        const rect = document.getElementById(id).getBoundingClientRect();
+        return Math.abs(rect.top - expected) < 4;
+      }, { id: targetId, expected: anchorAfterRestore })).toBe(true);
+      const anchorAfterRelease = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
+      expect(Math.abs(anchorAfterRelease - anchorAfterRestore)).toBeLessThan(4);
+      await expectDiagnosticsClean(diagnostics);
+    } finally {
+      releasePoster();
       await context.close();
       await enabledBrowser.close();
     }

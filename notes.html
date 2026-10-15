@@ -82,6 +82,9 @@
     .note-content li { margin: .55rem 0; }
     .note-content img { display: block; width: 100%; height: clamp(11rem, 34vw, 32rem); margin: 2rem 0; object-fit: contain; background: #d4ddd5; filter: sepia(.08) saturate(.86); }
     .note-content img[src*="assets/posters/"] { width: min(100%, 28rem); height: auto; max-height: 46rem; margin: 2.4rem auto; background: #0a0907; filter: sepia(.04) saturate(.95); box-shadow: 0 1.5rem 3.5rem rgba(29, 48, 41, .18); }
+.note-content img[src*="godfather1.jpg"] { aspect-ratio: 800 / 1136; }
+.note-content img[src*="godfather2.jpg"] { aspect-ratio: 800 / 1140; }
+.note-content img[src*="godfather3.jpg"] { aspect-ratio: 800 / 1199; }
     .note-content table { display: block; width: 100%; margin: 1.8rem 0; overflow-x: auto; border-collapse: collapse; font-family: var(--sans); font-size: .7rem; line-height: 1.65; scrollbar-color: var(--accent) transparent; scrollbar-width: thin; }
     .note-content th, .note-content td { min-width: 8rem; padding: .7rem .75rem; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
     .note-content th { color: var(--accent); background: rgba(56, 88, 75, .08); font-weight: 700; }
@@ -413,8 +416,7 @@
         const imagesBeforeAnchor = anchor ? [...noteContent.querySelectorAll('img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
         const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => {
           const rect = image.getBoundingClientRect();
-          const nearViewport = rect.bottom >= -window.innerHeight && rect.top <= window.innerHeight * 2;
-          return nearViewport && (rect.height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
+          return rect.height === 0 && (!image.complete || image.naturalWidth <= 0);
         });
         const sample = () => {
           const currentSaved = getSavedNoteReturnPosition();
