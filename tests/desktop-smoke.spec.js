@@ -22,6 +22,54 @@ async function expectDiagnosticsClean(diagnostics) {
   expect(diagnostics.failedResponses).toEqual([]);
 }
 
+function installNoteReturnDiagnostics() {
+  window.__noteReturnRestoreDiagnostics = null;
+  window.__noteReturnPageshowAt = null;
+  window.addEventListener('pageshow', () => {
+    if (location.pathname === '/notes.html') window.__noteReturnPageshowAt = performance.now();
+  });
+  const originalReplaceState = history.replaceState;
+  history.replaceState = function(nextState, title, url) {
+    const previousState = history.state;
+    const result = originalReplaceState.apply(this, arguments);
+    if (location.pathname === '/notes.html' && previousState?.noteCharacterReturn && !nextState?.noteCharacterReturn) {
+      const saved = previousState.noteCharacterReturn;
+      const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
+      const rect = anchor?.getBoundingClientRect();
+      const computed = anchor ? getComputedStyle(anchor) : null;
+      const imagesBeforeAnchor = anchor ? [...document.querySelectorAll('#noteContent img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
+      const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => {
+        const rect = image.getBoundingClientRect();
+        const nearViewport = rect.bottom >= -window.innerHeight && rect.top <= window.innerHeight * 2;
+        return nearViewport && (rect.height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
+      });
+      window.__noteReturnRestoreDiagnostics = {
+        elapsed: window.__noteReturnPageshowAt == null ? null : performance.now() - window.__noteReturnPageshowAt,
+        fonts: document.fonts.status,
+        revealReady: !anchor || (computed?.opacity === '1' && computed?.transform === 'none'),
+        viewportTop: rect?.top ?? null,
+        viewportBottom: rect?.bottom ?? null,
+        pendingLayoutImages: layoutSensitiveImages.filter((image) => !image.complete || image.naturalWidth <= 0).length,
+        pendingLayoutImageDetails: layoutSensitiveImages.filter((image) => !image.complete || image.naturalWidth <= 0).map((image) => ({ src: image.currentSrc || image.src, height: image.getBoundingClientRect().height, complete: image.complete, naturalWidth: image.naturalWidth }))
+      };
+    }
+    return result;
+  };
+}
+
+async function expectNoteReturnRestoreSettled(page) {
+  await expect.poll(() => page.evaluate(() => window.__noteReturnRestoreDiagnostics)).toBeTruthy();
+  const diagnostics = await page.evaluate(() => window.__noteReturnRestoreDiagnostics);
+  expect(diagnostics, `正文恢复未提前稳定：${JSON.stringify(diagnostics)}`).not.toBeNull();
+  expect(diagnostics.elapsed, `正文恢复耗尽期限：${JSON.stringify(diagnostics)}`).toBeLessThan(3500);
+  expect(diagnostics.fonts, `正文恢复字体未稳定：${JSON.stringify(diagnostics)}`).toBe('loaded');
+  expect(diagnostics.revealReady, `正文恢复 reveal 未稳定：${JSON.stringify(diagnostics)}`).toBe(true);
+  expect(Number.isFinite(diagnostics.viewportTop), `正文恢复缺少 viewport 顶部：${JSON.stringify(diagnostics)}`).toBe(true);
+  expect(Number.isFinite(diagnostics.viewportBottom), `正文恢复缺少 viewport 底部：${JSON.stringify(diagnostics)}`).toBe(true);
+  expect(diagnostics.pendingLayoutImages, `仍有影响布局的图片未稳定：${JSON.stringify(diagnostics)}`).toBe(0);
+  return diagnostics;
+}
+
 test.describe('柯里昂档案桌面端', () => {
   test('预览服务只允许公开页面与资源', async () => {
     expect(resolvePublicPath('/index.html')).toMatch(/index\.html$/);
@@ -1225,6 +1273,7 @@ test.describe('柯里昂档案桌面端', () => {
         sessionStorage.setItem(key, JSON.stringify(events));
       });
     });
+    await page.addInitScript(installNoteReturnDiagnostics);
     await page.goto('/index.html?person=unknown&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).not.toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?person=unknown&keep=1#characters$/);
@@ -1288,7 +1337,6 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#personConfirmGo').click();
     await expect(page).toHaveURL(/index\.html#characters$/);
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
-    const restoreStartedAt = Date.now();
     await page.goBack({ waitUntil: 'networkidle' });
     await expect(page).toHaveURL(new RegExp(`notes\\.html#${targetId}$`));
     await expect.poll(() => page.evaluate(() => {
@@ -1296,7 +1344,7 @@ test.describe('柯里昂档案桌面端', () => {
       return events.at(-1)?.persisted;
     })).toBe(false);
     await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
-    expect(Date.now() - restoreStartedAt).toBeLessThan(3500);
+    await expectNoteReturnRestoreSettled(page);
     const pendingLazyImagesBeforeAnchor = await page.evaluate((id) => {
       const anchor = document.getElementById(id);
       return [...document.querySelectorAll('#noteContent img')].filter((image) => anchor && (image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) && image.loading === 'lazy' && !image.complete).length;
@@ -1333,15 +1381,22 @@ test.describe('柯里昂档案桌面端', () => {
         const header = document.querySelector('.notes-header');
         if (!target || !header) { reject(new Error(`hash 取消后找不到目标：${id}`)); return; }
         const rect = target.getBoundingClientRect();
-        const signature = `${Math.round(window.scrollY)}|${rect.top.toFixed(2)}`;
-        stableSamples = rect.top >= header.getBoundingClientRect().bottom - 1 && signature === previous ? stableSamples + 1 : 0;
+        const headerBottom = header.getBoundingClientRect().bottom;
+        const inViewport = rect.top >= headerBottom - 1 && rect.bottom <= window.innerHeight;
+        const signature = `${Math.round(window.scrollY)}|${rect.top.toFixed(2)}|${rect.bottom.toFixed(2)}`;
+        stableSamples = inViewport && signature === previous ? stableSamples + 1 : 0;
         previous = signature;
         if (stableSamples >= 5) { resolve(true); return; }
-        if (performance.now() - started > 4000) { reject(new Error('hash 改变后旧恢复仍影响滚动')); return; }
+        if (performance.now() - started > 4000) { reject(new Error('hash 改变后目标未保持在 viewport，或旧恢复仍影响滚动')); return; }
         requestAnimationFrame(sample);
       };
       requestAnimationFrame(sample);
     }), alternateHash);
+    const alternateScrollBefore = await waitForStableScroll();
+    await page.mouse.wheel(0, 320);
+    const alternateScrollAfter = await waitForStableScroll();
+    expect(alternateScrollAfter - alternateScrollBefore).toBeGreaterThan(40);
+    await expect.poll(() => page.evaluate((expected) => Math.abs(window.scrollY - expected) < 4, alternateScrollAfter)).toBe(true);
     await page.goto('/index.html?person=person-01&keep=1#characters', { waitUntil: 'networkidle' });
     await expect(page.locator('#reader')).toHaveClass(/is-open/);
     await expect(page).toHaveURL(/index\.html\?keep=1#characters$/);
@@ -1372,6 +1427,7 @@ test.describe('柯里昂档案桌面端', () => {
           sessionStorage.setItem(key, JSON.stringify(events));
         });
       });
+      await page.addInitScript(installNoteReturnDiagnostics);
       await page.goto('/notes.html', { waitUntil: 'networkidle' });
       const trigger = page.locator('.person-mention[data-person="person-27"]').first();
       const targetId = await trigger.evaluate((node) => node.closest('[id]')?.id);
@@ -1436,6 +1492,7 @@ test.describe('柯里昂档案桌面端', () => {
         return events.at(-1)?.persisted;
       })).toBe(true);
       await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
+      await expectNoteReturnRestoreSettled(page);
       await page.waitForFunction(() => {
         const dialog = document.getElementById('personConfirm');
         return dialog?.hidden && !document.querySelector('[inert]') && document.body.style.overflow === '';

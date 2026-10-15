@@ -411,13 +411,18 @@
         let stableSamples = 0;
         const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
         const imagesBeforeAnchor = anchor ? [...noteContent.querySelectorAll('img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
-        const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => image.getBoundingClientRect().height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
+        const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => {
+          const rect = image.getBoundingClientRect();
+          const nearViewport = rect.bottom >= -window.innerHeight && rect.top <= window.innerHeight * 2;
+          return nearViewport && (rect.height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
+        });
         const sample = () => {
           const currentSaved = getSavedNoteReturnPosition();
           if (token !== noteReturnRestoreToken || window.location.hash !== saved.hash || !currentSaved || currentSaved.hash !== saved.hash || currentSaved.scrollY !== saved.scrollY) return;
           const rect = anchor?.getBoundingClientRect();
           const computed = anchor ? getComputedStyle(anchor) : null;
           const imagesReady = layoutSensitiveImages.every((image) => image.complete && image.naturalWidth > 0);
+          const revealReady = !anchor || (computed?.opacity === '1' && computed?.transform === 'none');
           if (anchor && Number.isFinite(saved.anchorViewportTop) && rect) {
             const correctedScrollY = Math.max(0, window.scrollY + rect.top - saved.anchorViewportTop);
             if (Math.abs(correctedScrollY - window.scrollY) > 0.5) window.scrollTo({ top: correctedScrollY, left: 0, behavior: 'auto' });
@@ -426,10 +431,11 @@
           }
           const current = Math.round(window.scrollY);
           const signature = [current, rect?.top, rect?.left, rect?.width, rect?.height, computed?.opacity, computed?.transform].map((value) => typeof value === 'number' ? value.toFixed(2) : value).join('|');
-          stableSamples = signature === previous ? stableSamples + 1 : 0;
+          stableSamples = revealReady && signature === previous ? stableSamples + 1 : 0;
           previous = signature;
+          const stable = stableSamples >= 3 && document.fonts.status === 'loaded' && imagesReady && revealReady;
           const expired = performance.now() >= noteReturnRestoreDeadline;
-          if ((stableSamples >= 3 && document.fonts.status === 'loaded' && imagesReady) || expired) {
+          if (stable) {
             if (!anchor) window.scrollTo({ top: saved.scrollY, left: 0, behavior: 'auto' });
             noteReturnRestoreFrame = window.requestAnimationFrame(() => {
               if (token === noteReturnRestoreToken && window.location.hash === saved.hash) {
@@ -441,6 +447,12 @@
                 noteReturnRestoreDeadline = 0;
               }
             });
+            return;
+          }
+          if (expired) {
+            if (token === noteReturnRestoreToken && window.location.hash === saved.hash) clearSavedNoteReturnPosition();
+            noteReturnRestoreFrame = undefined;
+            noteReturnRestoreDeadline = 0;
             return;
           }
           noteReturnRestoreFrame = window.requestAnimationFrame(sample);
