@@ -86,6 +86,6 @@
 - 已在 `scripts/build-content.cjs` 中建立 44 条按完整标题校验的受控角色名称映射，生成 `mentions` / `mentionExclusions` 元数据；`person-27` 的两位人物共用 `person-27`，`person-43` 的历史同名语境按块 ID 排除。
 - `notes.html` 使用一次性文本节点遍历生成原生 `.person-mention` 按钮，保留正文字符、链接、稳定 ID 和受保护节点；页面级确认框支持取消、遮罩、Escape、Tab、Enter/Space、焦点恢复、滚动锁、`inert`、reduced-motion、立即重开和 `pageshow` 清理。
 - `index.html` 消费严格校验的 `person` query，在 hash 初始定位后补偿一次滚动，等待目标卡 reveal/几何稳定后复用 `morphPerson()`，成功只删除 `person` 并保留其他 query。
-- `notes.html` 在确认跳转前把当前 hash、阅读锚点 ID、viewport 顶部位置和滚动位置写入历史条目的临时 state；返回时按锚点校正、等待字体/前置图片/reveal 稳定后消费，并在 hash 改变、用户交互或离开页面时取消恢复；不使用持久化存储。初始无返回 state 时不取消普通 hash/search 高亮定时器。
+- `notes.html` 在确认跳转前把当前 hash、阅读锚点 ID、viewport 顶部位置和滚动位置写入历史条目的临时 state；返回时按锚点校正，缓存锚点之前真正可能改变布局高度的图片集合，只等待这些图片、字体和 reveal 稳定后消费，并在 hash 改变、用户交互或离开页面时取消恢复；不使用持久化存储。固定高度的屏外 lazy 图片可保持未加载，初始无返回 state 时不取消普通 hash/search 高亮定时器。
 - `tests/desktop-smoke.spec.js` 新增正文保真、别名/共享卡、映射排除、焦点与弹窗状态、跨页普通返回、真实 BFCache 返回、非法 query、隔离 fixture 和 reduced-motion 回归；返回检查真实滚动位置、`pageshow.persisted=false/true`、viewport 内容锚点和 hash 取消；BFCache 用 Chromium 新 headless 模式移除默认禁用参数，不创建可见窗口。搜索高亮使用测试侧 `MutationObserver` 记录瞬时 class 的实际出现，不改变产品高亮时长。
 - 验证：生产构建和发布白名单通过；完整 Playwright 11/11 通过（含新增 4 项）；内容构建、脚本语法、内联脚本语法、预览边界和 `git diff --check` 通过。正式桌面视口为 1920×1080、1440×900、1024×900，DPR 1，字体 loaded，237 个标注，无横向溢出或页面错误；三种视口均重新检查无弹窗正文标注、稳定确认弹窗和人物卡截图；390px 仅沿用历史回归。

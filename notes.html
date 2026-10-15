@@ -409,14 +409,15 @@
         noteReturnRestoreDeadline = performance.now() + 4000;
         let previous = null;
         let stableSamples = 0;
+        const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
+        const imagesBeforeAnchor = anchor ? [...noteContent.querySelectorAll('img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
+        const layoutSensitiveImages = imagesBeforeAnchor.filter((image) => image.getBoundingClientRect().height === 0 || image.matches('.note-content img[src*="assets/posters/"]'));
         const sample = () => {
           const currentSaved = getSavedNoteReturnPosition();
           if (token !== noteReturnRestoreToken || window.location.hash !== saved.hash || !currentSaved || currentSaved.hash !== saved.hash || currentSaved.scrollY !== saved.scrollY) return;
-          const anchor = saved.anchorId ? document.getElementById(saved.anchorId) : null;
           const rect = anchor?.getBoundingClientRect();
           const computed = anchor ? getComputedStyle(anchor) : null;
-          const imagesBeforeAnchor = anchor ? [...noteContent.querySelectorAll('img')].filter((image) => image.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) : [];
-          const imagesReady = imagesBeforeAnchor.every((image) => image.complete && image.naturalWidth > 0);
+          const imagesReady = layoutSensitiveImages.every((image) => image.complete && image.naturalWidth > 0);
           if (anchor && Number.isFinite(saved.anchorViewportTop) && rect) {
             const correctedScrollY = Math.max(0, window.scrollY + rect.top - saved.anchorViewportTop);
             if (Math.abs(correctedScrollY - window.scrollY) > 0.5) window.scrollTo({ top: correctedScrollY, left: 0, behavior: 'auto' });
