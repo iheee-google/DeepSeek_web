@@ -1197,13 +1197,17 @@ test.describe('柯里昂档案桌面端', () => {
       while ((textNode = walker.nextNode())) if (textNode.data.includes('文森佐·潘坦捷利')) return true;
       return false;
     })).toBe(true);
+    await expect(page.locator('#chapter-04-block-016 .person-mention').filter({ hasText: '罗萨托' })).toHaveCount(0);
     for (const personId of ['person-25', 'person-26', 'person-27']) {
       await expect(page.locator(`#chapter-02-block-009 .person-mention[data-person="${personId}"]`)).toHaveCount(0);
     }
     await expect(page.locator('#chapter-06-block-329 .person-mention[data-person="person-15"]')).toHaveCount(0);
-    for (const [name, personId] of [['维托', 'person-01'], ['索洛佐', 'person-23'], ['康妮', 'person-06'], ['麦克', 'person-02'], ['巴西尼', 'person-25'], ['沃尔茨', 'person-28'], ['扎萨', 'person-38'], ['阿托贝洛', 'person-39'], ['莫斯卡', 'person-44']]) {
+    const expectedAliasMappings = [['布拉西', 'person-13'], ['芳丹', 'person-20'], ['本纳瑟拉', 'person-22'], ['格林', 'person-30'], ['吉尔代', 'person-41']];
+    expect(await page.evaluate((expected) => expected.every(([name, personId]) => window.CORLEONE_ARCHIVE.people.find((person) => person.id === personId)?.mentions.includes(name)), expectedAliasMappings)).toBe(true);
+    for (const [name, personId] of [['维托', 'person-01'], ['索洛佐', 'person-23'], ['康妮', 'person-06'], ['麦克', 'person-02'], ['本纳瑟拉', 'person-22'], ['巴西尼', 'person-25'], ['沃尔茨', 'person-28'], ['罗斯', 'person-31'], ['欧拉', 'person-32'], ['吉尔里', 'person-37'], ['吕凯西', 'person-40'], ['莫斯卡', 'person-44']]) {
       const locator = page.locator('.person-mention').filter({ hasText: new RegExp(`^${name}$`) });
-      await expect(locator.first()).toHaveAttribute('data-person', personId);
+      await expect(locator).not.toHaveCount(0);
+      expect(await locator.evaluateAll((buttons, expectedId) => buttons.every((button) => button.dataset.person === expectedId), personId)).toBe(true);
     }
     expect(await page.locator('.person-mention').evaluateAll((buttons) => !buttons.some((button) => ['柯里昂', '教父', '汤姆逊', '约翰尼'].includes(button.textContent)))).toBe(true);
     await expect(page.locator('.person-mention').filter({ hasText: /^麦克拉斯基$/ }).first()).toHaveAttribute('data-person', 'person-24');
@@ -1304,6 +1308,18 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('.person-detail-close').click();
     await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
+
+    const rapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
+    await trigger.press('Enter');
+    await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
+    await page.keyboard.press('Escape');
+    await rapidTrigger.evaluate((element) => element.click());
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
+    expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: true, overflow: 'hidden' });
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(rapidTrigger).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
   });
 
@@ -1362,8 +1378,15 @@ test.describe('柯里昂档案桌面端', () => {
     await page.locator('#mention-fixture-plain .person-mention').click();
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
+    const reducedRapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
+    await page.keyboard.press('Escape');
+    await reducedRapidTrigger.evaluate((element) => element.click());
+    await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
+    await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
+    expect(await page.locator('.notes-main').evaluate((element) => element.inert)).toBe(true);
     await page.keyboard.press('Escape');
     await expect(page.locator('#personDetail')).toBeHidden();
+    await expect(reducedRapidTrigger).toBeFocused();
     await expectDiagnosticsClean(diagnostics);
   });
 });
