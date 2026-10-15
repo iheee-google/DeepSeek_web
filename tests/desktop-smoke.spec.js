@@ -1312,8 +1312,15 @@ test.describe('柯里昂档案桌面端', () => {
     const rapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
     await trigger.press('Enter');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
-    await page.keyboard.press('Escape');
-    await rapidTrigger.evaluate((element) => element.click());
+    const raceState = await page.evaluate(() => {
+      const findMention = (personId, text) => [...document.querySelectorAll(`.person-mention[data-person="${personId}"]`)].find((element) => element.textContent === text);
+      const second = findMention('person-23', '索洛佐');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
+      second?.click();
+      return beforeReopen;
+    });
+    expect(raceState).toEqual({ closing: true, hidden: false });
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
     expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: true, overflow: 'hidden' });
@@ -1358,7 +1365,8 @@ test.describe('柯里昂档案桌面端', () => {
 <p id="mention-fixture-strong-split">麦克<strong>拉斯基</strong></p>
 <p id="mention-fixture-em-split">汤姆<em>逊</em></p>
 <p id="mention-fixture-link"><a href="#mention-fixture-link-target">Don Vito</a></p>
-<p id="mention-fixture-code"><code>Don Vito</code></p>`
+<p id="mention-fixture-code"><code>Don Vito</code></p>
+<p id="mention-fixture-audited-aliases">布拉西 芳丹 本纳瑟拉 格林 吉尔代</p>`
             } : section)
           };
         }
@@ -1372,6 +1380,11 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#mention-fixture-em-split .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-link .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-code .person-mention')).toHaveCount(0);
+    for (const [name, personId] of [['布拉西', 'person-13'], ['芳丹', 'person-20'], ['本纳瑟拉', 'person-22'], ['格林', 'person-30'], ['吉尔代', 'person-41']]) {
+      const alias = page.locator('#mention-fixture-audited-aliases .person-mention').filter({ hasText: new RegExp(`^${name}$`) });
+      await expect(alias).toHaveCount(1);
+      await expect(alias).toHaveAttribute('data-person', personId);
+    }
     const mentionCount = await page.locator('.person-mention').count();
     await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
     await expect(page.locator('.person-mention')).toHaveCount(mentionCount);
@@ -1379,8 +1392,14 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
     const reducedRapidTrigger = page.locator('.person-mention[data-person="person-23"]').filter({ hasText: /^索洛佐$/ }).first();
-    await page.keyboard.press('Escape');
-    await reducedRapidTrigger.evaluate((element) => element.click());
+    const reducedRaceState = await page.evaluate(() => {
+      const second = [...document.querySelectorAll('.person-mention[data-person="person-23"]')].find((element) => element.textContent === '索洛佐');
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
+      second?.click();
+      return beforeReopen;
+    });
+    expect(reducedRaceState).toEqual({ closing: true, hidden: false });
     await expect(page.locator('#personDetailTitle')).toContainText('维吉尔·索洛佐');
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     expect(await page.locator('.notes-main').evaluate((element) => element.inert)).toBe(true);
