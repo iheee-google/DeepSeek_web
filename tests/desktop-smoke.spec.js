@@ -1519,6 +1519,7 @@ test.describe('柯里昂档案桌面端', () => {
     const diagnostics = collectDiagnostics(page);
     let posterRequestSeen = false;
     let posterResponseStatus = null;
+    let posterResponseFulfilled = false;
     let releasePoster;
     const posterResponseGate = new Promise((resolve) => { releasePoster = resolve; });
     try {
@@ -1544,11 +1545,13 @@ test.describe('柯里昂档案桌面端', () => {
           const applyDelay = () => {
             const image = document.querySelector('#noteContent img[src*="godfather1.jpg"]');
             if (!image || image.dataset.delayedPosterTest) return;
-            image.dataset.delayedPosterTest = 'true';
-            image.loading = 'eager';
+            const replacement = image.cloneNode(false);
+            replacement.dataset.delayedPosterTest = 'true';
+            replacement.loading = 'eager';
             const url = new URL(image.src);
             url.searchParams.set('delayed-test', '1');
-            image.src = url.href;
+            replacement.src = url.href;
+            image.replaceWith(replacement);
           };
           const observer = new MutationObserver(applyDelay);
           observer.observe(document.documentElement, { childList: true, subtree: true });
@@ -1561,8 +1564,10 @@ test.describe('柯里昂档案桌面端', () => {
         posterRequestSeen = true;
         await posterResponseGate;
         const response = await route.fetch();
-        posterResponseStatus = response.status();
+        const status = response.status();
         await route.fulfill({ response });
+        posterResponseStatus = status;
+        posterResponseFulfilled = true;
       });
       const poster = page.locator('#noteContent img[src*="godfather1.jpg"]').first();
       const trigger = page.locator('.person-mention[data-person="person-27"]').last();
@@ -1606,15 +1611,42 @@ test.describe('柯里昂档案桌面端', () => {
       })).toBe(false);
       await expect.poll(() => page.evaluate(() => Boolean(window.history.state?.noteCharacterReturn))).toBe(false);
       await expectNoteReturnRestoreSettled(page);
+      const delayedImageBeforeRelease = await poster.evaluate((image) => {
+        const rect = image.getBoundingClientRect();
+        return { complete: image.complete, naturalWidth: image.naturalWidth, naturalHeight: image.naturalHeight, currentSrc: image.currentSrc, width: rect.width, height: rect.height };
+      });
+      expect(delayedImageBeforeRelease.complete).toBe(false);
+      expect(delayedImageBeforeRelease.naturalWidth).toBe(0);
+      expect(delayedImageBeforeRelease.naturalHeight).toBe(0);
+      expect(delayedImageBeforeRelease.currentSrc).toBe('');
+      expect(await poster.getAttribute('src')).toContain('delayed-test=1');
+      expect(delayedImageBeforeRelease.height).toBeGreaterThan(0);
+      expect(Math.abs(delayedImageBeforeRelease.height / delayedImageBeforeRelease.width - 1136 / 800)).toBeLessThan(0.01);
       const anchorAfterRestore = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
       expect(Math.abs(anchorAfterRestore - anchorBefore)).toBeLessThan(4);
+      expect(posterResponseStatus).toBeNull();
+      expect(posterResponseFulfilled).toBe(false);
       releasePoster();
       await expect.poll(() => posterResponseStatus).toBe(200);
-      await expect.poll(() => poster.evaluate((image) => image.naturalWidth > 0)).toBe(true);
-      await expect.poll(() => page.evaluate(({ id, expected }) => {
-        const rect = document.getElementById(id).getBoundingClientRect();
-        return Math.abs(rect.top - expected) < 4;
-      }, { id: targetId, expected: anchorAfterRestore })).toBe(true);
+      await expect.poll(() => posterResponseFulfilled).toBe(true);
+      await expect.poll(() => poster.evaluate((image) => image.complete && image.currentSrc.includes('delayed-test=1') && image.naturalWidth === 800 && image.naturalHeight === 1136)).toBe(true);
+      await poster.evaluate((image) => image.decode());
+      await page.evaluate(({ id, expected }) => new Promise((resolve, reject) => {
+        let previous = '';
+        let stableSamples = 0;
+        const started = performance.now();
+        const sample = () => {
+          const target = document.getElementById(id);
+          const rect = target?.getBoundingClientRect();
+          const signature = rect ? [rect.top, rect.left, rect.width, rect.height].map((value) => value.toFixed(2)).join('|') : '';
+          stableSamples = rect && signature === previous ? stableSamples + 1 : 0;
+          previous = signature;
+          if (stableSamples >= 5 && rect && Math.abs(rect.top - expected) < 4) { resolve(true); return; }
+          if (performance.now() - started > 4000) { reject(new Error(`释放海报后锚点未稳定：${JSON.stringify({ rect, expected })}`)); return; }
+          requestAnimationFrame(sample);
+        };
+        requestAnimationFrame(sample);
+      }), { id: targetId, expected: anchorAfterRestore });
       const anchorAfterRelease = await page.evaluate((id) => document.getElementById(id).getBoundingClientRect().top, targetId);
       expect(Math.abs(anchorAfterRelease - anchorAfterRestore)).toBeLessThan(4);
       await expectDiagnosticsClean(diagnostics);
