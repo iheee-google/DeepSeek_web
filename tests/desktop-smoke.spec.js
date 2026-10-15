@@ -1309,12 +1309,13 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#personDetail')).toBeHidden();
     await expect(trigger).toBeFocused();
 
-    const rapidTrigger = page.locator('.person-mention[data-person="person-02"]').filter({ hasText: /^麦克$/ }).first();
+    const rapidTrigger = page.locator('#chapter-02-block-002 .person-mention[data-person="person-02"]').filter({ hasText: /^麦克$/ }).first();
+    expect(await trigger.evaluate((element) => element.closest('[id]')?.id)).toBe(await rapidTrigger.evaluate((element) => element.closest('[id]')?.id));
     await trigger.press('Enter');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
     const raceState = await page.evaluate(() => {
       const findMention = (personId, text) => [...document.querySelectorAll(`.person-mention[data-person="${personId}"]`)].find((element) => element.textContent === text);
-      const second = findMention('person-02', '麦克');
+      const second = [...document.querySelectorAll('#chapter-02-block-002 .person-mention[data-person="person-02"]')].find((element) => element.textContent === '麦克');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
       const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
       second?.click();
@@ -1324,6 +1325,14 @@ test.describe('柯里昂档案桌面端', () => {
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetail')).toHaveClass(/is-open/);
     await expect(page.locator('#personDetailTitle')).toContainText('麦克·柯里昂');
+    await expect.poll(() => page.locator('.person-detail-panel').evaluate((panel) => ({ opacity: getComputedStyle(panel).opacity, transform: getComputedStyle(panel).transform }))).toEqual({ opacity: '1', transform: 'none' });
+    expect(await page.evaluate(() => {
+      const person = window.CORLEONE_ARCHIVE.people.find((item) => item.id === 'person-02');
+      const template = document.createElement('template');
+      template.innerHTML = person.html;
+      template.content.querySelector('h2')?.remove();
+      return template.content.textContent;
+    })).toBe(await page.locator('#personDetailBody').textContent());
     await expect(page.locator('.person-detail-close')).toBeFocused();
     expect(await page.evaluate(() => ({ inert: document.querySelector('.notes-main')?.inert, overflow: document.body.style.overflow }))).toEqual({ inert: true, overflow: 'hidden' });
     await page.keyboard.press('Escape');
@@ -1364,6 +1373,7 @@ test.describe('柯里昂档案桌面端', () => {
               ...section,
               html: `${section.html}
 <p id="mention-fixture-plain">Don Vito</p>
+<p id="mention-fixture-same-block">Don Vito 与麦克</p>
 <p id="mention-fixture-boundary">Don Vitone 教父</p>
 <p id="mention-fixture-cross"><strong>Don</strong> <em>Vito</em></p>
 <p id="mention-fixture-strong-split">麦克<strong>拉斯基</strong></p>
@@ -1378,6 +1388,7 @@ test.describe('柯里昂档案桌面端', () => {
     });
     await page.goto('/notes.html#mention-fixture-plain', { waitUntil: 'networkidle' });
     await expect(page.locator('#mention-fixture-plain .person-mention')).toHaveCount(1);
+    await expect(page.locator('#mention-fixture-same-block .person-mention')).toHaveCount(2);
     await expect(page.locator('#mention-fixture-boundary .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-cross .person-mention')).toHaveCount(0);
     await expect(page.locator('#mention-fixture-strong-split .person-mention')).toHaveCount(0);
@@ -1392,12 +1403,13 @@ test.describe('柯里昂档案桌面端', () => {
     const mentionCount = await page.locator('.person-mention').count();
     await page.evaluate(() => window.dispatchEvent(new Event('pageshow')));
     await expect(page.locator('.person-mention')).toHaveCount(mentionCount);
-    await page.locator('#mention-fixture-plain .person-mention').click();
+    const reducedPrimaryTrigger = page.locator('#mention-fixture-same-block .person-mention').filter({ hasText: /^Don Vito$/ });
+    await reducedPrimaryTrigger.click();
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetailTitle')).toContainText('维托·柯里昂');
-    const reducedRapidTrigger = page.locator('.person-mention[data-person="person-02"]').filter({ hasText: /^麦克$/ }).first();
+    const reducedRapidTrigger = page.locator('#mention-fixture-same-block .person-mention').filter({ hasText: /^麦克$/ });
     const reducedRaceState = await page.evaluate(() => {
-      const second = [...document.querySelectorAll('.person-mention[data-person="person-02"]')].find((element) => element.textContent === '麦克');
+      const second = [...document.querySelectorAll('#mention-fixture-same-block .person-mention[data-person="person-02"]')].find((element) => element.textContent === '麦克');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
       const beforeReopen = { closing: document.querySelector('#personDetail')?.classList.contains('is-closing'), hidden: document.querySelector('#personDetail')?.hidden };
       second?.click();
@@ -1405,6 +1417,14 @@ test.describe('柯里昂档案桌面端', () => {
     });
     expect(reducedRaceState).toEqual({ closing: true, hidden: false });
     await expect(page.locator('#personDetailTitle')).toContainText('麦克·柯里昂');
+    await expect.poll(() => page.locator('.person-detail-panel').evaluate((panel) => ({ opacity: getComputedStyle(panel).opacity, transform: getComputedStyle(panel).transform }))).toEqual({ opacity: '1', transform: 'none' });
+    expect(await page.evaluate(() => {
+      const person = window.CORLEONE_ARCHIVE.people.find((item) => item.id === 'person-02');
+      const template = document.createElement('template');
+      template.innerHTML = person.html;
+      template.content.querySelector('h2')?.remove();
+      return template.content.textContent;
+    })).toBe(await page.locator('#personDetailBody').textContent());
     await expect(page.locator('#personDetail')).toHaveAttribute('aria-hidden', 'false');
     await expect(page.locator('#personDetail')).toHaveClass(/is-open/);
     await expect(page.locator('.person-detail-close')).toBeFocused();
