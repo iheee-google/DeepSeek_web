@@ -1420,7 +1420,8 @@ test.describe('柯里昂档案桌面端', () => {
         pairs: route === 'index.html' ? {
           hero: readPair('.hero h1', '.hero'),
           quote: readPair('.quote-block blockquote', '.quote-section'),
-          action: readPair('.section-kicker', '.rules-section')
+          action: readPair('.section-kicker', '.rules-section'),
+          timeline: readPair('.timeline-section .section-kicker', '.timeline-section')
         } : {
           body: { foreground: bodyStyle.color, background: noteBackground, ratio: contrast(composite(parseColor(bodyStyle.color), noteBackground), noteBackground) },
           mention: readPair('.person-mention', '.note-content'),
@@ -1461,6 +1462,10 @@ test.describe('柯里昂档案桌面端', () => {
           return {
             layoutRatio: Number.parseFloat(style.width) / Number.parseFloat(style.height),
             naturalRatio: image.naturalWidth / image.naturalHeight,
+            rect: (() => {
+              const { x, y, width, height } = element.getBoundingClientRect();
+              return { x, y, width, height, centerX: x + width / 2, centerY: y + height / 2 };
+            })(),
             gridColumn: getComputedStyle(element).gridColumn,
             zIndex: getComputedStyle(element).zIndex
           };
@@ -1468,9 +1473,14 @@ test.describe('柯里昂档案桌面端', () => {
         const posters = [...document.querySelectorAll('.hero-poster')].map(readRatio);
         const timeline = document.querySelector('.timeline-section');
         const timelineButton = document.querySelector('.timeline-focus .button');
+        const mediaRect = document.querySelector('.hero-media').getBoundingClientRect();
+        const ctaRect = document.querySelector('.hero-content .button').getBoundingClientRect();
+        const intersects = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
         const spotlight = [...document.querySelectorAll('.character-card--spotlight')].map((element) => element.clientWidth);
         return {
           posters,
+          mediaRect: { x: mediaRect.x, width: mediaRect.width, centerX: mediaRect.x + mediaRect.width / 2 },
+          ctaCovered: posters.some(({ rect }) => intersects(rect, ctaRect)),
           timelineBackground: getComputedStyle(timeline).backgroundColor,
           timelineText: getComputedStyle(timeline).color,
           timelineButton: timelineButton ? {
@@ -1485,12 +1495,36 @@ test.describe('柯里昂档案桌面端', () => {
       expect(impactLayout.posters[0].layoutRatio).toBeCloseTo(impactLayout.posters[0].naturalRatio, 2);
       expect(impactLayout.posters[1].layoutRatio).toBeCloseTo(impactLayout.posters[1].naturalRatio, 2);
       expect(impactLayout.posters[2].layoutRatio).toBeCloseTo(impactLayout.posters[2].naturalRatio, 2);
-      expect(impactLayout.posters[0].layoutRatio).toBeGreaterThan(impactLayout.posters[1].layoutRatio);
+      expect(impactLayout.posters[0].rect.width).toBeGreaterThan(impactLayout.posters[1].rect.width);
+      expect(Math.abs(impactLayout.posters[0].rect.centerX - impactLayout.mediaRect.centerX)).toBeLessThan(impactLayout.mediaRect.width * .2);
+      expect(impactLayout.ctaCovered).toBe(false);
       expect(impactLayout.timelineBackground).toBe('rgb(25, 21, 18)');
       expect(impactLayout.timelineText).toBe('rgb(241, 231, 212)');
+      expect(indexTheme.pairs.timeline.ratio).toBeGreaterThanOrEqual(4.5);
       expect(impactLayout.timelineButton?.color).toBe('rgb(25, 21, 18)');
       expect(impactLayout.timelineButton?.background).toBe('rgb(228, 182, 168)');
       expect(impactLayout.spotlight[0]).toBeGreaterThan(impactLayout.spotlight[1]);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      const posterSources = await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => image.src));
+      const clickFractions = [.18, .5, .82];
+      for (let index = 0; index < posterSources.length; index += 1) {
+        const point = await page.locator('.hero-poster img').nth(index).evaluate((image, fraction) => {
+          const rect = image.getBoundingClientRect();
+          return { x: rect.left + rect.width * fraction, y: rect.top + rect.height * .5 };
+        }, clickFractions[index]);
+        const hit = await page.evaluate(({ x, y }) => {
+          const element = document.elementFromPoint(x, y);
+          return { tag: element?.tagName, src: element?.currentSrc || element?.src || '' };
+        }, point);
+        expect(hit.tag).toBe('IMG');
+        expect(hit.src).toBe(posterSources[index]);
+        await page.mouse.click(point.x, point.y);
+        await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
+        await expect(page.locator('.image-viewer-image')).toHaveAttribute('src', posterSources[index]);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+      }
       const selectedFilter = await page.locator('[data-character-filter="all"]').evaluate((element) => {
         const parse = (value) => value.match(/rgba?\(([^)]+)\)/)[1].split(',').map((part) => Number.parseFloat(part.trim()));
         const luminance = (r, g, b) => [r, g, b].map((channel) => channel / 255).map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);

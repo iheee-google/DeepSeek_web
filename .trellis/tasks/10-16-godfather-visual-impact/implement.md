@@ -25,7 +25,9 @@
 ## 当前执行结果
 
 - [x] 1–9 已完成；无界面三视口截图已采集并检查首屏、时间轴、人物焦点、符号、结尾、全文 hero 和正文。
-- [ ] 10 等待用户对本轮稳定截图和视觉方向做最终确认；确认前不归档任务。
+- [x] 顾问收尾要求已完成：时间轴 kicker 使用暗面专用前景；实现路径统一为 `10-16`；主题测试覆盖三张海报的真实坐标命中、viewer 源映射、主海报面积/位置和 CTA 遮挡。
+- [x] 主题证据脚本同时采集 normal/reduced-motion 两种模式；normal 模式不禁用动画，先逐项滚过 reveal 目标并等待有限动画稳定，再采集首屏、时间轴、人物、符号和全文 hero。
+- [ ] 等待用户对本轮稳定截图和视觉方向做最终确认；确认前不归档任务。
 
 ## 验证命令
 
@@ -45,10 +47,10 @@ git diff --check
 
 ## 本轮验证结果
 
-- 主题专项回归 1/1，完整 `npm test` 11/11。
+- 主题专项回归 1/1，完整 `npm test` 11/11；专项新增三张海报的真实坐标点击和 viewer 源映射、主海报面积/位置、CTA 遮挡、暗时间轴 kicker/按钮对比度与全文 hero surface 断言。
 - `node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js` 通过。
-- `npm run verify:deploy`、任务校验、`git diff --check` 通过；`npm run build` 在收尾阶段执行并作为最后构建命令。
-- 三种正式桌面视口记录 CSS viewport、DPR 1、字体 loaded、无横向溢出和无页面/控制台/请求错误；稳定截图覆盖首屏三联海报、暗色时间轴、人物焦点、符号、结尾和全文 hero/正文。
+- `npm run verify:deploy`、任务校验、`git diff --check` 通过；本轮代码/记录修正后还需重新执行末尾 `npm run build` 并以其输出为最终构建证据。
+- normal/reduced-motion 两种模式均在 1920/1440/1024 记录正式视口、DPR 1、字体 loaded、无横向溢出和无页面/控制台/请求错误；normal 模式截图未禁用动画，稳定证据覆盖首屏三联海报、暗色时间轴、人物焦点、符号和全文 hero。
 
 ## 证据要求
 
@@ -63,7 +65,7 @@ git diff --check
 ## 收尾与回滚
 
 - 通过 `trellis-check` 进行主会话范围内检查；明确错误只修复对应错误，不借机重构。
-- 通过 `trellis-update-spec` 将真正稳定的构图/表面配对规则写入 `.trellis/spec/frontend/`，不复制产品设计全文。
+- 通过 `trellis-update-spec` 将真正稳定的构图/表面配对规则写入 `.trellis/spec/frontend/`，不复制产品设计全文；本轮的暗面 kicker 前景配对已沿用现有规范变量，无需增加重复规则。
 - 更新 `docs/design-v2.md`、任务 journal 和实现清单，记录用户视觉确认与实际命令结果。
 - scoped commit 只包含本任务页面/共享样式/测试/文档/任务记录，不包含 `.tmp/`、预存 scaffold、部署配置或无关生成差异。
 - 不推送、不部署，除非用户另行明确授权。

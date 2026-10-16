@@ -174,3 +174,9 @@
 - 研究记录已写入 `.trellis/tasks/10-16-godfather-visual-impact/research/visual-impact.md`：Gordon Willis 的 brown-and-black、blue-black 与地点质感差异；编辑式暗色的多层近黑、非对称网格、大比例摄影、极大标题和克制酒红；Transitions.dev 的 panel reveal 与 reduced-motion 模式。LOC 页面受限，仅保留馆藏元数据边界，不冒充海报色彩审阅。
 - 已完成 `prd.md`、`design.md`、`implement.md`、`implement.jsonl`、`check.jsonl`；Trellis 校验通过。进一步明确 `godfather1.jpg` 为主海报、`.timeline-section` 为暗色权力段，搜索/人物详情/viewer 只做回归。
 - 在 `research/visual-draft-home.svg` 与 `visual-draft-rhythm.svg` 生成并渲染了两张非产品构图草案，展示 A 暗幕与红线、B 三联海报主导、C 家族权力地图的融合关系。产品代码尚未修改，真实任务仍等待最终规划批准和 `task.py start`。
+
+## 2026-10-16 · 暗幕与红线收尾证据
+
+- 顾问收尾要求已落实：`.timeline-section .section-kicker` 使用暗面专用前景，避免普通酒红在近黑背景上失去对比度；`implement.jsonl`/`check.jsonl` 的研究路径统一为真实 `10-16` 任务，错误的 `10-17` 草稿目录保持未跟踪且未删除。
+- 主题回归新增真实坐标证据：1920/1440/1024 三种桌面视口均逐张命中 I/II/III 海报的实际 `<img>`，打开 viewer 后核对对应 `currentSrc`，同时检查主海报面积与中央位置、CTA 不遮挡、时间轴 kicker/按钮对比度和全文 hero 暗面。
+- 主题证据脚本已同时采集 normal 与 reduced-motion；normal 模式不禁用动画，先用原生滚动逐项经过 reveal 目标并等待有限动画稳定，再采集稳定取景。最终完整 `npm test` 为 11/11，专项为 1/1；用户视觉确认前任务不归档、不推送、不部署。
