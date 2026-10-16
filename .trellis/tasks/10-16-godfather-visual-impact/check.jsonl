@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"核对主题阶段、合成背景对比度、稳定截图、全套浏览器回归、窄视口边界与发布校验"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"核对海报/模块视觉修改不破坏语义按钮、焦点、图片自然比例、嵌套关闭和动效状态"}
+{"file":".trellis/tasks/10-17-godfather-visual-impact/prd.md","reason":"逐项检查 A+B+C 融合方向、视觉节拍、完整内容、桌面范围和不改行为约束"}
+{"file":".trellis/tasks/10-17-godfather-visual-impact/design.md","reason":"检查三种语义场景、hero 层级、红线语义、内容地图和 CSS/行为边界是否可实现"}
+{"file":".trellis/tasks/10-17-godfather-visual-impact/research/visual-impact.md","reason":"复核外部证据与代码基线，避免把全站黑滤镜、虚假关系线或参考站实现带入产品"}

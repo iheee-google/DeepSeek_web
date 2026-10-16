@@ -195,6 +195,41 @@
       .notes-hero h1 { max-width: none; font-size: var(--archive-hero-size); line-height: var(--archive-hero-leading); letter-spacing: var(--archive-hero-tracking); }
       .notes-hero p { max-width: var(--archive-body-measure); line-height: 1.65; }
       .note-content h1 .title-group, .note-content h1 .title-group--parenthetical, .note-content h2 .title-group--parenthetical, .note-content h3 .title-group--parenthetical { white-space: nowrap; }
+
+      .notes-hero {
+        position: relative;
+        isolation: isolate;
+        padding-inline: clamp(1.25rem, 2.4vw, 3rem);
+        overflow: hidden;
+        border: 1px solid var(--archive-dark-line);
+        background: var(--archive-study);
+        color: var(--archive-study-text);
+      }
+      .notes-hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        background: radial-gradient(circle at 82% 32%, rgba(var(--archive-action-rgb), .22), transparent 24rem), linear-gradient(110deg, rgba(var(--archive-study-rgb), .98), rgba(var(--archive-study-raised-rgb), .72));
+      }
+      .notes-hero::after {
+        content: "";
+        position: absolute;
+        right: 6%;
+        bottom: 2.8rem;
+        left: 6%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--archive-action) 22%, var(--archive-amber) 50%, var(--archive-action) 78%, transparent);
+        opacity: .9;
+      }
+      .notes-hero > div { position: relative; z-index: 1; }
+      .notes-kicker { color: var(--archive-action-on-dark); }
+      .notes-kicker::before { background: currentColor; }
+      .notes-hero h1 { color: var(--archive-study-text); }
+      .notes-hero p { color: var(--archive-study-muted); }
+      .notes-stats { background: var(--archive-dark-line); }
+      .notes-stats span { background: rgba(var(--archive-study-raised-rgb), .72); color: var(--archive-study-muted); }
+      .notes-stats strong { color: var(--archive-study-text); }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
       .notes-hero { grid-template-columns: minmax(0, 1fr) minmax(18rem, .72fr); gap: 2rem; }

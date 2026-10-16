@@ -1454,6 +1454,43 @@ test.describe('柯里昂档案桌面端', () => {
       expect(indexTheme.pairs.hero.ratio).toBeGreaterThanOrEqual(3);
       expect(indexTheme.pairs.quote.ratio).toBeGreaterThanOrEqual(4.5);
       expect(indexTheme.pairs.action.ratio).toBeGreaterThanOrEqual(4.5);
+      const impactLayout = await page.evaluate(() => {
+        const readRatio = (element) => {
+          const image = element.querySelector('img');
+          const style = getComputedStyle(element);
+          return {
+            layoutRatio: Number.parseFloat(style.width) / Number.parseFloat(style.height),
+            naturalRatio: image.naturalWidth / image.naturalHeight,
+            gridColumn: getComputedStyle(element).gridColumn,
+            zIndex: getComputedStyle(element).zIndex
+          };
+        };
+        const posters = [...document.querySelectorAll('.hero-poster')].map(readRatio);
+        const timeline = document.querySelector('.timeline-section');
+        const timelineButton = document.querySelector('.timeline-focus .button');
+        const spotlight = [...document.querySelectorAll('.character-card--spotlight')].map((element) => element.clientWidth);
+        return {
+          posters,
+          timelineBackground: getComputedStyle(timeline).backgroundColor,
+          timelineText: getComputedStyle(timeline).color,
+          timelineButton: timelineButton ? {
+            color: getComputedStyle(timelineButton).color,
+            background: getComputedStyle(timelineButton).backgroundColor
+          } : null,
+          spotlight
+        };
+      });
+      expect(impactLayout.posters[0].gridColumn).toBe('2');
+      expect(impactLayout.posters[0].zIndex).toBe('3');
+      expect(impactLayout.posters[0].layoutRatio).toBeCloseTo(impactLayout.posters[0].naturalRatio, 2);
+      expect(impactLayout.posters[1].layoutRatio).toBeCloseTo(impactLayout.posters[1].naturalRatio, 2);
+      expect(impactLayout.posters[2].layoutRatio).toBeCloseTo(impactLayout.posters[2].naturalRatio, 2);
+      expect(impactLayout.posters[0].layoutRatio).toBeGreaterThan(impactLayout.posters[1].layoutRatio);
+      expect(impactLayout.timelineBackground).toBe('rgb(25, 21, 18)');
+      expect(impactLayout.timelineText).toBe('rgb(241, 231, 212)');
+      expect(impactLayout.timelineButton?.color).toBe('rgb(25, 21, 18)');
+      expect(impactLayout.timelineButton?.background).toBe('rgb(228, 182, 168)');
+      expect(impactLayout.spotlight[0]).toBeGreaterThan(impactLayout.spotlight[1]);
       const selectedFilter = await page.locator('[data-character-filter="all"]').evaluate((element) => {
         const parse = (value) => value.match(/rgba?\(([^)]+)\)/)[1].split(',').map((part) => Number.parseFloat(part.trim()));
         const luminance = (r, g, b) => [r, g, b].map((channel) => channel / 255).map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
@@ -1474,6 +1511,7 @@ test.describe('柯里昂档案桌面端', () => {
       expect(notesTheme.pairs.body.ratio).toBeGreaterThanOrEqual(4.5);
       expect(notesTheme.pairs.heading.ratio).toBeGreaterThanOrEqual(3);
       expect(notesTheme.pairs.mention.ratio).toBeGreaterThanOrEqual(4.5);
+      expect(await page.locator('.notes-hero').evaluate((element) => ({ background: getComputedStyle(element).backgroundColor, color: getComputedStyle(element).color }))).toEqual({ background: 'rgb(25, 21, 18)', color: 'rgb(241, 231, 212)' });
       await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelector('.note-content img')));
       const viewerPair = await page.locator('#corleoneImageViewer .image-viewer-shell').evaluate((element) => {
         const foreground = getComputedStyle(element).color;

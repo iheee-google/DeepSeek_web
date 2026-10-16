@@ -225,7 +225,7 @@
     }
     .hero-poster {
       position: relative;
-      aspect-ratio: 2 / 3;
+      aspect-ratio: 800 / 1136;
       margin: 0;
       overflow: hidden;
       border: 1px solid rgba(240, 199, 120, .24);
@@ -236,7 +236,7 @@
     }
     .hero-poster:nth-child(1) { transform: translateY(4%); animation-delay: .12s; }
     .hero-poster:nth-child(2) { transform: translateY(-3%); animation-delay: .24s; }
-    .hero-poster:nth-child(3) { transform: translateY(6%); animation-delay: .36s; }
+    .hero-poster:nth-child(3) { aspect-ratio: 800 / 1199; transform: translateY(6%); animation-delay: .36s; }
     .hero-poster img {
       width: 100%;
       cursor: zoom-in;
@@ -995,8 +995,119 @@
       .quote-block blockquote { max-width: var(--archive-quote-measure); font-size: var(--archive-quote-size); line-height: 1.08; letter-spacing: -.04em; }
       .quote-index-label { text-wrap: balance; }
       .quote-index-label .quote-index-phrase { white-space: nowrap; }
+
+      /* cinematic impact: A 暗幕与红线 / B 三联海报 / C 家族权力地图 */
+      .hero-media {
+        top: clamp(7rem, 10vh, 8.5rem);
+        right: 2.5vw;
+        bottom: clamp(4.5rem, 8vh, 7rem);
+        left: 53%;
+        grid-template-columns: minmax(0, .76fr) minmax(0, 1.12fr) minmax(0, .76fr);
+        gap: clamp(.25rem, .8vw, .8rem);
+        mask-image: none;
+        opacity: 1;
+      }
+      .hero-media::before {
+        content: "";
+        position: absolute;
+        right: -3%;
+        bottom: 13%;
+        left: -8%;
+        z-index: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--archive-action) 18%, var(--archive-amber) 52%, var(--archive-action) 84%, transparent);
+        pointer-events: none;
+      }
+      .hero-poster {
+        z-index: 1;
+        border-color: rgba(var(--archive-amber-rgb), .38);
+        box-shadow: 0 2rem 4rem rgba(0, 0, 0, .42);
+      }
+      .hero-poster img {
+        display: block;
+        border: 1px solid rgba(var(--archive-paper-rgb), .2);
+        background: var(--archive-study-raised);
+      }
+      .hero-poster:nth-child(1) {
+        grid-column: 2;
+        grid-row: 1;
+        z-index: 3;
+        transform: translateY(-1%) rotate(1.2deg) scale(1.08);
+        box-shadow: 0 2.5rem 5rem rgba(0, 0, 0, .52);
+      }
+      .hero-poster:nth-child(2) { grid-column: 1; grid-row: 1; aspect-ratio: 800 / 1140; z-index: 1; transform: translate(11%, 8%) rotate(-5deg) scale(.9); }
+      .hero-poster:nth-child(3) { grid-column: 3; grid-row: 1; z-index: 1; transform: translate(-11%, 10%) rotate(5deg) scale(.9); }
+      .hero:hover .hero-poster:nth-child(1) { transform: translateY(-2%) rotate(1.2deg) scale(1.12); }
+      .hero:hover .hero-poster:nth-child(2) { transform: translate(8%, 5%) rotate(-4deg) scale(.94); }
+      .hero:hover .hero-poster:nth-child(3) { transform: translate(-8%, 7%) rotate(4deg) scale(.94); }
+
+      #rules .rule-tabs { grid-template-columns: 1.22fr 1fr .92fr; }
+      #rules .rule-card.rule-tab:first-child { border-top: 2px solid var(--archive-action); }
+      #rules .rule-card.rule-tab:not(:first-child) { border-top-color: var(--archive-line-strong); }
+
+      .timeline-section {
+        color: var(--archive-study-text);
+        background: var(--archive-study);
+        border-top: 1px solid var(--archive-dark-line);
+        border-bottom: 1px solid var(--archive-dark-line);
+      }
+      .timeline-section .section-title { color: var(--archive-study-text); }
+      .timeline-section .timeline-caption { color: var(--archive-study-muted); }
+      .timeline-section .section-rule { background: linear-gradient(90deg, var(--archive-action), var(--archive-amber), transparent); }
+      .timeline-section .timeline-scroll { scrollbar-color: var(--archive-action-on-dark) transparent; }
+      .timeline-section .timeline-item { border-top-color: var(--archive-dark-line); background: rgba(var(--archive-study-raised-rgb), .72); }
+      .timeline-section .timeline-item:hover,
+      .timeline-section .timeline-item:focus-visible,
+      .timeline-section .timeline-item.is-active { border-color: var(--archive-action-on-dark); background: var(--archive-study-raised); }
+      .timeline-section .timeline-item small,
+      .timeline-section .timeline-work { color: var(--archive-action-on-dark); }
+      .timeline-section .timeline-item h3 { color: var(--archive-study-text); }
+      .timeline-section .timeline-item p { color: var(--archive-study-muted); }
+      .timeline-section .timeline-dot { border-color: var(--archive-action-on-dark); background: var(--archive-study); box-shadow: 0 0 0 .3rem rgba(var(--archive-action-rgb), .2); }
+      .timeline-section .timeline-item:hover .timeline-dot,
+      .timeline-section .timeline-item:focus-visible .timeline-dot,
+      .timeline-section .timeline-item.is-active .timeline-dot { background: var(--archive-action); border-color: var(--archive-amber); box-shadow: 0 0 0 .4rem rgba(var(--archive-amber-rgb), .2); }
+      .timeline-section .timeline-line { background: linear-gradient(90deg, transparent, var(--archive-action) 3%, var(--archive-amber) 50%, var(--archive-action) 97%, transparent); }
+      .timeline-section .timeline-focus { border-color: var(--archive-dark-line-strong); border-left-color: var(--archive-action-on-dark); background: var(--archive-study-raised); box-shadow: 0 .8rem 2rem rgba(0, 0, 0, .2); }
+      .timeline-section .timeline-focus strong { color: var(--archive-action-on-dark); }
+      .timeline-section .timeline-focus > span { color: var(--archive-amber); }
+      .timeline-section .timeline-focus p { color: var(--archive-study-muted); }
+      .timeline-section .timeline-focus .button { color: var(--archive-study); border-color: var(--archive-action-on-dark); background: var(--archive-action-on-dark); }
+      .timeline-section .timeline-focus .button:hover { color: var(--archive-study); border-color: var(--archive-paper); background: var(--archive-paper); }
+
+      #characters .character-spotlight {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .55rem;
+        background: transparent;
+        border: 0;
+      }
+      #characters .character-card--spotlight { min-height: 25rem; border: 1px solid var(--line-strong); }
+      #characters .character-card--spotlight:nth-child(1) { grid-column: span 5; min-height: 32rem; }
+      #characters .character-card--spotlight:nth-child(2) { grid-column: span 3; }
+      #characters .character-card--spotlight:nth-child(3) { grid-column: span 2; }
+      #characters .character-card--spotlight:nth-child(4) { grid-column: span 2; }
+      #characters .character-card--spotlight:nth-child(1) .character-body h3 { font-size: clamp(2rem, 3vw, 3.1rem); }
+      #characters .character-card--spotlight:nth-child(1) .character-index { font-size: 1.65rem; }
+
+      #motifs .motif-layout {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: .55rem;
+        background: transparent;
+        border: 0;
+      }
+      #motifs .motif { grid-column: span 4; border: 1px solid var(--line); }
+      #motifs .motif:nth-child(3n + 1) { grid-column: span 5; min-height: 20rem; }
+      #motifs .motif:nth-child(3n + 2) { grid-column: span 3; }
+      #motifs .motif:nth-child(3n) { grid-column: span 4; }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
+      .hero-media { left: 58%; right: 1rem; }
+      .hero h1 { font-size: clamp(4.4rem, 8.5vw, 7.2rem); }
+      #characters .character-spotlight { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+      #characters .character-card--spotlight:nth-child(1) { grid-column: span 7; min-height: 28rem; }
+      #characters .character-card--spotlight:nth-child(2) { grid-column: span 5; min-height: 28rem; }
+      #characters .character-card--spotlight:nth-child(3) { grid-column: span 5; min-height: 22rem; }
+      #characters .character-card--spotlight:nth-child(4) { grid-column: span 7; min-height: 22rem; }
       .section-header, .timeline-head, .history-section .section-header { grid-template-columns: 1fr; gap: 1.25rem; }
       .section-intro, .timeline-caption { max-width: 38rem; }
       .notes-portal-card { grid-template-columns: minmax(0, 1.2fr) minmax(15rem, .8fr); }

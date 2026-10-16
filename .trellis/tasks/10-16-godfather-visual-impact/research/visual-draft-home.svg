@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">教父档案 A+B+C 融合构图草案</title>
+  <desc id="desc">非产品截图。A 暗幕与红线，B 三联海报主导，C 家族权力地图的首屏构图草案。</desc>
+  <style>
+    .sans { font-family: Arial, "Noto Sans CJK SC", sans-serif; }
+    .serif { font-family: Georgia, "Noto Serif CJK SC", serif; }
+    .label { font: 11px Arial, sans-serif; letter-spacing: 3px; }
+    .small { font: 14px Arial, "Noto Sans CJK SC", sans-serif; }
+    .cn { font-family: "Noto Serif CJK SC", Georgia, serif; }
+  </style>
+  <rect width="1440" height="900" fill="#181311"/>
+  <rect width="1440" height="74" fill="#efe2cc"/>
+  <text x="62" y="37" class="sans" font-size="15" fill="#241c17" font-weight="700">教父档案</text>
+  <text x="62" y="55" class="label" fill="#6f4b3d">THE GODFATHER ARCHIVE</text>
+  <text x="1160" y="43" class="label" fill="#53382b">RULES　 TIMELINE　 BLOODLINE　 NOTES</text>
+  <text x="62" y="118" class="label" fill="#c99455">DESIGN DRAFT · A + B + C · NOT PRODUCT SCREENSHOT</text>
+  <rect x="62" y="144" width="74" height="2" fill="#8a3035"/>
+  <text x="62" y="186" class="label" fill="#c99455">A / DARK CURTAIN</text>
+  <text x="62" y="348" class="cn" font-size="116" fill="#f1e7d4">权力</text>
+  <text x="62" y="462" class="cn" font-size="92" fill="#f1e7d4">是家庭的影子</text>
+  <text x="66" y="514" class="cn" font-size="20" fill="#c5b49c">暗色是权力的切场，不是全站的底色</text>
+  <rect x="64" y="570" width="164" height="48" rx="24" fill="#e4b6a8"/>
+  <text x="99" y="601" class="cn" font-size="16" fill="#191512">进入档案</text>
+  <text x="64" y="690" class="label" fill="#c5b49c">01 / FIRST FRAME</text>
+  <text x="64" y="718" class="cn" font-size="17" fill="#c5b49c">标题先建立冲突，海报随后把冲突具象化</text>
+  <line x1="62" y1="778" x2="1378" y2="778" stroke="#8a3035" stroke-width="3"/>
+  <line x1="760" y1="138" x2="760" y2="778" stroke="#8a3035" stroke-width="1" opacity=".7"/>
+
+  <!-- Poster I -->
+  <g transform="translate(790 216) rotate(-6)">
+    <rect width="190" height="300" fill="#2a201c" stroke="#bd9157" stroke-width="1"/>
+    <rect x="13" y="13" width="164" height="274" fill="#0b0a09"/>
+    <circle cx="95" cy="113" r="40" fill="#53382b" opacity=".9"/>
+    <path d="M46 236 C78 176 113 176 150 236" fill="none" stroke="#c69b61" stroke-width="3"/>
+    <text x="25" y="265" class="serif" font-size="20" fill="#d5ae6b">I</text>
+    <text x="24" y="38" class="label" fill="#c5b49c">POSTER / II</text>
+  </g>
+  <!-- Poster II main -->
+  <g transform="translate(968 144)">
+    <rect width="270" height="410" fill="#38251f" stroke="#e4b6a8" stroke-width="3"/>
+    <rect x="15" y="15" width="240" height="380" fill="#0a0908"/>
+    <circle cx="135" cy="137" r="65" fill="#53382b"/>
+    <path d="M48 310 C95 205 174 205 222 310" fill="none" stroke="#d4a35d" stroke-width="5"/>
+    <text x="31" y="53" class="label" fill="#bd9157">B / PRIMARY IMAGE · I</text>
+    <text x="31" y="349" class="serif" font-size="35" fill="#e8d6b8">THE</text>
+    <text x="31" y="382" class="serif" font-size="35" fill="#e8d6b8">GODFATHER</text>
+    <rect x="-18" y="178" width="84" height="28" fill="#8a3035"/>
+    <text x="-4" y="197" class="label" fill="#f1e7d4">视觉焦点</text>
+  </g>
+  <!-- Poster III -->
+  <g transform="translate(1218 260) rotate(5)">
+    <rect width="168" height="264" fill="#29201c" stroke="#bd9157" stroke-width="1"/>
+    <rect x="12" y="12" width="144" height="240" fill="#11100e"/>
+    <circle cx="84" cy="107" r="34" fill="#4c332a"/>
+    <path d="M38 205 C68 154 103 154 130 205" fill="none" stroke="#b78a55" stroke-width="2"/>
+    <text x="22" y="232" class="serif" font-size="20" fill="#d5ae6b">III</text>
+    <text x="22" y="35" class="label" fill="#c5b49c">POSTER / III</text>
+  </g>
+  <text x="968" y="594" class="label" fill="#c99455">B / I PRIMARY · II + III SECONDARY</text>
+  <text x="968" y="625" class="cn" font-size="18" fill="#c5b49c">I 承担第一视觉，II/III 建立时间与血缘的回声</text>
+  <text x="1375" y="846" class="label" text-anchor="end" fill="#c5b49c">SCHEMATIC · 1440 × 900</text>
+</svg>

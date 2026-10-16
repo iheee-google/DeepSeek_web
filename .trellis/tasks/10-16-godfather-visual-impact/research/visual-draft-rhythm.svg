@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1500" viewBox="0 0 1440 1500" role="img" aria-labelledby="title desc">
+  <title id="title">教父档案整体节奏构图草案</title>
+  <desc id="desc">非产品截图。展示暗幕、暖纸档案、暗色时间轴、家族权力地图和暗影结尾的页面节拍。</desc>
+  <style>
+    .sans { font-family: Arial, "Noto Sans CJK SC", sans-serif; }
+    .serif { font-family: Georgia, "Noto Serif CJK SC", serif; }
+    .label { font: 11px Arial, sans-serif; letter-spacing: 3px; }
+    .cn { font-family: "Noto Serif CJK SC", Georgia, serif; }
+  </style>
+  <rect width="1440" height="1500" fill="#efe2cc"/>
+  <text x="56" y="48" class="label" fill="#8a3035">DESIGN DRAFT · PAGE RHYTHM · A + B + C</text>
+  <text x="1384" y="48" class="label" text-anchor="end" fill="#6f4b3d">NOT PRODUCT SCREENSHOT</text>
+
+  <!-- hero -->
+  <rect y="76" width="1440" height="300" fill="#181311"/>
+  <text x="58" y="122" class="label" fill="#c99455">01 / DARK CURTAIN</text>
+  <text x="58" y="226" class="cn" font-size="76" fill="#f1e7d4">权力是家庭的影子</text>
+  <rect x="58" y="260" width="410" height="3" fill="#8a3035"/>
+  <rect x="900" y="122" width="160" height="224" fill="#0b0a09" stroke="#bd9157"/>
+  <rect x="1080" y="98" width="216" height="286" fill="#0a0908" stroke="#e4b6a8" stroke-width="3"/>
+  <rect x="1310" y="142" width="112" height="174" fill="#11100e" stroke="#bd9157"/>
+  <text x="1088" y="352" class="label" fill="#e4b6a8">PRIMARY POSTER / I</text>
+
+  <!-- paper archive -->
+  <rect y="376" width="1440" height="280" fill="#efe2cc"/>
+  <line x1="58" y1="430" x2="1382" y2="430" stroke="#8a3035" stroke-width="3"/>
+  <text x="58" y="468" class="label" fill="#8a3035">02 / ARCHIVE PAPER</text>
+  <text x="58" y="540" class="cn" font-size="54" fill="#241c17">先看规则，再看谁被改变</text>
+  <text x="900" y="476" class="label" fill="#6f4b3d">WARM READING SURFACE</text>
+  <text x="900" y="516" class="cn" font-size="18" fill="#756454">规则、来源和完整正文回到暖纸面，冲击力来自尺度差而非噪声。</text>
+  <text x="900" y="566" class="cn" font-size="18" fill="#756454">模块不再同重量，但阅读仍然连续。</text>
+
+  <!-- dark timeline -->
+  <rect y="656" width="1440" height="270" fill="#211714"/>
+  <text x="58" y="708" class="label" fill="#c99455">03 / CONSEQUENCE · DARK CUT</text>
+  <text x="58" y="786" class="cn" font-size="52" fill="#f1e7d4">时间不会替任何人宽恕</text>
+  <line x1="58" y1="840" x2="1382" y2="840" stroke="#8a3035" stroke-width="4"/>
+  <circle cx="320" cy="840" r="10" fill="#e4b6a8"/><circle cx="620" cy="840" r="10" fill="#bd9157"/><circle cx="920" cy="840" r="10" fill="#e4b6a8"/><circle cx="1220" cy="840" r="14" fill="#8a3035"/>
+  <text x="58" y="886" class="label" fill="#c5b49c">SINGLE TRACK · RED LINE = STRUCTURE, NOT RELATIONSHIP DATA</text>
+
+  <!-- map -->
+  <rect y="926" width="1440" height="330" fill="#e5d5bc"/>
+  <text x="58" y="980" class="label" fill="#8a3035">04 / BLOODLINE MAP</text>
+  <text x="58" y="1050" class="cn" font-size="56" fill="#241c17">四十四张面孔</text>
+  <text x="58" y="1102" class="cn" font-size="56" fill="#241c17">一条家族暗线</text>
+  <line x1="610" y1="970" x2="610" y2="1198" stroke="#8a3035" stroke-width="2"/>
+  <rect x="684" y="975" width="270" height="184" fill="#241c17"/>
+  <text x="708" y="1010" class="label" fill="#c99455">FOCUS / DON</text>
+  <text x="708" y="1084" class="cn" font-size="38" fill="#f1e7d4">人物焦点</text>
+  <rect x="1000" y="1014" width="132" height="120" fill="#f8f1e4" stroke="#8a3035"/>
+  <rect x="1150" y="990" width="132" height="120" fill="#f8f1e4" stroke="#6f4b3d"/>
+  <rect x="1300" y="1034" width="82" height="88" fill="#f8f1e4" stroke="#6f4b3d"/>
+  <text x="684" y="1202" class="label" fill="#6f4b3d">PRIMARY / SECONDARY / INDEXED</text>
+
+  <!-- finale -->
+  <rect y="1256" width="1440" height="244" fill="#181311"/>
+  <text x="58" y="1306" class="label" fill="#c99455">05 / LAST FRAME</text>
+  <text x="58" y="1404" class="cn" font-size="70" fill="#f1e7d4">余波，不是重复</text>
+  <text x="58" y="1450" class="cn" font-size="18" fill="#c5b49c">结尾用更大的留白和另一种重心结束整条叙事。</text>
+  <rect x="1154" y="1308" width="216" height="138" fill="#37221f" stroke="#bd9157"/>
+</svg>

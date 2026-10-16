@@ -159,3 +159,18 @@
 - 验证：`npm test` 11/11、`npm run build`、`npm run verify:deploy`、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check`、Trellis 校验均通过。未推送、未部署；预存 scaffold 与 `.tmp/` 未纳入任务提交。
 - 顾问复审后将主题 token 与模块声明合回两页原有样式区，删除重复的末尾覆盖块；对比度脚本沿祖先 surface 合成透明背景，避免把透明元素直接当作纸色。修正后主题专项 1/1、完整 Playwright 11/11 和三视口稳定主题证据截图均通过。
 - 最终收尾补强将人物筛选激活态改为琥珀底/墨褐字并通过实际 `4.5:1` 对比度断言，人物卡照片明确使用 `filter:none` 保留原色；顾问要求后，主题证据脚本用原生 `scrollIntoView` 逐项经过目标内 reveal 元素，再返回调整后的稳定取景位置，对所有相交目标/祖先检查最终态和连续几何，并显式等待图片查看器 opacity/identity transform 稳定。人物工具栏的可见稳定态由主题专项回归验证；1920/1440/1024 三视口共 33 张证据（首页 24、全文 6、viewer 3）重新采集并逐张读取；最终完整 `npm test` 为 11/11。结构收尾提交为 `e0d183b`，测试/记录提交为 `d2c29f1`，最终证据提交为 `899c40d`，未推送或部署。
+
+## 2026-10-16 · 暗幕与红线视觉冲击力实现
+
+- 按用户批准的融合方向实现桌面视觉：首屏将 `godfather1.jpg` 放入中央主位，II/III 作为自然比例的错位次级海报；不改图片、viewer 点击区域、内容数据或 URL。1920/1440/1024 均检查了海报比例、主次 z-index、CTA 可达性和页面溢出。
+- 将 `.timeline-section` 设为暗色权力切场，并显式修正详情按钮的暗面前景/背景；规则、人物、史实、符号保留暖纸阅读面。人物焦点卡使用 5/3/2/2 不等宽地图布局，1024px 改为 7/5、5/7 两行，避免窄卡把正文压成逐字换行；全文页只强化暗色 hero 和内边距，不复制首页舞台构图。
+- `tests/desktop-smoke.spec.js` 增加三视口海报自然比例、中央主海报位置/z-index、暗时间轴 surface/按钮配对、人物焦点不等宽和全文 hero surface 断言。主题专项 1/1，完整 `npm test` 11/11；语法检查、`npm run verify:deploy`、Trellis 校验、`git diff --check` 均通过，`npm run build` 待本轮记录更新后作为末尾命令执行。
+- 当前实现提交前等待用户检查稳定截图；未推送、未部署，预存 scaffold、错误的 `10-17` 草稿目录和 `.tmp/` 不纳入任务提交。
+
+## 2026-10-16 · 重新规划电影感与视觉冲击力
+
+- 用户反馈上一版暖纸与暗书房“太平淡、视觉冲击力不够”。基线审计确认问题在构图和叙事节奏：首屏左侧大标题与右侧等量三联海报关系规整，规则/人物/史实/符号模块重量接近，暗色尚未形成权力转折。
+- 用户选择融合方案：A「暗幕与红线」定气氛，B「三联海报主导」定首屏，C「家族权力地图」定内容结构。暖纸继续承担主要阅读面，暗色只用于开场、权力/引文停顿和结尾；红线只表达章节/焦点/选中，不绘制虚假关系线。
+- 研究记录已写入 `.trellis/tasks/10-16-godfather-visual-impact/research/visual-impact.md`：Gordon Willis 的 brown-and-black、blue-black 与地点质感差异；编辑式暗色的多层近黑、非对称网格、大比例摄影、极大标题和克制酒红；Transitions.dev 的 panel reveal 与 reduced-motion 模式。LOC 页面受限，仅保留馆藏元数据边界，不冒充海报色彩审阅。
+- 已完成 `prd.md`、`design.md`、`implement.md`、`implement.jsonl`、`check.jsonl`；Trellis 校验通过。进一步明确 `godfather1.jpg` 为主海报、`.timeline-section` 为暗色权力段，搜索/人物详情/viewer 只做回归。
+- 在 `research/visual-draft-home.svg` 与 `visual-draft-rhythm.svg` 生成并渲染了两张非产品构图草案，展示 A 暗幕与红线、B 三联海报主导、C 家族权力地图的融合关系。产品代码尚未修改，真实任务仍等待最终规划批准和 `task.py start`。
