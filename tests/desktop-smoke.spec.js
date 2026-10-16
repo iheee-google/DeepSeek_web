@@ -1442,6 +1442,17 @@ test.describe('柯里昂档案桌面端', () => {
       expect(indexTheme.pairs.hero.ratio).toBeGreaterThanOrEqual(3);
       expect(indexTheme.pairs.quote.ratio).toBeGreaterThanOrEqual(4.5);
       expect(indexTheme.pairs.action.ratio).toBeGreaterThanOrEqual(4.5);
+      const selectedFilter = await page.locator('[data-character-filter="all"]').evaluate((element) => {
+        const parse = (value) => value.match(/rgba?\(([^)]+)\)/)[1].split(',').map((part) => Number.parseFloat(part.trim()));
+        const luminance = (r, g, b) => [r, g, b].map((channel) => channel / 255).map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        const [fr, fg, fb] = parse(getComputedStyle(element).color);
+        const [br, bg, bb] = parse(getComputedStyle(element).backgroundColor);
+        const light = Math.max(luminance(fr, fg, fb), luminance(br, bg, bb));
+        const dark = Math.min(luminance(fr, fg, fb), luminance(br, bg, bb));
+        return { ratio: (light + .05) / (dark + .05), filter: getComputedStyle(document.querySelector('.character-card img')).filter };
+      });
+      expect(selectedFilter.ratio).toBeGreaterThanOrEqual(4.5);
+      expect(selectedFilter.filter).toBe('none');
 
       await page.goto('/notes.html', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
