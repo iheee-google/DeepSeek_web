@@ -24,8 +24,8 @@
 
 ## 当前执行结果
 
-- [x] 1–9 已完成；无界面三视口截图已采集并检查首屏、时间轴、人物焦点、符号、结尾、全文 hero 和正文。
-- [x] 顾问收尾要求已完成：时间轴 kicker 使用暗面专用前景；实现路径统一为 `10-16`；主题测试覆盖三张海报的真实坐标命中、viewer 源映射、主海报面积/位置和 CTA 遮挡。
+- [x] 1–9 已完成；无界面三视口截图已采集并检查首屏、时间轴、人物焦点、符号、结尾、全文 hero 和正文。人物区域另按工具栏、焦点卡、名册分别采集真实 viewport 截图，避免用整段容器截图替代视口证据。
+- [x] 顾问收尾要求已完成：时间轴 kicker 使用暗面专用前景；实现路径统一为 `10-16`；主题测试覆盖三张海报的真实坐标命中、viewer 的 `currentSrc`/`src` 源映射、主海报相对 II/III 的变换面积/位置和两个 CTA 遮挡。
 - [x] 主题证据脚本同时采集 normal/reduced-motion 两种模式；normal 模式不禁用动画，先逐项滚过 reveal 目标并等待有限动画稳定，再采集首屏、时间轴、人物、符号和全文 hero。
 - [ ] 等待用户对本轮稳定截图和视觉方向做最终确认；确认前不归档任务。
 
@@ -49,8 +49,8 @@ git diff --check
 
 - 主题专项回归 1/1，完整 `npm test` 11/11；专项新增三张海报的真实坐标点击和 viewer 源映射、主海报面积/位置、CTA 遮挡、暗时间轴 kicker/按钮对比度与全文 hero surface 断言。
 - `node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js` 通过。
-- `npm run verify:deploy`、任务校验、`git diff --check` 通过；本轮代码/记录修正后还需重新执行末尾 `npm run build` 并以其输出为最终构建证据。
-- normal/reduced-motion 两种模式均在 1920/1440/1024 记录正式视口、DPR 1、字体 loaded、无横向溢出和无页面/控制台/请求错误；normal 模式截图未禁用动画，稳定证据覆盖首屏三联海报、暗色时间轴、人物焦点、符号和全文 hero。
+- `npm run verify:deploy`、任务校验、`git diff --check` 通过；本轮测试断言与证据记录修正后，已重新执行末尾 `npm run build`，并以其成功的生产 bundle 输出作为最终构建证据。
+- normal/reduced-motion 两种模式均在 1920/1440/1024 记录正式视口、DPR 1、字体 loaded、无横向溢出和无页面/控制台/请求错误；normal 模式截图未禁用动画，稳定证据覆盖首屏三联海报、暗色时间轴、人物工具栏/焦点卡/名册、符号和全文 hero。
 
 ## 证据要求
 

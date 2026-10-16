@@ -1459,9 +1459,13 @@ test.describe('柯里昂档案桌面端', () => {
         const readRatio = (element) => {
           const image = element.querySelector('img');
           const style = getComputedStyle(element);
+          const transform = new DOMMatrixReadOnly(style.transform);
+          const scaleArea = Math.abs(transform.a * transform.d - transform.b * transform.c);
           return {
             layoutRatio: Number.parseFloat(style.width) / Number.parseFloat(style.height),
             naturalRatio: image.naturalWidth / image.naturalHeight,
+            intrinsic: { width: image.naturalWidth, height: image.naturalHeight, complete: image.complete, objectFit: getComputedStyle(image).objectFit },
+            visualArea: element.clientWidth * element.clientHeight * scaleArea,
             rect: (() => {
               const { x, y, width, height } = element.getBoundingClientRect();
               return { x, y, width, height, centerX: x + width / 2, centerY: y + height / 2 };
@@ -1474,13 +1478,13 @@ test.describe('柯里昂档案桌面端', () => {
         const timeline = document.querySelector('.timeline-section');
         const timelineButton = document.querySelector('.timeline-focus .button');
         const mediaRect = document.querySelector('.hero-media').getBoundingClientRect();
-        const ctaRect = document.querySelector('.hero-content .button').getBoundingClientRect();
+        const ctaRects = [...document.querySelectorAll('.hero-content .button')].map((element) => element.getBoundingClientRect());
         const intersects = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
         const spotlight = [...document.querySelectorAll('.character-card--spotlight')].map((element) => element.clientWidth);
         return {
           posters,
           mediaRect: { x: mediaRect.x, width: mediaRect.width, centerX: mediaRect.x + mediaRect.width / 2 },
-          ctaCovered: posters.some(({ rect }) => intersects(rect, ctaRect)),
+          ctaCovered: ctaRects.some((ctaRect) => posters.some(({ rect }) => intersects(rect, ctaRect))),
           timelineBackground: getComputedStyle(timeline).backgroundColor,
           timelineText: getComputedStyle(timeline).color,
           timelineButton: timelineButton ? {
@@ -1495,7 +1499,9 @@ test.describe('柯里昂档案桌面端', () => {
       expect(impactLayout.posters[0].layoutRatio).toBeCloseTo(impactLayout.posters[0].naturalRatio, 2);
       expect(impactLayout.posters[1].layoutRatio).toBeCloseTo(impactLayout.posters[1].naturalRatio, 2);
       expect(impactLayout.posters[2].layoutRatio).toBeCloseTo(impactLayout.posters[2].naturalRatio, 2);
-      expect(impactLayout.posters[0].rect.width).toBeGreaterThan(impactLayout.posters[1].rect.width);
+      expect(impactLayout.posters.every(({ intrinsic }) => intrinsic.complete && intrinsic.width > 0 && intrinsic.height > 0 && intrinsic.objectFit === 'contain')).toBe(true);
+      expect(impactLayout.posters[0].visualArea).toBeGreaterThan(impactLayout.posters[1].visualArea);
+      expect(impactLayout.posters[0].visualArea).toBeGreaterThan(impactLayout.posters[2].visualArea);
       expect(Math.abs(impactLayout.posters[0].rect.centerX - impactLayout.mediaRect.centerX)).toBeLessThan(impactLayout.mediaRect.width * .2);
       expect(impactLayout.ctaCovered).toBe(false);
       expect(impactLayout.timelineBackground).toBe('rgb(25, 21, 18)');
@@ -1506,7 +1512,13 @@ test.describe('柯里昂档案桌面端', () => {
       expect(impactLayout.spotlight[0]).toBeGreaterThan(impactLayout.spotlight[1]);
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      const posterSources = await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => image.src));
+      const ctaHits = await page.locator('.hero-content .button').evaluateAll((buttons) => buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        const element = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        return element === button || button.contains(element);
+      }));
+      expect(ctaHits).toEqual([true, true]);
+      const posterSources = await page.locator('.hero-poster img').evaluateAll((images) => images.map((image) => ({ source: image.src, currentSrc: image.currentSrc })));
       const clickFractions = [.18, .5, .82];
       for (let index = 0; index < posterSources.length; index += 1) {
         const point = await page.locator('.hero-poster img').nth(index).evaluate((image, fraction) => {
@@ -1518,10 +1530,10 @@ test.describe('柯里昂档案桌面端', () => {
           return { tag: element?.tagName, src: element?.currentSrc || element?.src || '' };
         }, point);
         expect(hit.tag).toBe('IMG');
-        expect(hit.src).toBe(posterSources[index]);
+        expect(hit.src).toBe(posterSources[index].currentSrc);
         await page.mouse.click(point.x, point.y);
         await expect(page.locator('#corleoneImageViewer')).toHaveAttribute('open', '');
-        await expect(page.locator('.image-viewer-image')).toHaveAttribute('src', posterSources[index]);
+        await expect(page.locator('.image-viewer-image')).toHaveAttribute('src', posterSources[index].source);
         await page.keyboard.press('Escape');
         await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
       }
