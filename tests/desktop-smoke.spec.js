@@ -1433,6 +1433,18 @@ test.describe('柯里昂档案桌面端', () => {
       await page.setViewportSize(viewport);
       await page.goto('/index.html', { waitUntil: 'networkidle' });
       await page.evaluate(() => document.fonts.ready);
+      const toolbar = page.locator('.character-toolbar');
+      await toolbar.evaluate((element) => window.scrollTo({ top: element.getBoundingClientRect().top + window.scrollY - innerHeight * .35, behavior: 'auto' }));
+      await page.waitForFunction(() => {
+        const element = document.querySelector('.character-toolbar');
+        if (!element || document.fonts.status !== 'loaded') return false;
+        const style = getComputedStyle(element);
+        const signature = [element.getBoundingClientRect().top, element.getBoundingClientRect().height, style.opacity, style.transform].map((value) => Math.round(Number.parseFloat(value) * 100) / 100).join('|');
+        const previous = window.__themeToolbarSignature;
+        window.__themeToolbarSignature = signature;
+        const transformSettled = style.transform === 'none' || style.transform === 'matrix(1, 0, 0, 1, 0, 0)';
+        return element.classList.contains('is-visible') && style.opacity === '1' && transformSettled && previous === signature;
+      });
       const indexTheme = await snapshot('index.html');
       expect(indexTheme.overflow).toBe(true);
       expect(indexTheme.fonts).toBe('loaded');
