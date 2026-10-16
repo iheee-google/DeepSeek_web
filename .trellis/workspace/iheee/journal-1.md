@@ -157,3 +157,4 @@
 - 更新 `docs/design-v2.md`、`.trellis/spec/frontend/index.md` 与 `quality-guidelines.md`，固化明暗表面/前景配对、实际合成背景对比度和稳定截图要求。
 - `tests/desktop-smoke.spec.js` 新增三种正式桌面视口的 token、实际背景、对比度、字体、DPR 和横向溢出检查；稳定主题证据截图保存在 `.tmp/`，已检查首页开场/规则/时间轴/暗引文/人物/史实/符号/结尾、全文和深色图片查看器。
 - 验证：`npm test` 11/11、`npm run build`、`npm run verify:deploy`、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check`、Trellis 校验均通过。未推送、未部署；预存 scaffold 与 `.tmp/` 未纳入任务提交。
+- 顾问复审后将主题 token 与模块声明合回两页原有样式区，删除重复的末尾覆盖块；对比度脚本沿祖先 surface 合成透明背景，避免把透明元素直接当作纸色。修正后主题专项 1/1、完整 Playwright 11/11 和三视口稳定主题证据截图均通过。

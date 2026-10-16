@@ -30,7 +30,9 @@
 ## 实施记录
 - 已新增 `assets/css/archive-theme.css`，并在 `index.html`、`notes.html` 与图片查看器中落地暖纸/暗书房语义角色；未修改内容、生成数据、图片、JavaScript 生命周期或部署配置。
 - 已更新 `docs/design-v2.md` 与 `.trellis/spec/frontend/index.md`，将旧的唯一浅色主题约束改为暖纸主体与有限暗面叙事区。
-- 已在 `tests/desktop-smoke.spec.js` 增加三种正式桌面视口的主题 token、实际背景、对比度、字体和溢出检查。
+- 已在 `tests/desktop-smoke.spec.js` 增加三种正式桌面视口的主题 token、实际背景、对比度、字体和溢出检查；背景测量会沿祖先 surface 合成透明层，不以理论 token 代替实际背景。
+- 顾问复审后将主题声明整合回两页原有生效样式区，删除末尾重复覆盖块；全文 body 使用明确暖纸面，未改变图片查看器 JavaScript 或任何数据/部署文件。
+- 结构修正后主题专项 1/1、完整 Playwright 11/11、稳定主题证据截图、`npm run build`、`npm run verify:deploy`、脚本语法、`git diff --check` 和任务校验均通过。
 
 ## 审查与停止
 - [x] 按主会话质量检查核对范围、对比度、明暗表面、旧绿色回退和交互回归；发现的问题只在主题/测试边界内修正。

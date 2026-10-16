@@ -1368,8 +1368,10 @@ test.describe('柯里昂档案桌面端', () => {
         const channels = match[1].split(',').map((part) => Number.parseFloat(part.trim()));
         return { r: channels[0], g: channels[1], b: channels[2], a: channels[3] ?? 1 };
       };
+      const paper = { r: 241, g: 231, b: 212, a: 1 };
       const composite = (foreground, background) => {
-        if (!foreground || foreground.a >= 1) return foreground;
+        if (!foreground) return background;
+        if (foreground.a >= 1) return foreground;
         const alpha = foreground.a;
         return {
           r: foreground.r * alpha + background.r * (1 - alpha),
@@ -1377,6 +1379,14 @@ test.describe('柯里昂档案桌面端', () => {
           b: foreground.b * alpha + background.b * (1 - alpha),
           a: 1
         };
+      };
+      const resolveBackground = (element) => {
+        const layers = [];
+        for (let current = element; current; current = current.parentElement) {
+          const color = parseColor(getComputedStyle(current).backgroundColor);
+          if (color && color.a > 0) layers.unshift(color);
+        }
+        return layers.reduce((background, layer) => composite(layer, background), paper);
       };
       const luminance = (color) => [color.r, color.g, color.b].map((channel) => {
         const value = channel / 255;
@@ -1392,16 +1402,14 @@ test.describe('柯里昂档案桌面端', () => {
         const background = document.querySelector(backgroundSelector);
         if (!foreground || !background) return null;
         const foregroundStyle = getComputedStyle(foreground);
-        const backgroundStyle = getComputedStyle(background);
-        const paper = { r: 241, g: 231, b: 212, a: 1 };
-        const parsedBackground = parseColor(backgroundStyle.backgroundColor);
-        const backgroundColor = parsedBackground && parsedBackground.a > 0 ? parsedBackground : paper;
+        const backgroundColor = resolveBackground(background);
         const foregroundColor = composite(parseColor(foregroundStyle.color), backgroundColor);
-        return { foreground: foregroundStyle.color, background: backgroundStyle.backgroundColor, ratio: contrast(foregroundColor, backgroundColor) };
+        return { foreground: foregroundStyle.color, background: getComputedStyle(background).backgroundColor, ratio: contrast(foregroundColor, backgroundColor) };
       };
       const rootStyle = getComputedStyle(document.documentElement);
       const bodyStyle = getComputedStyle(document.body);
       const readBackground = (selector) => getComputedStyle(document.querySelector(selector)).backgroundColor;
+      const noteBackground = resolveBackground(document.querySelector('.note-content') || document.body);
       return {
         viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
         overflow: document.documentElement.scrollWidth <= innerWidth + 1,
@@ -1414,7 +1422,7 @@ test.describe('柯里昂档案桌面端', () => {
           quote: readPair('.quote-block blockquote', '.quote-section'),
           action: readPair('.section-kicker', '.rules-section')
         } : {
-          body: { foreground: bodyStyle.color, ratio: contrast(composite(parseColor(bodyStyle.color), { r: 241, g: 231, b: 212, a: 1 }), { r: 241, g: 231, b: 212, a: 1 }) },
+          body: { foreground: bodyStyle.color, background: noteBackground, ratio: contrast(composite(parseColor(bodyStyle.color), noteBackground), noteBackground) },
           mention: readPair('.person-mention', '.note-content'),
           heading: readPair('.note-content h1', 'body')
         }
