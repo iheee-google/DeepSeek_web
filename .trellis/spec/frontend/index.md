@@ -38,7 +38,7 @@ These decisions are product-level facts recorded in `docs/design-v2.md` and must
 
 - The primary experience is archive exploration on `/`; `notes.html` is the supporting complete-source reading route, not a reason to duplicate ten chapter readers on the homepage.
 - All source-note material remains represented. A module may reorganize or expose content, but it must not replace the original note with summaries or remove source links.
-- The visual direction is the family–power intersection: warm paper/family cues cross with cool institutional/power cues. Do not revert the site to an overwhelmingly dark theme or introduce an unrelated visual system.
+- The visual direction is the family–power intersection: a warm-paper reading surface carries the main archive, while the homepage opening, quote pause, and closing frame use a limited dark-study surface for power and shadow. Do not revert to a full dark theme, restore the gray-green palette, or introduce an unrelated visual system. Keep surface/foreground pairs explicit and verify contrast on both light and dark surfaces.
 - Motion and interaction are first-class product behavior: new interactive elements need visible enter, active, and exit feedback, with continuous shared-element transitions where the same content changes context.
 - The supplied reference sites are research sources, not dependencies or code sources: [beautifului.dev](https://beautifului.dev/), [beui.dev](https://beui.dev/), [rareui.com](https://rareui.com/), [transitions.dev](https://transitions.dev/), [shadcn/ui](https://ui.shadcn.com/), [getdesign.md](https://getdesign.md/), [variant.com](https://variant.com/), and [tasteskill.dev](https://www.tasteskill.dev/).
 

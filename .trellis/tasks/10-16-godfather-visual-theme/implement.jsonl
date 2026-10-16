@@ -1,0 +1,5 @@
+{"file":".trellis/spec/frontend/index.md","reason":"原生两页架构、完整内容与视觉约束；局部暗面变更须按已选方案同步"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"模块数据、语义控件、CSS 状态与进入/激活/退出边界"}
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"桌面行组、稳定截图、焦点/嵌套关闭、构建与发布白名单"}
+{"file":"docs/design-v2.md","reason":"产品设计基线，本任务明确替代唯一浅主题规定"}
+{"file":".trellis/tasks/10-16-godfather-visual-theme/research/visual-direction.md","reason":"电影资料、UI 研究与访问限制、用户已选 A 的依据"}

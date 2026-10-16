@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#e4e9df">
   <title>全文 / 教父</title>
+  <link rel="stylesheet" href="assets/css/archive-theme.css">
   <link rel="stylesheet" href="assets/css/image-viewer.css">
   <style>
     :root {
@@ -200,6 +201,65 @@
       .notes-hero h1 { font-size: clamp(4rem, 7.5vw, 6.8rem); }
       .note-content h1 { font-size: var(--archive-chapter-size); }
     }
+
+    /* archive theme: the complete note remains the warm-paper reading surface */
+    :root {
+      --paper: var(--archive-ink);
+      --paper-muted: var(--archive-ink-muted);
+      --ink: var(--archive-paper);
+      --panel: var(--archive-paper-deep);
+      --panel-light: var(--archive-paper-raised);
+      --line: var(--archive-line);
+      --line-strong: var(--archive-line-strong);
+      --accent: var(--archive-action);
+      --accent-bright: var(--archive-walnut);
+      --olive: var(--archive-walnut);
+    }
+    html { background: var(--archive-paper); }
+    body { color: var(--archive-ink); background: linear-gradient(135deg, var(--archive-paper) 0%, var(--archive-paper-raised) 52%, var(--archive-paper-deep) 100%); }
+    .grain { opacity: .018; mix-blend-mode: multiply; }
+    .notes-header { border-bottom-color: var(--archive-line); background: rgba(var(--archive-paper-rgb), .94); }
+    .brand-mark { border-color: var(--archive-walnut); color: var(--archive-walnut); }
+    .brand-copy strong, .notes-nav a:hover, .notes-nav a.is-active, .notes-return { color: var(--archive-ink); }
+    .brand-copy span, .notes-nav, .notes-hero p, .note-toolbar-meta, .note-content { color: var(--archive-ink-muted); }
+    .notes-nav a::after, .notes-kicker::before { background-color: var(--archive-action); }
+    .notes-kicker, .note-toc-head, .note-toolbar-meta strong, .notes-return svg, .note-toolbar a svg { color: var(--archive-action); }
+    .notes-return { border-color: var(--archive-line-strong); }
+    .notes-return:hover { background: rgba(var(--archive-walnut-rgb), .1); }
+    .notes-hero { border-bottom-color: var(--archive-line); }
+    .notes-hero h1, .notes-stats strong, .note-toolbar a, .note-content h1, .note-content h2, .note-content h4, .note-content strong { color: var(--archive-ink); }
+    .notes-stats { background: var(--archive-line); }
+    .notes-stats span { color: var(--archive-ink-muted); background: rgba(var(--archive-paper-raised-rgb), .72); }
+    .note-toolbar { border-bottom-color: var(--archive-line); }
+    .note-layout { color: var(--archive-ink); }
+    .note-toc-head { border-bottom-color: var(--archive-line); }
+    .note-toc a { color: var(--archive-ink-muted); }
+    .note-toc a:hover, .note-toc a.is-active { border-left-color: var(--archive-action); color: var(--archive-ink); background: rgba(var(--archive-walnut-rgb), .08); }
+    .note-content { color: rgba(var(--archive-ink-rgb), .84); }
+    .note-content h3, .note-content em, .note-content a { color: var(--archive-action); }
+    .note-content a { text-decoration-color: rgba(var(--archive-action-rgb), .42); }
+    .note-content h4, .note-chapter, .note-content th, .note-content td { border-color: var(--archive-line); }
+    .note-content blockquote { color: var(--archive-ink); border-left-color: var(--archive-action); background: rgba(var(--archive-action-rgb), .08); }
+    .note-content th { color: var(--archive-action); background: rgba(var(--archive-walnut-rgb), .08); }
+    .note-content code { color: var(--archive-ink); background: rgba(var(--archive-walnut-rgb), .08); }
+    .note-content img { background: var(--archive-paper-deep); filter: none; }
+    .note-content img[src*="assets/posters/"] { background: var(--archive-study); box-shadow: 0 1.5rem 3.5rem rgba(var(--archive-ink-rgb), .18); }
+    .note-content .person-mention { color: var(--archive-action); background: rgba(var(--archive-action-rgb), .09); }
+    .note-content .person-mention:hover { color: var(--archive-walnut); background: rgba(var(--archive-action-rgb), .16); }
+    .note-content .person-mention:active { background: rgba(var(--archive-action-rgb), .24); }
+    .note-content .person-mention:focus-visible { outline-color: var(--archive-ink); box-shadow: 0 0 0 5px var(--archive-action), 0 0 0 7px rgba(var(--archive-paper-raised-rgb), .95); }
+    .person-detail-backdrop { background: rgba(var(--archive-study-rgb), .62); }
+    .person-detail-panel { border-color: var(--archive-line-strong); color: var(--archive-ink); background: var(--archive-paper-raised); box-shadow: 0 2rem 5rem rgba(var(--archive-ink-rgb), .26); }
+    .person-detail-close { border-color: var(--archive-line-strong); color: var(--archive-ink); background: rgba(var(--archive-paper-raised-rgb), .9); }
+    .person-detail-close:hover { border-color: var(--archive-action); background: rgba(var(--archive-action-rgb), .09); }
+    .person-detail-kicker, .person-detail-panel h2, .person-detail-body strong { color: var(--archive-ink); }
+    .person-detail-kicker, .person-detail-body em { color: var(--archive-action); }
+    .person-detail-description, .person-detail-body { color: var(--archive-ink-muted); }
+    .person-detail-body img { background: var(--archive-paper-deep); filter: none; }
+    .back-top { border-color: var(--archive-line-strong); color: var(--archive-ink); background: rgba(var(--archive-paper-raised-rgb), .9); }
+    .back-top:hover { background: var(--archive-paper); }
+    .search-hit { animation-name: noteHitWarm; }
+    @keyframes noteHitWarm { 0%, 100% { background: transparent; } 22% { background: rgba(var(--archive-action-rgb), .2); } }
   </style>
 </head>
 <body>

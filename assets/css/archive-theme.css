@@ -1,0 +1,33 @@
+:root {
+  --archive-paper: #f1e7d4;
+  --archive-paper-rgb: 241, 231, 212;
+  --archive-paper-raised: #f8f1e4;
+  --archive-paper-raised-rgb: 248, 241, 228;
+  --archive-paper-deep: #e5d5bc;
+  --archive-paper-deep-rgb: 229, 213, 188;
+  --archive-ink: #241c17;
+  --archive-ink-rgb: 36, 28, 23;
+  --archive-ink-muted: #756454;
+  --archive-ink-muted-rgb: 117, 100, 84;
+  --archive-study: #191512;
+  --archive-study-rgb: 25, 21, 18;
+  --archive-study-raised: #28201b;
+  --archive-study-raised-rgb: 40, 32, 27;
+  --archive-study-text: #f1e7d4;
+  --archive-study-text-rgb: 241, 231, 212;
+  --archive-study-muted: #c5b49c;
+  --archive-walnut: #53382b;
+  --archive-walnut-rgb: 83, 56, 43;
+  --archive-action: #762f35;
+  --archive-action-rgb: 118, 47, 53;
+  --archive-action-on-dark: #e4b6a8;
+  --archive-action-on-dark-rgb: 228, 182, 168;
+  --archive-amber: #bd9157;
+  --archive-amber-rgb: 189, 145, 87;
+  --archive-line: rgba(var(--archive-ink-rgb), .16);
+  --archive-line-strong: rgba(var(--archive-ink-rgb), .3);
+  --archive-dark-line: rgba(var(--archive-paper-rgb), .2);
+  --archive-dark-line-strong: rgba(var(--archive-paper-rgb), .34);
+  --archive-shadow-light: rgba(var(--archive-ink-rgb), .12);
+  --archive-shadow-dark: rgba(0, 0, 0, .38);
+}

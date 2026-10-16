@@ -149,3 +149,11 @@
 - 将人物详情竞态的第二触发器收紧为同一正文块的“麦克”；正常与 reduced-motion 分别使用同段 `维托/麦克` 和 fixture `Don Vito/麦克`，都在同一个 `evaluate` 中确认旧层 `is-closing && !hidden`，立即打开新人物，等待新层 `is-open`、面板 opacity/transform、关闭按钮焦点和完整新正文，再关闭并核对 `aria-hidden`、inert、滚动锁和触发焦点。提交为 `d4a3017`、`802df90`。
 - 证据脚本在 `1920×1080`、`1440×900`、`1024×900` 分别记录实际 viewport、DPR 1、`document.fonts.status=loaded`、无横向溢出、无 console/page/request 错误；等待正文 reveal 和人物详情 opacity/transform 稳定后重新生成并人工检查标注、完整人物详情、嵌套图片关闭后三组截图。
 - 角色专项与最终完整 `npm test` 均为 10/10；此前一次搜索高亮观察失败经单项重跑和完整重跑通过，未修改搜索实现或放宽断言。`node --check tests/desktop-smoke.spec.js` 与 `git diff --check` 通过。
+
+## 2026-10-16 · 暖纸与暗书房视觉主题重设计
+
+- 用户选择 A「暖纸与暗书房」：首页开场、主引文和结尾使用有限暗色叙事区；规则、时间轴、人物、史实、符号与 `/notes.html` 以暖纸作为主要阅读面。未新增图片、字体、依赖、主题开关或移动端交付。
+- 新增 `assets/css/archive-theme.css` 作为两页共享语义 token；修改 `index.html`、`notes.html`、`assets/css/image-viewer.css`，保留标题/引文行组、图片比例、既有 JavaScript 生命周期、URL/history 和所有交互契约。
+- 更新 `docs/design-v2.md`、`.trellis/spec/frontend/index.md` 与 `quality-guidelines.md`，固化明暗表面/前景配对、实际合成背景对比度和稳定截图要求。
+- `tests/desktop-smoke.spec.js` 新增三种正式桌面视口的 token、实际背景、对比度、字体、DPR 和横向溢出检查；稳定主题证据截图保存在 `.tmp/`，已检查首页开场/规则/时间轴/暗引文/人物/史实/符号/结尾、全文和深色图片查看器。
+- 验证：`npm test` 11/11、`npm run build`、`npm run verify:deploy`、`node --check scripts/build-content.cjs`、`node --check assets/js/image-viewer.js`、`node --check tests/desktop-smoke.spec.js`、`git diff --check`、Trellis 校验均通过。未推送、未部署；预存 scaffold 与 `.tmp/` 未纳入任务提交。

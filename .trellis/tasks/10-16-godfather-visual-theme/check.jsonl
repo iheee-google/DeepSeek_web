@@ -1,0 +1,4 @@
+{"file":".trellis/spec/frontend/quality-guidelines.md","reason":"完整回归、真实字体与几何、瞬时状态和发布边界"}
+{"file":".trellis/spec/frontend/component-guidelines.md","reason":"原生视觉修改不破坏控件语义、图片比例与动效契约"}
+{"file":".trellis/tasks/10-16-godfather-visual-theme/prd.md","reason":"逐项验收已选暖纸/暗书房方向与不改内容/行为范围"}
+{"file":".trellis/tasks/10-16-godfather-visual-theme/design.md","reason":"表面/前景配对、CSS 作用域、硬编码与层级风险"}

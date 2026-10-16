@@ -4,6 +4,18 @@
 
 The project has no configured lint or TypeScript check. Do not claim either has run. The reliable checks are the content build, JavaScript syntax checks, Playwright browser regression, preview-server boundary checks, and `git diff --check`.
 
+## Visual Theme Surface Contract
+
+The archive uses a warm-paper reading surface and a limited dark-study surface; these are semantic roles, not interchangeable aliases. Shared tokens live in `assets/css/archive-theme.css`:
+
+- Light surface text pairs use `--archive-ink`/`--archive-ink-muted` on `--archive-paper`/`--archive-paper-raised`.
+- Dark surface text pairs use `--archive-study-text`/`--archive-study-muted` on `--archive-study`/`--archive-study-raised`.
+- `--archive-action` is for links, selected states, and character mentions on light surfaces; `--archive-amber` is for dark-surface markers and fine lines, not light-surface body text.
+- New dark surfaces must explicitly set both foreground and background. Do not rely on the page's compatibility aliases (`--paper`, `--ink`) to infer the correct contrast.
+- Theme changes must test computed colors on both routes, real composite backgrounds, ordinary text (≥4.5:1), large text (≥3:1), and focus/control boundaries (≥3:1) at the three formal desktop viewports. Stable screenshots wait for reveal and finite entrance animations to settle.
+
+Do not restore the gray-green palette, apply a global sepia/filter layer, or make the whole archive dark to simulate the film. Keep the complete note readable on the warm-paper surface.
+
 ## Required Workflow
 
 ### Production Static Bundle

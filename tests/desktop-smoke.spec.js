@@ -1358,6 +1358,110 @@ test.describe('柯里昂档案桌面端', () => {
     await expectDiagnosticsClean(diagnostics);
   });
 
+  test('暖纸与暗书房主题在桌面视口保持层级和可读性', async ({ page }) => {
+    const diagnostics = collectDiagnostics(page);
+    const viewports = [{ width: 1920, height: 1080 }, { width: 1440, height: 900 }, { width: 1024, height: 900 }];
+    const snapshot = async (route) => page.evaluate((route) => {
+      const parseColor = (value) => {
+        const match = value.match(/rgba?\(([^)]+)\)/);
+        if (!match) return null;
+        const channels = match[1].split(',').map((part) => Number.parseFloat(part.trim()));
+        return { r: channels[0], g: channels[1], b: channels[2], a: channels[3] ?? 1 };
+      };
+      const composite = (foreground, background) => {
+        if (!foreground || foreground.a >= 1) return foreground;
+        const alpha = foreground.a;
+        return {
+          r: foreground.r * alpha + background.r * (1 - alpha),
+          g: foreground.g * alpha + background.g * (1 - alpha),
+          b: foreground.b * alpha + background.b * (1 - alpha),
+          a: 1
+        };
+      };
+      const luminance = (color) => [color.r, color.g, color.b].map((channel) => {
+        const value = channel / 255;
+        return value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4;
+      }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+      const contrast = (foreground, background) => {
+        const light = Math.max(luminance(foreground), luminance(background));
+        const dark = Math.min(luminance(foreground), luminance(background));
+        return (light + .05) / (dark + .05);
+      };
+      const readPair = (foregroundSelector, backgroundSelector) => {
+        const foreground = document.querySelector(foregroundSelector);
+        const background = document.querySelector(backgroundSelector);
+        if (!foreground || !background) return null;
+        const foregroundStyle = getComputedStyle(foreground);
+        const backgroundStyle = getComputedStyle(background);
+        const paper = { r: 241, g: 231, b: 212, a: 1 };
+        const parsedBackground = parseColor(backgroundStyle.backgroundColor);
+        const backgroundColor = parsedBackground && parsedBackground.a > 0 ? parsedBackground : paper;
+        const foregroundColor = composite(parseColor(foregroundStyle.color), backgroundColor);
+        return { foreground: foregroundStyle.color, background: backgroundStyle.backgroundColor, ratio: contrast(foregroundColor, backgroundColor) };
+      };
+      const rootStyle = getComputedStyle(document.documentElement);
+      const bodyStyle = getComputedStyle(document.body);
+      const readBackground = (selector) => getComputedStyle(document.querySelector(selector)).backgroundColor;
+      return {
+        viewport: { width: innerWidth, height: innerHeight, dpr: devicePixelRatio },
+        overflow: document.documentElement.scrollWidth <= innerWidth + 1,
+        fonts: document.fonts.status,
+        tokens: ['--archive-paper', '--archive-ink', '--archive-study', '--archive-action'].reduce((values, token) => ({ ...values, [token]: rootStyle.getPropertyValue(token).trim() }), {}),
+        body: { color: bodyStyle.color, background: bodyStyle.backgroundColor, backgroundImage: bodyStyle.backgroundImage },
+        backgrounds: ['.hero', '.rules-section', '.timeline-section', '.quote-section', '.characters-section', '.history-section', '#motifs', '.finale'].filter((selector) => document.querySelector(selector)).map((selector) => ({ selector, value: readBackground(selector) })),
+        pairs: route === 'index.html' ? {
+          hero: readPair('.hero h1', '.hero'),
+          quote: readPair('.quote-block blockquote', '.quote-section'),
+          action: readPair('.section-kicker', '.rules-section')
+        } : {
+          body: { foreground: bodyStyle.color, ratio: contrast(composite(parseColor(bodyStyle.color), { r: 241, g: 231, b: 212, a: 1 }), { r: 241, g: 231, b: 212, a: 1 }) },
+          mention: readPair('.person-mention', '.note-content'),
+          heading: readPair('.note-content h1', 'body')
+        }
+      };
+    }, route);
+
+    for (const viewport of viewports) {
+      await page.setViewportSize(viewport);
+      await page.goto('/index.html', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      const indexTheme = await snapshot('index.html');
+      expect(indexTheme.overflow).toBe(true);
+      expect(indexTheme.fonts).toBe('loaded');
+      expect(indexTheme.tokens['--archive-paper']).toBe('#f1e7d4');
+      expect(indexTheme.tokens['--archive-study']).toBe('#191512');
+      expect(indexTheme.backgrounds.map(({ value }) => value)).not.toContain('rgb(29, 48, 41)');
+      expect(indexTheme.pairs.hero.ratio).toBeGreaterThanOrEqual(3);
+      expect(indexTheme.pairs.quote.ratio).toBeGreaterThanOrEqual(4.5);
+      expect(indexTheme.pairs.action.ratio).toBeGreaterThanOrEqual(4.5);
+
+      await page.goto('/notes.html', { waitUntil: 'networkidle' });
+      await page.evaluate(() => document.fonts.ready);
+      const notesTheme = await snapshot('notes.html');
+      expect(notesTheme.overflow).toBe(true);
+      expect(notesTheme.fonts).toBe('loaded');
+      expect(notesTheme.pairs.body.ratio).toBeGreaterThanOrEqual(4.5);
+      expect(notesTheme.pairs.heading.ratio).toBeGreaterThanOrEqual(3);
+      expect(notesTheme.pairs.mention.ratio).toBeGreaterThanOrEqual(4.5);
+      await page.evaluate(() => window.CorleoneImageViewer.open(document.querySelector('.note-content img')));
+      const viewerPair = await page.locator('#corleoneImageViewer .image-viewer-shell').evaluate((element) => {
+        const foreground = getComputedStyle(element).color;
+        const background = getComputedStyle(element).backgroundColor;
+        const parse = (value) => value.match(/rgba?\(([^)]+)\)/)[1].split(',').map((part) => Number.parseFloat(part.trim()));
+        const [fr, fg, fb] = parse(foreground);
+        const [br, bg, bb] = parse(background);
+        const luminance = (r, g, b) => [r, g, b].map((channel) => channel / 255).map((value) => value <= .03928 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        const light = Math.max(luminance(fr, fg, fb), luminance(br, bg, bb));
+        const dark = Math.min(luminance(fr, fg, fb), luminance(br, bg, bb));
+        return { foreground, background, ratio: (light + .05) / (dark + .05) };
+      });
+      expect(viewerPair.ratio).toBeGreaterThanOrEqual(4.5);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#corleoneImageViewer')).not.toHaveAttribute('open', '');
+    }
+    await expectDiagnosticsClean(diagnostics);
+  });
+
   test('角色名称标注跳过跨节点与受保护内容并支持减弱动效', async ({ page }) => {
     const diagnostics = collectDiagnostics(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });

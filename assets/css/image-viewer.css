@@ -1,11 +1,11 @@
 body.image-viewer-open { overflow: hidden; }
 
 .image-viewer {
-  --viewer-bg: var(--panel-light, #fbf8f0);
-  --viewer-ink: var(--paper, #1d3029);
-  --viewer-muted: var(--paper-muted, #65736b);
-  --viewer-line: var(--line-strong, rgba(29, 48, 41, .3));
-  --viewer-accent: var(--gold, var(--accent, #a35e3d));
+  --viewer-bg: var(--archive-study-raised, #28201b);
+  --viewer-ink: var(--archive-study-text, #f1e7d4);
+  --viewer-muted: var(--archive-study-muted, #c5b49c);
+  --viewer-line: var(--archive-dark-line-strong, rgba(241, 231, 212, .34));
+  --viewer-accent: var(--archive-amber, #bd9157);
   position: fixed;
   inset: 0;
   z-index: 220;
@@ -22,7 +22,7 @@ body.image-viewer-open { overflow: hidden; }
 }
 .image-viewer:not([open]) { display: none; }
 .image-viewer::backdrop {
-  background: rgba(13, 19, 16, .78);
+  background: rgba(25, 21, 18, .88);
   backdrop-filter: blur(16px) saturate(86%);
 }
 .image-viewer-shell {
@@ -34,7 +34,7 @@ body.image-viewer-open { overflow: hidden; }
   margin: auto;
   border: 1px solid var(--viewer-line);
   background: var(--viewer-bg);
-  box-shadow: 0 2.5rem 7rem rgba(5, 13, 10, .42);
+  box-shadow: 0 2.5rem 7rem rgba(0, 0, 0, .48);
   animation: imageViewerIn .45s var(--ease-out, cubic-bezier(.16, 1, .3, 1)) both;
 }
 .image-viewer-shell:fullscreen,
@@ -91,7 +91,7 @@ body.image-viewer-open { overflow: hidden; }
   overflow: auto;
   padding: clamp(1rem, 3vw, 3rem);
   overscroll-behavior: contain;
-  background: radial-gradient(circle at 50% 45%, rgba(56, 88, 75, .09), transparent 55%), color-mix(in srgb, var(--viewer-bg) 94%, #000 6%);
+  background: radial-gradient(circle at 50% 45%, rgba(189, 145, 87, .08), transparent 55%), color-mix(in srgb, var(--viewer-bg) 92%, #000 8%);
 }
 .image-viewer-canvas {
   display: flex;
