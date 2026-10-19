@@ -20,7 +20,7 @@ Do not restore the gray-green palette, apply a global sepia/filter layer, or mak
 
 - The desktop homepage hero uses the three local posters as a hierarchy: `godfather1.jpg` is the central primary poster, while II/III are secondary side posters. Each figure keeps the source image's natural aspect ratio and independent viewer hit area; transforms may create overlap but must not hide the CTA or create page overflow.
 - The homepage timeline is a dark-study stage, but its single horizontal track, connector geometry, node IDs, drag behavior, and detail panel contract remain unchanged. Dark-stage controls must explicitly pair a readable foreground with the dark surface rather than inheriting light-surface button colors.
-- Content-map emphasis uses unequal grid spans and numbering for characters, motifs, history, and timeline modules. At the 1024px desktop boundary, character spotlight cards must retain readable text widths; prefer a two-row asymmetric grid over four columns that forces Chinese copy into character-by-character wrapping.
+- Content-map emphasis uses numbering, controlled spacing, and module-specific geometry. Character spotlight cards use equal outer boxes at formal desktop widths (four columns at wide desktop, two-by-two at 1024px); motif cards use equal-width three-column rows. Preserve readable text and natural row heights rather than using cross-column spans that make card borders compete.
 - Visual-impact assertions should measure poster CSS width/height against each image's intrinsic ratio, verify the primary z-index/grid position, check the timeline dark surface and control pair, and retain page-level overflow and full interaction regression coverage.
 
 ## Required Workflow

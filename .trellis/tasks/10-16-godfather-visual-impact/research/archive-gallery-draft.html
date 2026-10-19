@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>草案 B · 电影馆藏</title>
+<style>
+  :root { --paper:#eee6d9; --paper-2:#e4d8c8; --ink:#211b18; --muted:#776b5e; --line:#b8a898; --red:#7d3338; --gold:#a97b45; --black:#151311; }
+  * { box-sizing:border-box; }
+  body { margin:0; color:var(--ink); background:var(--paper); font-family:Arial,"Noto Sans CJK SC",sans-serif; }
+  .draft-label { position:fixed; z-index:9; right:20px; bottom:16px; color:#877967; font:10px/1.4 Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; }
+  .nav { height:78px; display:flex; align-items:center; justify-content:space-between; padding:0 64px; border-bottom:1px solid var(--line); font-size:12px; letter-spacing:.12em; }
+  .brand { display:flex; align-items:center; gap:14px; letter-spacing:.04em; }
+  .brand-mark { width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--red); border-radius:50%; color:var(--red); font-family:Georgia,serif; font-size:17px; }
+  .nav-links { display:flex; gap:34px; color:#63584d; }
+  .hero { min-height:790px; display:grid; grid-template-columns: .84fr 1.16fr; gap:60px; padding:68px 64px 72px; background:var(--paper); }
+  .hero-copy { align-self:center; }
+  .kicker { display:flex; align-items:center; gap:12px; color:var(--red); font-size:10px; letter-spacing:.24em; text-transform:uppercase; }
+  .kicker::before { content:""; width:44px; height:1px; background:var(--red); }
+  h1 { max-width:7ch; margin:30px 0 24px; color:var(--ink); font:400 clamp(76px,8vw,122px)/.84 Georgia,"Noto Serif CJK SC",serif; letter-spacing:-.08em; }
+  .lead { max-width:305px; color:var(--muted); font:16px/1.9 Georgia,"Noto Serif CJK SC",serif; }
+  .hero-meta { display:grid; grid-template-columns:repeat(3,1fr); max-width:420px; margin-top:50px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .hero-meta div { padding:14px 12px 15px 0; border-right:1px solid var(--line); }
+  .hero-meta div + div { padding-left:12px; }
+  .hero-meta div:last-child { border-right:0; }
+  .hero-meta small { display:block; color:#8f7c69; font-size:9px; letter-spacing:.12em; text-transform:uppercase; }
+  .hero-meta strong { display:block; margin-top:8px; font:400 25px/1 Georgia,"Noto Serif CJK SC",serif; }
+  .hero-art { display:grid; grid-template-columns:.72fr 1fr .72fr; align-items:end; gap:18px; padding:48px 28px 36px; border:1px solid var(--line); background:#ded2c2; }
+  .poster { position:relative; margin:0; align-self:end; }
+  .poster img { display:block; width:100%; height:100%; object-fit:contain; }
+  .poster.side { height:438px; opacity:.7; filter:grayscale(.18) saturate(.7); }
+  .poster.main { height:610px; padding:0 10px; }
+  .poster-label { position:absolute; z-index:1; top:-26px; left:0; color:var(--red); font:10px Arial,sans-serif; letter-spacing:.16em; }
+  .poster-index { position:absolute; right:4px; bottom:-28px; color:var(--red); font:38px/1 Georgia,serif; }
+  .gallery-caption { grid-column:1/-1; display:flex; justify-content:space-between; gap:20px; padding-top:20px; border-top:1px solid #a99987; color:#796d60; font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+  .people { padding:92px 64px 112px; background:var(--paper-2); border-top:1px solid var(--line); }
+  .section-head { display:grid; grid-template-columns:1fr .6fr; align-items:end; gap:60px; padding-bottom:24px; border-bottom:1px solid var(--line); }
+  .section-head h2 { margin:16px 0 0; font:400 clamp(48px,5vw,76px)/.9 Georgia,"Noto Serif CJK SC",serif; letter-spacing:-.065em; }
+  .section-head p { max-width:300px; margin:0; color:var(--muted); font:14px/1.8 Georgia,"Noto Serif CJK SC",serif; }
+  .catalogue { display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:26px; margin-top:36px; }
+  .catalogue-item { display:grid; grid-template-rows:310px auto; min-width:0; }
+  .catalogue-item:first-child { grid-row:span 2; grid-template-rows:520px auto; }
+  .catalogue-image { overflow:hidden; background:var(--black); }
+  .catalogue-image img { display:block; width:100%; height:100%; object-fit:cover; filter:grayscale(.15) contrast(1.04); }
+  .catalogue-info { display:grid; grid-template-columns:auto 1fr; gap:14px; padding-top:14px; border-top:1px solid #9f8f7c; }
+  .catalogue-index { color:var(--red); font:24px/1 Georgia,serif; }
+  .catalogue-info small { color:#8f7c69; font-size:9px; letter-spacing:.14em; text-transform:uppercase; }
+  .catalogue-info h3 { margin:5px 0 0; font:400 24px/1.05 Georgia,"Noto Serif CJK SC",serif; }
+  .catalogue-info p { margin:9px 0 0; color:var(--muted); font-size:11px; line-height:1.6; }
+  .catalogue-note { grid-column:2/-1; align-self:end; padding:20px 0 0; border-top:1px solid var(--line); color:var(--muted); font:13px/1.8 Georgia,"Noto Serif CJK SC",serif; }
+  .people-foot { display:flex; justify-content:space-between; margin-top:54px; padding-top:14px; border-top:1px solid var(--line); color:#776b5e; font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="draft-label">design draft B · real assets · not product screen</div>
+<header class="nav"><div class="brand"><span class="brand-mark">✦</span><span>教父档案<br><small>THE GODFATHER ARCHIVE</small></span></div><nav class="nav-links"><span>法则</span><span>编年</span><span>人物</span><span>全文</span></nav></header>
+<main>
+<section class="hero"><div class="hero-copy"><div class="kicker">the archive / 01</div><h1>权力<br>是家庭的影子</h1><p class="lead">不是把所有信息平均照亮，而是让观看在明与暗的边缘停留。</p><div class="hero-meta"><div><small>the trilogy</small><strong>3 部作品</strong></div><div><small>the bloodline</small><strong>44 人物</strong></div><div><small>the archive</small><strong>全文</strong></div></div></div><div class="hero-art"><figure class="poster side"><span class="poster-label">II / 1974</span><img src="../../../../assets/posters/godfather2.jpg" alt="教父 II 海报"><span class="poster-index">02</span></figure><figure class="poster main"><span class="poster-label">I / 1972 · PRIMARY</span><img src="../../../../assets/posters/godfather1.jpg" alt="教父 I 海报"><span class="poster-index">01</span></figure><figure class="poster side"><span class="poster-label">III / 1990</span><img src="../../../../assets/posters/godfather3.jpg" alt="教父 III 海报"><span class="poster-index">03</span></figure><div class="gallery-caption"><span>three films / one family</span><span>an illustrated dossier</span></div></div></section>
+<section class="people"><div class="section-head"><div><div class="kicker">catalogue / bloodline</div><h2>人物不是海报<br>是档案索引</h2></div><p>以清晰的图像、编号和行距建立收藏感。文字不覆盖人物，而是像馆藏卡一样紧贴在影像之后。</p></div><div class="catalogue">
+<article class="catalogue-item"><div class="catalogue-image"><img src="../../../../assets/portraits/vito.jpg" alt="维托·柯里昂"></div><div class="catalogue-info"><span class="catalogue-index">01</span><div><small>patriarch / archive profile</small><h3>维托·柯里昂</h3><p>家族秩序的起点，也是所有代价的前史。</p></div></div></article>
+<article class="catalogue-item"><div class="catalogue-image"><img src="../../../../assets/portraits/michael.jpg" alt="麦克·柯里昂"></div><div class="catalogue-info"><span class="catalogue-index">02</span><div><small>heir / transformation</small><h3>麦克·柯里昂</h3><p>从局外人到新教父。</p></div></div></article>
+<article class="catalogue-item"><div class="catalogue-image"><img src="../../../../assets/portraits/sonny.jpg" alt="桑尼·柯里昂"></div><div class="catalogue-info"><span class="catalogue-index">03</span><div><small>first son / volatility</small><h3>桑尼·柯里昂</h3><p>家族的速度与失控。</p></div></div></article>
+<div class="catalogue-note">一张人物图不需要同时承担人物简介、关系说明和交互提示。先让影像被看见，再让索引告诉你该从哪里进入。</div>
+</div><div class="people-foot"><span>44 people · indexed by role and era</span><span>view complete catalogue →</span></div></section>
+</main>
+</body>
+</html>

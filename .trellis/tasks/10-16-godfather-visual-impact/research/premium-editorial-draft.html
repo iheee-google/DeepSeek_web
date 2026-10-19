@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>草案 A · 精品电影刊物</title>
+<style>
+  :root { color-scheme: dark; --ink:#11100f; --ink-2:#1a1715; --paper:#e9dfd0; --paper-muted:#a99c8b; --gold:#c59a61; --red:#883d3f; --white:#f4ede2; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--ink); color:var(--white); font-family:Arial,"Noto Sans CJK SC",sans-serif; }
+  .draft-label { position:fixed; z-index:9; right:20px; bottom:16px; color:#8d8174; font:10px/1.4 Arial,sans-serif; letter-spacing:.16em; text-transform:uppercase; }
+  .nav { height:78px; display:flex; align-items:center; justify-content:space-between; padding:0 64px; border-bottom:1px solid #39312b; color:#cdbfae; font-size:12px; letter-spacing:.12em; }
+  .brand { display:flex; align-items:center; gap:14px; color:var(--white); letter-spacing:.04em; }
+  .brand-mark { width:30px; height:30px; display:grid; place-items:center; border:1px solid var(--gold); border-radius:50%; color:var(--gold); font-family:Georgia,serif; font-size:17px; }
+  .nav-links { display:flex; gap:34px; }
+  .hero { min-height:800px; display:grid; grid-template-columns:minmax(390px,.76fr) minmax(680px,1.24fr); gap:54px; padding:68px 64px 74px; background:linear-gradient(120deg,#12100f 0%,#151311 52%,#0c0b0a 100%); }
+  .hero-copy { align-self:end; padding-bottom:22px; }
+  .kicker { display:flex; align-items:center; gap:12px; color:var(--gold); font-size:10px; letter-spacing:.24em; text-transform:uppercase; }
+  .kicker::before { content:""; width:44px; height:1px; background:var(--red); }
+  h1 { max-width:6.5ch; margin:28px 0 22px; color:var(--white); font:400 clamp(76px,8.1vw,126px)/.82 Georgia,"Noto Serif CJK SC",serif; letter-spacing:-.08em; }
+  .lead { max-width:285px; margin:0; color:#c7bbaa; font:16px/1.9 Georgia,"Noto Serif CJK SC",serif; }
+  .hero-actions { display:flex; gap:12px; margin-top:34px; }
+  .action { padding:12px 20px; border:1px solid #665447; color:var(--white); background:transparent; font-size:12px; letter-spacing:.08em; }
+  .action.primary { border-color:#d8a391; color:#211917; background:#d8a391; }
+  .hero-note { margin-top:68px; padding-top:14px; border-top:1px solid #443a32; color:#83776c; font-size:10px; letter-spacing:.16em; text-transform:uppercase; }
+  .hero-art { position:relative; align-self:center; display:grid; grid-template-columns:.72fr 1fr .72fr; align-items:center; gap:18px; min-height:600px; padding:26px 0 38px; }
+  .hero-art::before { content:""; position:absolute; inset:0 0 22px; border-top:1px solid #342c27; border-bottom:1px solid #342c27; pointer-events:none; }
+  .poster { position:relative; z-index:1; margin:0; }
+  .poster img { display:block; width:100%; height:100%; object-fit:contain; box-shadow:0 24px 42px rgba(0,0,0,.42); }
+  .poster.side { height:450px; opacity:.78; filter:saturate(.72) brightness(.76); }
+  .poster.left { transform:translateY(30px) rotate(-3.2deg); }
+  .poster.right { transform:translateY(45px) rotate(3.2deg); }
+  .poster.main { height:590px; padding:0 4px; transform:translateY(-14px); }
+  .poster.main::after { content:"I"; position:absolute; right:18px; bottom:17px; color:#e4b676; font:42px/1 Georgia,serif; text-shadow:0 2px 12px #000; }
+  .poster-label { position:absolute; top:-22px; left:0; color:var(--gold); font:10px Arial,sans-serif; letter-spacing:.16em; }
+  .poster.side .poster-label { color:#8c7c6a; }
+  .hero-index { position:absolute; right:0; bottom:0; display:flex; align-items:baseline; gap:12px; color:#8c7c6a; font-size:10px; letter-spacing:.14em; }
+  .hero-index strong { color:var(--red); font:64px/1 Georgia,serif; font-weight:400; }
+  .people { padding:92px 64px 112px; color:#211c18; background:var(--paper); }
+  .section-head { display:flex; align-items:end; justify-content:space-between; gap:40px; padding-bottom:26px; border-bottom:1px solid #b9aa98; }
+  .section-head .kicker { color:#8b5c48; }
+  .section-head h2 { margin:16px 0 0; font:400 clamp(46px,5.2vw,78px)/.9 Georgia,"Noto Serif CJK SC",serif; letter-spacing:-.065em; }
+  .section-head p { max-width:255px; margin:0; color:#75695d; font:14px/1.8 Georgia,"Noto Serif CJK SC",serif; }
+  .people-grid { display:grid; grid-template-columns:1.35fr 1fr 1fr 1fr; gap:16px; margin-top:34px; }
+  .person { min-width:0; }
+  .person-image { height:286px; overflow:hidden; background:#191513; }
+  .person:first-child .person-image { height:420px; }
+  .person img { width:100%; height:100%; display:block; object-fit:cover; filter:contrast(1.03) saturate(.82); }
+  .person-info { display:grid; grid-template-columns:auto 1fr; gap:14px; padding-top:14px; border-top:1px solid #9c8b77; }
+  .person-index { color:#8b3b3e; font:24px/1 Georgia,serif; }
+  .person-info small { display:block; color:#927e69; font-size:9px; letter-spacing:.14em; text-transform:uppercase; }
+  .person-info h3 { margin:5px 0 0; font:400 25px/1.05 Georgia,"Noto Serif CJK SC",serif; }
+  .person-info p { margin:9px 0 0; color:#75695d; font-size:11px; line-height:1.6; }
+  .person:first-child { grid-row:span 2; }
+  .people-foot { display:flex; justify-content:space-between; margin-top:54px; padding-top:14px; border-top:1px solid #b9aa98; color:#776b5e; font-size:10px; letter-spacing:.14em; text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="draft-label">design draft A · real assets · not product screen</div>
+<header class="nav"><div class="brand"><span class="brand-mark">✦</span><span>教父档案<br><small>THE GODFATHER ARCHIVE</small></span></div><nav class="nav-links"><span>法则</span><span>编年</span><span>人物</span><span>全文</span></nav></header>
+<main>
+<section class="hero">
+  <div class="hero-copy"><div class="kicker">a family chronicle in three acts</div><h1>权力<br>是家庭的影子</h1><p class="lead">一部关于庇护如何变成诅咒的长镜头，从西西里出发，在美国落幕。</p><div class="hero-actions"><span class="action primary">进入档案</span><span class="action">沿时间线阅读</span></div><div class="hero-note">01 / first frame · image before information</div></div>
+  <div class="hero-art"><figure class="poster side left"><span class="poster-label">II / THE ECHO</span><img src="../../../../assets/posters/godfather2.jpg" alt="教父 II 海报"></figure><figure class="poster main"><span class="poster-label">I / THE ORIGIN</span><img src="../../../../assets/posters/godfather1.jpg" alt="教父 I 海报"></figure><figure class="poster side right"><span class="poster-label">III / THE AFTERMATH</span><img src="../../../../assets/posters/godfather3.jpg" alt="教父 III 海报"></figure><div class="hero-index"><strong>01</strong><span>from family<br>to power</span></div></div>
+</section>
+<section class="people"><div class="section-head"><div><div class="kicker">the bloodline</div><h2>四十四张面孔</h2></div><p>不把人物说明压在照片上。影像先成为档案，文字随后给出身份与位置。</p></div><div class="people-grid">
+  <article class="person"><div class="person-image"><img src="../../../../assets/portraits/vito.jpg" alt="维托·柯里昂"></div><div class="person-info"><span class="person-index">01</span><div><small>the patriarch · core archive</small><h3>维托·柯里昂</h3><p>教父、父亲、家族秩序的起点。</p></div></div></article>
+  <article class="person"><div class="person-image"><img src="../../../../assets/portraits/michael.jpg" alt="麦克·柯里昂"></div><div class="person-info"><span class="person-index">02</span><div><small>the heir</small><h3>麦克·柯里昂</h3><p>拒绝继承，最终成为继承本身。</p></div></div></article>
+  <article class="person"><div class="person-image"><img src="../../../../assets/portraits/sonny.jpg" alt="桑尼·柯里昂"></div><div class="person-info"><span class="person-index">03</span><div><small>the first son</small><h3>桑尼·柯里昂</h3><p>速度、愤怒与家族的裂口。</p></div></div></article>
+  <article class="person"><div class="person-image"><img src="../../../../assets/portraits/kay.jpg" alt="凯·亚当斯"></div><div class="person-info"><span class="person-index">04</span><div><small>the witness</small><h3>凯·亚当斯</h3><p>站在家族边缘，见证门如何关闭。</p></div></div></article>
+</div><div class="people-foot"><span>44 people · 3 generations · one archive</span><span>open a dossier →</span></div></section>
+</main>
+</body>
+</html>

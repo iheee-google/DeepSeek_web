@@ -1077,38 +1077,35 @@
       .timeline-section .timeline-focus .button:hover { color: var(--archive-study); border-color: var(--archive-paper); background: var(--archive-paper); }
 
       #characters .character-spotlight {
-        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-template-columns: repeat(4, minmax(0, 1fr));
         gap: .55rem;
         background: transparent;
         border: 0;
       }
-      #characters .character-card--spotlight { min-height: 25rem; border: 1px solid var(--line-strong); }
-      #characters .character-card--spotlight:nth-child(1) { grid-column: span 5; min-height: 32rem; }
-      #characters .character-card--spotlight:nth-child(2) { grid-column: span 3; }
-      #characters .character-card--spotlight:nth-child(3) { grid-column: span 2; }
-      #characters .character-card--spotlight:nth-child(4) { grid-column: span 2; }
-      #characters .character-card--spotlight:nth-child(1) .character-body h3 { font-size: clamp(2rem, 3vw, 3.1rem); }
-      #characters .character-card--spotlight:nth-child(1) .character-index { font-size: 1.65rem; }
+      #characters .character-card--spotlight { grid-column: span 1; min-height: 28rem; border: 1px solid var(--line-strong); }
+      #characters .character-card--spotlight .character-body h3 { font-size: clamp(1.7rem, 2.5vw, 2.7rem); }
+      #characters .character-card--spotlight .character-index { font-size: 1.35rem; }
 
       #motifs .motif-layout {
-        grid-template-columns: repeat(12, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: .55rem;
         background: transparent;
         border: 0;
       }
-      #motifs .motif { grid-column: span 4; border: 1px solid var(--line); }
-      #motifs .motif:nth-child(3n + 1) { grid-column: span 5; min-height: 20rem; }
-      #motifs .motif:nth-child(3n + 2) { grid-column: span 3; }
-      #motifs .motif:nth-child(3n) { grid-column: span 4; }
+      #motifs .motif,
+      #motifs .motif:nth-child(3n + 1),
+      #motifs .motif:nth-child(3n + 2),
+      #motifs .motif:nth-child(3n) { grid-column: span 1; min-height: 20rem; border: 1px solid var(--line); }
     }
     @media (min-width: 901px) and (max-width: 1100px) {
       .hero-media { left: 58%; right: 1rem; }
       .hero h1 { font-size: clamp(4.4rem, 8.5vw, 7.2rem); }
-      #characters .character-spotlight { grid-template-columns: repeat(12, minmax(0, 1fr)); }
-      #characters .character-card--spotlight:nth-child(1) { grid-column: span 7; min-height: 28rem; }
-      #characters .character-card--spotlight:nth-child(2) { grid-column: span 5; min-height: 28rem; }
-      #characters .character-card--spotlight:nth-child(3) { grid-column: span 5; min-height: 22rem; }
-      #characters .character-card--spotlight:nth-child(4) { grid-column: span 7; min-height: 22rem; }
+      #characters .character-spotlight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #characters .character-card--spotlight,
+      #characters .character-card--spotlight:nth-child(1),
+      #characters .character-card--spotlight:nth-child(2),
+      #characters .character-card--spotlight:nth-child(3),
+      #characters .character-card--spotlight:nth-child(4) { grid-column: span 1; min-height: 28rem; }
       .section-header, .timeline-head, .history-section .section-header { grid-template-columns: 1fr; gap: 1.25rem; }
       .section-intro, .timeline-caption { max-width: 38rem; }
       .notes-portal-card { grid-template-columns: minmax(0, 1.2fr) minmax(15rem, .8fr); }
