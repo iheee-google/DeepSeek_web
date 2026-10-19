@@ -1480,10 +1480,13 @@ test.describe('柯里昂档案桌面端', () => {
         const mediaRect = document.querySelector('.hero-media').getBoundingClientRect();
         const ctaRects = [...document.querySelectorAll('.hero-content .button')].map((element) => element.getBoundingClientRect());
         const intersects = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y;
-        const spotlight = [...document.querySelectorAll('.character-card--spotlight')].map((element) => ({ width: element.clientWidth, height: element.clientHeight }));
+        const spotlight = [...document.querySelectorAll('.character-card--spotlight')].map((element) => {
+          const rect = element.getBoundingClientRect();
+          return { width: rect.width, height: rect.height, top: Math.round(rect.top) };
+        });
         const motifCards = [...document.querySelectorAll('#motifs .motif')].map((element) => {
           const rect = element.getBoundingClientRect();
-          return { width: element.clientWidth, height: element.clientHeight, top: Math.round(rect.top) };
+          return { width: rect.width, height: rect.height, top: Math.round(rect.top) };
         });
         return {
           posters,
@@ -1514,16 +1517,28 @@ test.describe('柯里昂档案桌面端', () => {
       expect(indexTheme.pairs.timeline.ratio).toBeGreaterThanOrEqual(4.5);
       expect(impactLayout.timelineButton?.color).toBe('rgb(25, 21, 18)');
       expect(impactLayout.timelineButton?.background).toBe('rgb(228, 182, 168)');
-      expect(new Set(impactLayout.spotlight.map(({ width }) => width)).size).toBe(1);
-      expect(new Set(impactLayout.spotlight.map(({ height }) => height)).size).toBe(1);
-      expect(new Set(impactLayout.motifCards.map(({ width }) => width)).size).toBe(1);
+      const withinPixels = (values, tolerance = 1) => values.length > 0 && Math.max(...values) - Math.min(...values) <= tolerance;
+      expect(impactLayout.spotlight).toHaveLength(4);
+      const spotlightRows = new Map();
+      for (const card of impactLayout.spotlight) {
+        const row = spotlightRows.get(card.top) || [];
+        row.push(card);
+        spotlightRows.set(card.top, row);
+      }
+      const expectedSpotlightColumns = viewport.width <= 1100 ? 2 : 4;
+      expect(spotlightRows.size).toBe(viewport.width <= 1100 ? 2 : 1);
+      expect([...spotlightRows.values()].every((row) => row.length === expectedSpotlightColumns)).toBe(true);
+      expect(withinPixels(impactLayout.spotlight.map(({ width }) => width))).toBe(true);
+      expect(withinPixels(impactLayout.spotlight.map(({ height }) => height))).toBe(true);
+      expect(impactLayout.motifCards).toHaveLength(12);
       const motifRows = new Map();
       for (const card of impactLayout.motifCards) {
         const row = motifRows.get(card.top) || [];
-        row.push(card.height);
+        row.push(card);
         motifRows.set(card.top, row);
       }
-      expect([...motifRows.values()].every((row) => new Set(row).size === 1)).toBe(true);
+      expect(motifRows.size).toBe(4);
+      expect([...motifRows.values()].every((row) => row.length === 3 && withinPixels(row.map(({ width }) => width)) && withinPixels(row.map(({ height }) => height)))).toBe(true);
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const ctaHits = await page.locator('.hero-content .button').evaluateAll((buttons) => buttons.map((button) => {
